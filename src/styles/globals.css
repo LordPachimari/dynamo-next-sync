@@ -1,3 +1,151 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    --ring: 215 20.2% 65.1%;
+
+    --radius: 0.5rem;
+    --blue: #3b82f6;
+    --orange: #f97316;
+  }
+
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20.2% 65.1%;
+
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 1.2%;
+
+    --secondary: 222.2 47.4% 11.2%;
+    --secondary-foreground: 210 40% 98%;
+
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --ring: 216 34% 17%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  /* * {
+    @apply border-border;
+  } */
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+
+.childrenContainer {
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+
+  transition: all 0.2s ease-in-out;
+}
+.sidebar {
+  z-index: 60;
+  left: -500px;
+  position: fixed;
+  overflow-y: auto;
+  width: 80%;
+  height: 100vh;
+  background: white;
+  box-shadow: 2px 0px 4px 0.5px rgba(72, 72, 72, 0.25);
+  border-right: 1px solid var(--border);
+  transition: all 0.1s ease-in-out;
+  backdrop-filter: blur(4px);
+}
+.listContainer {
+  background: white;
+  margin-top: 28px;
+  height: calc(100vh - 56px);
+  left: -560px;
+  width: 256px;
+  height: calc(100vh - 56px);
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  overflow-y: auto;
+
+  z-index: 42; /* Stay on top */
+  transition: all 0.1s ease-in-out;
+  border-right: 1px solid #cbd5e0;
+  border-top: none;
+}
+.show {
+  left: 0;
+}
+
+.showList {
+  left: 0;
+}
+.workspaceContainer {
+  margin-top: 56px;
+  overflow-y: scroll;
+  height: calc(100vh - 56px);
+  width: 100%;
+  transition: all 0.1s ease-in-out;
+}
+@media screen and (min-width: 500px) {
+  .sidebar {
+    width: 256px;
+  }
+}
+@media screen and (min-width: 1024px) {
+  .adjustChildren {
+    width: calc(100% - 256px);
+    margin-left: 256px;
+  }
+  .adjust {
+    width: calc(100% - 256px);
+    margin-left: 256px;
+  }
+}

@@ -36,6 +36,7 @@
     --radius: 0.5rem;
     --blue: #3b82f6;
     --orange: #f97316;
+    --button: linear-gradient(180deg, rgba(255, 118, 60, 0) -2.17%, rgba(255, 118, 60, 0.8) 7.69%, #f97316 100%), #FFFFFF;
   }
 
   .dark {

@@ -50,6 +50,7 @@ export const Topics = [
   "DESIGN",
   "ART",
   "VIDEOGRAPHY",
+  "GAMING",
 ] as const;
 
 export const TopicsObject = {
@@ -203,21 +204,20 @@ export const SolverPartialZod = SolverZod.pick({
 });
 export type SolverPartial = z.infer<typeof SolverPartialZod>;
 
-export const UpdateTransactionZod = QuestZod.pick({
+export const WorkUpdateZod = QuestZod.pick({
   title: true,
   topic: true,
   subtopic: true,
   reward: true,
   slots: true,
   deadline: true,
-})
-  .partial()
-  .extend({ lastUpdated: z.string() });
+  lastUpdated: true,
+}).partial();
 
-export type UpdateTransaction = z.infer<typeof UpdateTransactionZod>;
+export type WorkUpdate = z.infer<typeof WorkUpdateZod>;
 
-export const TransactionQueueZod = z.map(z.string(), UpdateTransactionZod);
-export type TransactionQueue = z.infer<typeof TransactionQueueZod>;
+export const UpdateQueueZod = z.map(z.string(), WorkUpdateZod);
+export type UpdateQueue = z.infer<typeof UpdateQueueZod>;
 export const PublishedQuestsInputZod = z.object({
   topic: z.optional(z.array(z.string())),
   subtopic: z.optional(z.array(z.string())),

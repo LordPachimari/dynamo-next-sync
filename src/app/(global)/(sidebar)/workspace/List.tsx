@@ -19,7 +19,7 @@ import { env } from "~/env.mjs";
 import { M, mutators } from "~/repl/mutators";
 import { Quest, QuestZod, SolutionZod } from "~/types/types";
 import { cn } from "~/utils/cn";
-import { Button } from "~/components/Button";
+import { Button } from "~/ui/Button";
 
 export default function List({
   showList,
@@ -109,7 +109,7 @@ export default function List({
       <ListSettings>
         <span
           className={cn(
-            "hover:text-accent-foreground mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100"
+            "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
             // path === item.href ? "bg-accent" : "transparent",
             // item.disabled && "cursor-not-allowed opacity-80",
           )}
@@ -136,7 +136,7 @@ export default function List({
             <span
               key={QuestOrSolution.id}
               className={cn(
-                "hover:text-accent-foreground mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100"
+                "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
                 // path === item.href ? "bg-accent" : "transparent",
                 // item.disabled && "cursor-not-allowed opacity-80",
               )}
@@ -150,7 +150,7 @@ export default function List({
       </ul>
       <span
         className={cn(
-          "hover:text-accent-foreground mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100"
+          "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
           // path === item.href ? "bg-accent" : "transparent",
           // item.disabled && "cursor-not-allowed opacity-80",
         )}
@@ -208,7 +208,7 @@ const ListSettings = ({ children }: { children: React.ReactNode }) => {
       /> */}
       <span
         className={cn(
-          "hover:text-accent-foreground mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100"
+          "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
           // path === item.href ? "bg-accent" : "transparent",
           // item.disabled && "cursor-not-allowed opacity-80",
         )}

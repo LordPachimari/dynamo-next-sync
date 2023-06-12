@@ -9,7 +9,7 @@ export default function Sidebar({
   toggleShowSidebar: () => void;
 }) {
   return (
-    <div className={`sidebar ${showSidebar ?"show":""}`}>
+    <div className={`sidebar ${showSidebar ? "show" : ""}`}>
       <div className="flex items-center justify-between p-2">
         <Switch className="bg-blue-500 " />
         <Button

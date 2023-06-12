@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import LandingPageButtons from "~/components/LandingPage/LandingPageButtons";
+import LandingPageButtons from "~/components/Landing/LandingPageButtons";
 
 const forIndividuals: { heading: string; description: string }[] = [
   {

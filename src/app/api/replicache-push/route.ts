@@ -4,7 +4,12 @@ import { auth } from "@clerk/nextjs";
 import { z } from "zod";
 import { jsonSchema } from "~/utils/json";
 import { QuestZod } from "~/types/types";
-import { getLastMutationId, getSpaceVersion, setLastMutationId, setSpaceVersion } from "~/repl/data";
+import {
+  getLastMutationId,
+  getSpaceVersion,
+  setLastMutationId,
+  setSpaceVersion,
+} from "~/repl/data";
 import { QUEST_PREFIX, userId } from "~/utils/constants";
 import { ReplicacheTransaction } from "~/repl/transaction";
 

@@ -1,7 +1,7 @@
 import type { ReadTransaction, WriteTransaction } from "replicache";
 
 import { QUEST_PREFIX } from "../utils/constants";
-import type { Quest, UpdateTransaction } from "~/types/types";
+import type { Quest, WorkUpdates } from "~/types/types";
 
 export type M = typeof mutators;
 export const mutators = {
@@ -19,10 +19,10 @@ export const mutators = {
     {
       id,
 
-      transactions,
+      updates,
     }: {
       id: string;
-      transactions: UpdateTransaction;
+      updates: WorkUpdates;
     }
   ): Promise<void> => {
     const quest = (await getQuest(tx, { id })) as Quest;
@@ -30,7 +30,7 @@ export const mutators = {
       console.info(`Quest ${id} not found`);
       return;
     }
-    const updatedQuest = { ...quest, transactions };
+    const updatedQuest = { ...quest, updates };
     await putQuest(tx, { id: `${QUEST_PREFIX}${id}`, quest: updatedQuest });
   },
 };

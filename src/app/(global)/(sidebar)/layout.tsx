@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Button } from "~/components/Button";
-import Sidebar from "~/components/Sidebar";
+import { Button } from "~/ui/Button";
+import Sidebar from "~/ui/Sidebar";
 
 export default function SidebarLayout({
   children, // will be a page or nested layout

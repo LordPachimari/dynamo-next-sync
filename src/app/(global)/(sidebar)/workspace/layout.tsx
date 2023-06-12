@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 
 import List from "./List";
-import { Button } from "~/components/Button";
+import { Button } from "~/ui/Button";
 import { userId } from "~/utils/constants";
 
 export default function WorkspaceLayout({

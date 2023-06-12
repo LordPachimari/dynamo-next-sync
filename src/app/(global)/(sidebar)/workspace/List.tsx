@@ -20,12 +20,15 @@ import { M, mutators } from "~/repl/mutators";
 import {
   Post,
   PostListComponent,
+  PostListComponentZod,
   PostZod,
   Quest,
   QuestListComponent,
+  QuestListComponentZod,
   QuestZod,
   Solution,
   SolutionListComponent,
+  SolutionListComponentZod,
   SolutionZod,
 } from "~/types/types";
 import { cn } from "~/utils/cn";
@@ -65,7 +68,11 @@ export default function List({
     }
   }, [rep, userId]);
 
-  const WorkZod = z.union([QuestZod, SolutionZod, PostZod]);
+  const WorkZod = z.union([
+    QuestListComponentZod,
+    SolutionListComponentZod,
+    PostListComponentZod,
+  ]);
 
   const works = useSubscribe(
     rep,

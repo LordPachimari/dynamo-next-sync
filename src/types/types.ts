@@ -180,12 +180,12 @@ export interface PublishedQuestDynamo extends PublishedQuest {
 export const QuestListComponentZod = QuestZod.pick({
   id: true,
   title: true,
+  topic: true,
+  inTrash: true,
+  type: true,
 });
 
-export type QuestListComponent = Pick<
-  Quest,
-  "id" | "title" | "topic" | "inTrash" | "lastUpdated" | "type"
->;
+export type QuestListComponent = z.infer<typeof QuestListComponentZod>;
 export type Versions = {
   server: string;
   local: string;
@@ -301,20 +301,22 @@ export const SolutionDynamoZod = SolutionZod.extend({
   SK: z.string(),
 });
 export type SolutionDynamo = z.infer<typeof SolutionDynamoZod>;
-export type SolutionListComponent = Pick<
-  Solution,
-  "id" | "title" | "topic" | "lastUpdated" | "inTrash" | "type"
->;
+
+export const SolutionListComponentZod = SolutionZod.pick({
+  id: true,
+  title: true,
+  topic: true,
+  inTrash: true,
+  type: true,
+});
+export type SolutionListComponent = z.infer<typeof SolutionListComponentZod>;
 export const ContentZod = z.object({
   content: z.instanceof(Uint8Array),
   text: z.instanceof(Uint8Array),
   inTrash: z.boolean(),
   type: z.enum(Entity),
 });
-export type PostListComponent = Pick<
-  Post,
-  "id" | "title" | "topic" | "lastUpdated" | "inTrash" | "type"
->;
+
 export type Content = z.infer<typeof ContentZod>;
 export type WorkspaceList = {
   quests: QuestListComponent[];
@@ -364,7 +366,14 @@ export const PostZod = z.object({
   lastUpdated: z.string(),
 });
 export type Post = z.infer<typeof PostZod>;
-
+export const PostListComponentZod = PostZod.pick({
+  id: true,
+  title: true,
+  topic: true,
+  inTrash: true,
+  type: true,
+});
+export type PostListComponent = z.infer<typeof PostZod>;
 export type LeaderboardType = Pick<
   User,
   "username" | "level" | "profile" | "questsSolved" | "rewarded" | "profile"

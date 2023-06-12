@@ -28,7 +28,7 @@ const TiptapEditor = (props: {
   type: "QUEST" | "SOLUTION" | "POST";
 }) => {
   let contentRestored: string | undefined;
-  const { id, content, type, setIsSaving } = props;
+  const { id, content, type } = props;
 
   if (content) {
     const restored = pako.inflate(content, { to: "string" });
@@ -125,7 +125,8 @@ const TiptapEditor = (props: {
     fileInputRef.current?.click();
   };
   const addImage = useCallback(
-    async (e: ChangeEvent<HTMLInputElement>) => {
+    // async
+    (e: ChangeEvent<HTMLInputElement>) => {
       // const files = e.target.files;
       // if (!files) {
       //   return;

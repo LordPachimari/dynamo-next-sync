@@ -14,11 +14,9 @@ import { Content, Quest } from "~/types/types";
 export const getWorkspaceListChangedItems = async ({
   spaceId,
   prevVersion,
-  userId,
 }: {
   spaceId: string;
   prevVersion: number;
-  userId: string;
 }) => {
   const queryParams: QueryCommandInput = {
     TableName: env.MAIN_TABLE_NAME,
@@ -27,7 +25,7 @@ export const getWorkspaceListChangedItems = async ({
     FilterExpression: "#version > :version",
     ExpressionAttributeNames: { "#PK": "PK", "#version": "version" },
     ExpressionAttributeValues: {
-      ":PK": `${spaceId}#${userId}`,
+      ":PK": spaceId,
       ":version": prevVersion,
     },
     ProjectionExpression: "id, title, topic, inTrash, published",
@@ -35,11 +33,7 @@ export const getWorkspaceListChangedItems = async ({
   try {
     const result = await dynamoClient.send(new QueryCommand(queryParams));
     if (result.Items) {
-      //pop the last item. Why: cause the last item is WORKSPACE_LIST space version.
-      //workspace list version is stored under the same Partition key PK:"WORKPSACE_LIST#<userId>" as user quests and solutions, with sort key SK:"VERSION"
-      //as the items are ordered by SK lexicographically, "VERSION" starts with "V" so it will be in the last item of a scan result.
-
-      result.Items.pop();
+      console.log("workspacelist dynamo", prevVersion, result);
 
       return result.Items;
     }
@@ -66,7 +60,7 @@ export const getWorkspaceWork = async ({
   RequestItems[tableName] = {
     Keys: [
       { PK: `WORKSPACE_LIST#${userId}`, SK: `${spaceId}` },
-      { PK: `${spaceId}#${userId}`, SK: `CONTENT#${spaceId}` },
+      { PK: spaceId, SK: `CONTENT#${spaceId}` },
     ],
   };
   const batchParams: BatchGetCommandInput = {

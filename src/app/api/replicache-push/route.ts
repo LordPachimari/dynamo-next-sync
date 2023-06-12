@@ -43,8 +43,15 @@ export async function POST(req: Request, res: Response) {
   const { searchParams } = new URL(req.url);
 
   const spaceId = z.string().parse(searchParams.get("spaceId"));
+
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const json = await req.json();
+  const adjustedSpaceId =
+    //if the space is workspace list or
+    //if the space is a work - quest/solution/post in workspace make it private by adding userId.
+    spaceId === (WORKSPACE_LIST || spaceId.startsWith("WORK"))
+      ? `${spaceId}#${userId}`
+      : spaceId;
 
   console.log("json", json);
   const push = pushRequestSchema.parse(json);
@@ -56,7 +63,7 @@ export async function POST(req: Request, res: Response) {
 
   const processMutations = async () => {
     const prevVersion = await getSpaceVersion({
-      spaceId,
+      spaceId: adjustedSpaceId,
 
       userId,
     });
@@ -69,7 +76,7 @@ export async function POST(req: Request, res: Response) {
     console.log("lastMutationID:", lastMutationId);
 
     const tx = new ReplicacheTransaction(
-      spaceId,
+      adjustedSpaceId,
       push.clientID,
       nextVersion,
       userId
@@ -108,8 +115,7 @@ export async function POST(req: Request, res: Response) {
 
       //each workspace list is a private list. So each user can view only its own workspace list.
       setSpaceVersion({
-        spaceId:
-          spaceId === WORKSPACE_LIST ? `${WORKSPACE_LIST}#${userId}` : spaceId,
+        spaceId: adjustedSpaceId,
         version: nextVersion,
         userId,
       }),

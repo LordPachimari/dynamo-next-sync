@@ -5,7 +5,7 @@ export default authMiddleware({
   publicRoutes: ["/"],
   afterAuth(auth, req, evt) {
     const isAuthPage =
-      req.nextUrl.pathname.startsWith("/") ||
+      req.nextUrl.pathname === "/" ||
       req.nextUrl.pathname.startsWith("/sign-in");
     // handle users who aren't authenticated
     if (!auth.userId && !auth.isPublicRoute) {

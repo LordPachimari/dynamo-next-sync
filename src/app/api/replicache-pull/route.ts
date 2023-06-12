@@ -33,6 +33,12 @@ export async function POST(req: NextRequest, res: NextResponse) {
   console.log("Processing mutation pull:", JSON.stringify(json, null, ""));
   const { searchParams } = new URL(req.url);
   const spaceId = z.string().parse(searchParams.get("spaceId"));
+  const adjustedSpaceId =
+    //if the space is workspace list or
+    //if the space is a work - quest/solution/post in workspace make it private by adding userId.
+    spaceId === (WORKSPACE_LIST || spaceId.startsWith("WORK"))
+      ? `${spaceId}#${userId}`
+      : spaceId;
   console.log("hello?", json);
   json.cookie = JSON.parse(json.cookie as string) as { version: number };
   const pull = pullRequestSchema.parse(json);
@@ -43,7 +49,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
   const startTransact = Date.now();
   const processPull = async () => {
     let items: any[] = [];
-    const version = await getSpaceVersion({ spaceId, userId });
+    const version = await getSpaceVersion({ spaceId: adjustedSpaceId, userId });
     const fromVersion =
       pull.cookie && pull.cookie.version ? pull.cookie.version : 0;
     if (fromVersion === 0) {
@@ -60,13 +66,12 @@ export async function POST(req: NextRequest, res: NextResponse) {
     if (spaceId === WORKSPACE_LIST) {
       items = await getWorkspaceListChangedItems({
         prevVersion: fromVersion,
-        spaceId,
-        userId,
+        spaceId: adjustedSpaceId,
       });
     } else if (spaceId.startsWith("WORK")) {
       items = await getWorkspaceWork({
         userId,
-        spaceId,
+        spaceId: adjustedSpaceId,
       });
     }
 

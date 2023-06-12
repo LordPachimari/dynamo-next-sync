@@ -31,6 +31,7 @@ import {
 import { cn } from "~/utils/cn";
 import { Button } from "~/ui/Button";
 import { WORKSPACE_LIST } from "~/utils/constants";
+import Link from "next/link";
 
 export default function List({
   showList,
@@ -44,9 +45,9 @@ export default function List({
   const undoManagerRef = useRef(new UndoManager());
   const [rep, setRep] = useState<Replicache<M> | null>(null);
   const [parent, enableAnimations] = useAutoAnimate();
-  let quests: QuestListComponent[] = [];
-  let solutions: SolutionListComponent[] = [];
-  let posts: PostListComponent[] = [];
+  const quests: QuestListComponent[] = [];
+  const solutions: SolutionListComponent[] = [];
+  const posts: PostListComponent[] = [];
   useEffect(() => {
     if (rep) {
       return;
@@ -158,21 +159,23 @@ export default function List({
         </span>
       </ListSettings>
       <ul ref={parent}>
-        {works.map(([key, value]) => {
+        {quests.map((value) => {
           const work = WorkZod.parse(value);
           return (
-            <span
-              key={work.id}
-              className={cn(
-                "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
-                // path === item.href ? "bg-accent" : "transparent",
-                // item.disabled && "cursor-not-allowed opacity-80",
-              )}
-            >
-              <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                {work.title || "Untitled"}
+            <Link key={work.id} href={`/workspace/${work.id}`}>
+              <span
+                key={work.id}
+                className={cn(
+                  "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
+                  // path === item.href ? "bg-accent" : "transparent",
+                  // item.disabled && "cursor-not-allowed opacity-80",
+                )}
+              >
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                  {work.title || "Untitled"}
+                </span>
               </span>
-            </span>
+            </Link>
           );
         })}
       </ul>

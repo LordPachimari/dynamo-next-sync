@@ -158,7 +158,7 @@ export const getSpaceVersion = async ({
   spaceId: string;
 }) => {
   const getParam: GetCommandInput = {
-    Key: { PK: `${spaceId}`, SK: "VERSION" },
+    Key: { PK: spaceId, SK: "VERSION" },
 
     TableName: env.MAIN_TABLE_NAME,
     AttributesToGet: ["version"],
@@ -189,7 +189,7 @@ export const setSpaceVersion = async ({
   const lastUpdated = new Date().toISOString();
   const updateParams: UpdateCommandInput = {
     TableName: env.MAIN_TABLE_NAME,
-    Key: { PK: `${spaceId}`, SK: "VERSION" },
+    Key: { PK: spaceId, SK: "VERSION" },
 
     UpdateExpression: "SET #version = :version, #lastUpdated = :lastUpdated",
     ExpressionAttributeNames: {

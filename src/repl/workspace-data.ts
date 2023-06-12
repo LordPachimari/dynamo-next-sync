@@ -23,17 +23,27 @@ export const getWorkspaceListChangedItems = async ({
     KeyConditionExpression: "#PK = :PK",
 
     FilterExpression: "#version > :version",
-    ExpressionAttributeNames: { "#PK": "PK", "#version": "version" },
+    ExpressionAttributeNames: {
+      "#PK": "PK",
+      "#version": "version",
+      "#type": "type",
+    },
     ExpressionAttributeValues: {
       ":PK": spaceId,
       ":version": prevVersion,
     },
-    ProjectionExpression: "id, title, topic, inTrash, published",
+    ProjectionExpression: "id, title, topic, inTrash, published, SK, #type",
   };
+  console.log("space id from dynamo", spaceId);
   try {
     const result = await dynamoClient.send(new QueryCommand(queryParams));
     if (result.Items) {
+      //pop the last item. Why: cause the last item is WORKSPACE_LIST space version.
+      //workspace list version is stored under the same Partition key PK:"WORKPSACE_LIST#<userId>" as user quests and solutions, with sort key SK:"VERSION"
+      //as the items are ordered by SK lexicographically, "VERSION" starts with "V" so it will be in the last item of a scan result.
+
       console.log("workspacelist dynamo", prevVersion, result);
+      result.Items.pop();
 
       return result.Items;
     }

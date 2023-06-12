@@ -70,7 +70,7 @@ export default function List({
   const works = useSubscribe(
     rep,
     async (tx) => {
-      const list = await tx.scan().entries().toArray();
+      const list = await tx.scan({ prefix: "#WORK" }).entries().toArray();
 
       console.log("list", list);
       return list;

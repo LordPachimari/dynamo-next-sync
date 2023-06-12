@@ -177,6 +177,10 @@ export interface PublishedQuestDynamo extends PublishedQuest {
   PK: string;
   SK: string;
 }
+export const QuestListComponentZod = QuestZod.pick({
+  id: true,
+  title: true,
+});
 
 export type QuestListComponent = Pick<
   Quest,

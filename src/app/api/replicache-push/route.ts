@@ -4,7 +4,7 @@ import { z } from "zod";
 import { jsonSchema } from "~/utils/json";
 import { QuestZod } from "~/types/types";
 
-import { QUEST_PREFIX, WORKSPACE_LIST, userId } from "~/utils/constants";
+import { QUEST_PREFIX, WORKSPACE_LIST } from "~/utils/constants";
 import { ReplicacheTransaction } from "~/repl/transaction";
 import {
   getLastMutationId,
@@ -49,7 +49,7 @@ export async function POST(req: Request, res: Response) {
   const adjustedSpaceId =
     //if the space is workspace list or
     //if the space is a work - quest/solution/post in workspace make it private by adding userId.
-    spaceId === (WORKSPACE_LIST || spaceId.startsWith("WORK"))
+    spaceId === (WORKSPACE_LIST || spaceId.startsWith("#WORK"))
       ? `${spaceId}#${userId}`
       : spaceId;
 
@@ -189,12 +189,12 @@ const processMutation = ({
       case "createQuest":
         const { quest } = createQuestArgsSchema.parse(mutation.args);
 
-        tx.put({ key: `WORK#${quest.id}`, value: quest });
+        tx.put({ key: `#WORK#${quest.id}`, value: quest });
 
         break;
       case "deleteQuest":
         const params = idSchema.parse(mutation.args);
-        tx.del({ key: `WORK#${params.id}` });
+        tx.del({ key: `#WORK#${params.id}` });
       default:
         throw new Error(`Unknown mutation: ${mutation.name}`);
     }

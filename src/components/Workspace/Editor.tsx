@@ -56,8 +56,8 @@ const Editor = ({ id }: { id: string }) => {
     const r = new Replicache({
       name: "user1",
       licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
-      pushURL: `/api/replicache-push?spaceId=WORK#${id}`,
-      pullURL: `/api/replicache-pull?spaceId=WORK#${id}`,
+      pushURL: `/api/replicache-push?spaceId=#WORK#${id}`,
+      pullURL: `/api/replicache-pull?spaceId=#WORK#${id}`,
       mutators,
       pullInterval: null,
     });

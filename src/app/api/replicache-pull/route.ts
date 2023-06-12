@@ -8,8 +8,9 @@ import {
 } from "~/repl/workspace-data";
 
 import { Content, Post, Quest, Solution } from "~/types/types";
-import { WORKSPACE_LIST, userId } from "~/utils/constants";
+import { WORKSPACE_LIST } from "~/utils/constants";
 
+import { auth } from "@clerk/nextjs";
 const cookieSchema = z.union([z.object({ version: z.number() }), z.null()]);
 
 type Cookie = z.TypeOf<typeof cookieSchema>;
@@ -24,10 +25,10 @@ type PullRequestSchemaType = {
 };
 export async function POST(req: NextRequest, res: NextResponse) {
   console.log("----------------------------------------------------");
-  // const { userId } = auth();
-  // if (!userId) {
-  //   return new Response("Unauthorized", { status: 401 });
-  // }
+  const { userId } = auth();
+  if (!userId) {
+    return new Response("Unauthorized", { status: 401 });
+  }
   const json = (await req.json()) as PullRequestSchemaType;
 
   console.log("Processing mutation pull:", JSON.stringify(json, null, ""));
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
   const adjustedSpaceId =
     //if the space is workspace list or
     //if the space is a work - quest/solution/post in workspace make it private by adding userId.
-    spaceId === (WORKSPACE_LIST || spaceId.startsWith("WORK"))
+    spaceId === (WORKSPACE_LIST || spaceId.startsWith("#WORK"))
       ? `${spaceId}#${userId}`
       : spaceId;
   console.log("hello?", json);
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
         prevVersion: fromVersion,
         spaceId: adjustedSpaceId,
       });
-    } else if (spaceId.startsWith("WORK")) {
+    } else if (spaceId.startsWith("#WORK")) {
       items = await getWorkspaceWork({
         userId,
         spaceId: adjustedSpaceId,
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
   //workspace items
 
-  if (spaceId === WORKSPACE_LIST || spaceId.startsWith("WORK")) {
+  if (spaceId === WORKSPACE_LIST || spaceId.startsWith("#WORK")) {
     for (const item of items) {
       const QuestOrSolutionOrPost = item as (
         | Quest

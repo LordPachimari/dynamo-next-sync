@@ -1,14 +1,7 @@
-import {
-  Dispatch,
-  FormEvent,
-  KeyboardEvent,
-  SetStateAction,
-  useRef,
-} from "react";
+import { FormEvent, useRef } from "react";
 
-import { WorkspaceStore } from "../../zustand/workspace";
-import styles from "./workspace.module.css";
 import { Solution, UpdateQueue, WorkUpdate } from "~/types/types";
+import { WorkspaceStore } from "../../zustand/workspace";
 import { Title } from "./Attributes";
 
 const SolutionAttributes = ({

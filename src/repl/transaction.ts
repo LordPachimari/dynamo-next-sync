@@ -1,6 +1,5 @@
 import { JSONObject, JSONValue, WriteTransaction } from "replicache";
-
-import { delItems, delPermItems, putItems } from "./data";
+import { delItems, delPermItems, putItems } from "./general-data";
 
 const DELETE_PERMANENTLY = "DELETE_PERMANENTLY" as const;
 const DELETE = "DELETE" as const;
@@ -43,7 +42,7 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
     spaceID: string,
     clientID: string,
     version: number,
-    userId: string,
+    userId: string
   ) {
     this._spaceID = spaceID;
     this._clientID = clientID;
@@ -109,7 +108,6 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
         keysToDel: keysToDelPerm,
         spaceId: this._spaceID,
         userId: this._userId,
-        version: this._version,
       }),
       putItems({
         items: itemsToPut,

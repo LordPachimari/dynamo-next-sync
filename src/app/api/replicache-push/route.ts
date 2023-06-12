@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 
-import { auth } from "@clerk/nextjs";
 import { z } from "zod";
 import { jsonSchema } from "~/utils/json";
 import { QuestZod } from "~/types/types";
+
+import { QUEST_PREFIX, WORKSPACE_LIST, userId } from "~/utils/constants";
+import { ReplicacheTransaction } from "~/repl/transaction";
 import {
   getLastMutationId,
   getSpaceVersion,
   setLastMutationId,
   setSpaceVersion,
-} from "~/repl/data";
-import { QUEST_PREFIX, userId } from "~/utils/constants";
-import { ReplicacheTransaction } from "~/repl/transaction";
+} from "~/repl/general-data";
+import { auth } from "@clerk/nextjs";
 
 // See notes in bug: https://github.com/rocicorp/replidraw/issues/47
 const mutationSchema = z.object({
@@ -33,10 +34,10 @@ const pushRequestSchema = z.object({
 
 export async function POST(req: Request, res: Response) {
   console.log("----------------------------------------------------");
-  // const { userId } = auth();
-  // if (!userId) {
-  //   return new Response("Unauthorized", { status: 401 });
-  // }
+  const { userId } = auth();
+  if (!userId) {
+    return new Response("Unauthorized", { status: 401 });
+  }
   console.log("Processing push");
 
   const { searchParams } = new URL(req.url);
@@ -104,7 +105,14 @@ export async function POST(req: Request, res: Response) {
         clientId: push.clientID,
         lastMutationId,
       }),
-      setSpaceVersion({ spaceId, version: nextVersion, userId }),
+
+      //each workspace list is a private list. So each user can view only its own workspace list.
+      setSpaceVersion({
+        spaceId:
+          spaceId === WORKSPACE_LIST ? `${WORKSPACE_LIST}#${userId}` : spaceId,
+        version: nextVersion,
+        userId,
+      }),
       tx.flush(),
     ]);
   };
@@ -175,12 +183,12 @@ const processMutation = ({
       case "createQuest":
         const { quest } = createQuestArgsSchema.parse(mutation.args);
 
-        tx.put({ key: `${QUEST_PREFIX}${quest.id}`, value: quest });
+        tx.put({ key: `WORK#${quest.id}`, value: quest });
 
         break;
       case "deleteQuest":
         const params = idSchema.parse(mutation.args);
-        tx.del({ key: `${QUEST_PREFIX}${params.id}` });
+        tx.del({ key: `WORK#${params.id}` });
       default:
         throw new Error(`Unknown mutation: ${mutation.name}`);
     }

@@ -1,0 +1,76 @@
+.imageParentContainer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.container {
+  width: 100%;
+}
+.imageContainer {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  cursor: pointer;
+}
+.fileContainer {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  height: 30px;
+  border-radius: 10px;
+  justify-content: space-between;
+}
+.fileComponent {
+  margin: 5px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  width: fit-content;
+  border: 1px solid var(--blue);
+  border-radius: 10px;
+}
+.deleteFileButton {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.titleContainer {
+  background: red;
+}
+
+.titleContent h1 {
+  font-size: xx-large;
+}
+.editorImage {
+  cursor: default;
+  display: inline-block;
+  position: relative;
+  user-select: none;
+}
+.editorImage img {
+  max-width: 100%;
+  cursor: default;
+}
+.editorImage img.selected {
+  outline: 2px solid rgb(60, 132, 244);
+  user-select: none;
+}
+
+/* Ipad */
+@media screen and (min-width: 764px) {
+}
+
+/*Ipad vertical - small laptop */
+@media screen and (min-width: 1024px) {
+  .imageContainer {
+    width: 500px;
+  }
+}
+
+/* Laptop - PC */
+@media screen and (min-width: 1280px) {
+}

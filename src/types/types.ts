@@ -1,3 +1,4 @@
+import { Content } from "next/font/google";
 import { StaticImageData } from "next/image";
 import { z } from "zod";
 
@@ -9,6 +10,7 @@ const Entity = [
   "COMMENT",
   "POST",
   "GUILD",
+  "CONTENT",
 ] as const;
 const SPACE_NAMES = [
   "PUBLISHED_QUESTS",
@@ -122,6 +124,7 @@ const QuestPartialZod = z
     topic: z.enum(Topics),
     subtopic: z.array(z.string()),
     reward: z.number(),
+
     slots: z.number(),
     creatorId: z.string(),
     createdAt: z.string(),
@@ -298,13 +301,21 @@ export type SolutionListComponent = Pick<
   Solution,
   "id" | "title" | "topic" | "lastUpdated" | "inTrash" | "type"
 >;
-export type Content = {
-  content: Uint8Array;
-  text: Uint8Array;
-};
+export const ContentZod = z.object({
+  content: z.instanceof(Uint8Array),
+  text: z.instanceof(Uint8Array),
+  inTrash: z.boolean(),
+  type: z.enum(Entity),
+});
+export type PostListComponent = Pick<
+  Post,
+  "id" | "title" | "topic" | "lastUpdated" | "inTrash" | "type"
+>;
+export type Content = z.infer<typeof ContentZod>;
 export type WorkspaceList = {
   quests: QuestListComponent[];
   solutions: SolutionListComponent[];
+  posts: PostListComponent[];
 };
 export const CommentZod = z.object({
   questId: z.string(),
@@ -337,7 +348,7 @@ export type Message = {
   channel: TopicsType | "GENERAL";
 };
 
-export const Post = z.object({
+export const PostZod = z.object({
   id: z.string(),
   title: z.string(),
   topic: z.enum(Topics),
@@ -345,8 +356,10 @@ export const Post = z.object({
   content: z.optional(z.instanceof(Uint8Array)),
   text: z.string(),
   type: z.enum(Entity),
+  inTrash: z.boolean(),
+  lastUpdated: z.string(),
 });
-export type Post = z.infer<typeof Post>;
+export type Post = z.infer<typeof PostZod>;
 
 export type LeaderboardType = Pick<
   User,

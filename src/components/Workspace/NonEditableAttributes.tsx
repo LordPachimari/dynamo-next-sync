@@ -1,44 +1,28 @@
+import { generateHTML } from "@tiptap/html";
+import dayjs from "dayjs";
+import parse, {
+  attributesToProps,
+  Element,
+  HTMLReactParserOptions,
+} from "html-react-parser";
+import Image, { ImageLoaderProps } from "next/image";
+import * as pako from "pako";
+import { useMemo } from "react";
+import FileExtension from "../Tiptap/FileExtension";
+import ImageExtension from "../Tiptap/ImageExtension";
+
+import { JSONContent } from "@tiptap/core";
+import StarterKit from "@tiptap/starter-kit";
+import { FromNow } from "~/utils/dayjs";
 import {
   PublishedQuest,
   PublishedSolution,
   Quest,
   Solution,
   TopicsType,
-} from "../../types/main";
-import Bold from "@tiptap/extension-bold";
-import Document from "@tiptap/extension-document";
-import Paragraph from "@tiptap/extension-paragraph";
-import _Text from "@tiptap/extension-text";
-import BulletList from "@tiptap/extension-bullet-list";
-import ListItem from "@tiptap/extension-list-item";
-
-import parse, {
-  attributesToProps,
-  HTMLReactParserOptions,
-  Element,
-} from "html-react-parser";
-import { useMemo } from "react";
-import dayjs from "dayjs";
-import { generateHTML } from "@tiptap/html";
-import Image, { ImageLoaderProps } from "next/image";
-import FileExtension from "../Tiptap/FileExtension";
-import ImageExtension from "../Tiptap/ImageExtension";
-import * as pako from "pako";
-
-import styles from "./workspace.module.css";
-import {
-  Badge,
-  Box,
-  Center,
-  Flex,
-  Heading,
-  HStack,
-  Spacer,
-  Text,
-} from "@chakra-ui/react";
-import { FromNow } from "~/utils/dayjs";
-import { JSONContent } from "@tiptap/core";
-import StarterKit from "@tiptap/starter-kit";
+} from "~/types/types";
+import { Badge } from "~/ui/Badge";
+import { cn } from "~/utils/cn";
 export const HtmlParseOptions: HTMLReactParserOptions = {
   replace: (_domNode) => {
     const domNode = _domNode as Element;
@@ -50,7 +34,7 @@ export const HtmlParseOptions: HTMLReactParserOptions = {
       };
 
       return (
-        <Center>
+        <div className="flex items-center justify-center">
           <Image
             width={Math.round(parseInt(props.width!))}
             height={Math.round(parseInt(props.height!))}
@@ -59,7 +43,7 @@ export const HtmlParseOptions: HTMLReactParserOptions = {
             alt="image"
             sizes="(max-width: 768px) 90vw, (min-width: 1024px) 400px"
           />
-        </Center>
+        </div>
       );
     }
 
@@ -67,7 +51,7 @@ export const HtmlParseOptions: HTMLReactParserOptions = {
       const props = attributesToProps(domNode.attribs);
 
       return (
-        <div className={styles.fileContainer}>
+        <div>
           <a href={props.link}>{props.src}</a>
         </div>
       );
@@ -76,30 +60,21 @@ export const HtmlParseOptions: HTMLReactParserOptions = {
 };
 const Title = ({ title }: { title: string | undefined }) => {
   return (
-    <Heading as="h2" id="title">
+    <h1 className="2xl font-extrabold" id="title">
       {title}
-    </Heading>
+    </h1>
   );
 };
 const Topic = ({ topic }: { topic?: TopicsType | undefined }) => {
   return (
     <Badge
-      colorScheme={`${
-        topic === "BUSINESS"
-          ? "green"
-          : topic === "MARKETING"
-          ? "red"
-          : topic === "PROGRAMMING"
-          ? "purple"
-          : topic === "VIDEOGRAPHY"
-          ? "blue"
-          : topic === "SCIENCE"
-          ? "green"
-          : "white"
-      }`}
-      fontSize="sm"
-      width="fit-content"
-      borderRadius="md"
+      className={cn("sm w-fit bg-white", {
+        "bg-red-500": topic === "MARKETING",
+        "bg-green-300": topic === "BUSINESS",
+        "bg-purple-500": topic === "PROGRAMMING",
+        "bg-blue-500": topic === "VIDEOGRAPHY",
+        "bg-green-500": topic === "SCIENCE",
+      })}
     >
       {topic && topic}
     </Badge>
@@ -108,26 +83,20 @@ const Topic = ({ topic }: { topic?: TopicsType | undefined }) => {
 
 const Subtopic = ({ subtopic }: { subtopic: string[] | undefined }) => {
   return (
-    <Flex id="subtopic" gap={2}>
+    <div className="flex gap-2" id="subtopic">
       {subtopic &&
         subtopic.map((s, i) => (
-          <Badge
-            key={i}
-            colorScheme="blue"
-            fontSize="sm"
-            width="fit-content"
-            borderRadius="md"
-          >
+          <Badge key={i} className="w-fit bg-blue-300">
             {s}
           </Badge>
         ))}
-    </Flex>
+    </div>
   );
 };
 
 const Reward = ({ reward }: { reward: number | undefined }) => {
   return (
-    <Flex id="reward" gap={2}>
+    <div className="flex gap-2" id="reward">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
@@ -140,15 +109,13 @@ const Reward = ({ reward }: { reward: number | undefined }) => {
           fill="var(--purple)"
         />
       </svg>
-      <Text fontWeight="bold" color="purple.500">
-        {reward}
-      </Text>
-    </Flex>
+      <p className="font-bold text-purple-500">{reward}</p>
+    </div>
   );
 };
 const Slots = ({ slots }: { slots: number | undefined }) => {
   return (
-    <Flex id="slots" gap={2}>
+    <div className="flex gap-2" id="slots">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
@@ -161,35 +128,19 @@ const Slots = ({ slots }: { slots: number | undefined }) => {
           fill="var(--gray)"
         />
       </svg>
-      <Text fontWeight="bold" color="gray.500">
-        {slots}
-      </Text>
-    </Flex>
+      <p className="font-bold text-gray-500">{slots}</p>
+    </div>
   );
 };
 const DateComponent = ({ questDate }: { questDate: string }) => {
   return (
-    <Flex gap={3}>
-      <Text>DUE</Text>
-      <Badge
-        colorScheme="blue"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        borderRadius="md"
-      >
-        {FromNow({ date: questDate })}
-      </Badge>
-      <Badge
-        colorScheme="blue"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        borderRadius="md"
-      >
+    <div className="flex gap-3">
+      <p>DUE</p>
+      <Badge className="bg-blue-300">{FromNow({ date: questDate })}</Badge>
+      <Badge className="bg-blue-300">
         {dayjs(questDate).format("MMM D, YYYY")}
       </Badge>
-    </Flex>
+    </div>
   );
 };
 
@@ -200,36 +151,30 @@ export const NonEditableQuestAttributes = ({
 }) => {
   const publishedQuest = quest as PublishedQuest;
   return (
-    <Flex flexDirection="column" gap={3}>
+    <div className="flex flex-col gap-3">
       {quest.published ? (
-        <Flex>
-          <Title title={quest.title} />
-          <Spacer />
+        <div className="flex justify-between">
+          <h1 title={quest.title} />
+
           <Badge
-            fontSize="md"
-            h="8"
-            minW="16"
-            variant="solid"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            colorScheme="green"
-            borderRadius="md"
+            className={cn("bg-green-500", {
+              "bg-red-500": publishedQuest.status === "CLOSED",
+            })}
           >
             {publishedQuest.status}
           </Badge>
-        </Flex>
+        </div>
       ) : (
         <Title title={quest.title} />
       )}
       {quest.deadline && <DateComponent questDate={quest.deadline} />}
       <Topic topic={quest.topic} />
       <Subtopic subtopic={quest.subtopic} />
-      <Flex gap={2}>
+      <div className="flex gap-2">
         <Reward reward={quest.reward} />
         <Slots slots={quest.slots} />
-      </Flex>
-    </Flex>
+      </div>
+    </div>
   );
 };
 export const NonEditableSolutionAttributes = ({
@@ -241,31 +186,18 @@ export const NonEditableSolutionAttributes = ({
   return (
     <>
       {solution.published ? (
-        <Flex>
+        <div className="flex justify-between">
           <Title title={publishedSolution.title} />
-          <Spacer />
           <Badge
-            fontSize="md"
-            h="8"
-            minW="16"
-            variant="solid"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            colorScheme={
-              publishedSolution.status === "ACCEPTED"
-                ? "green"
-                : publishedSolution.status === "ACKNOWLEDGED"
-                ? "green"
-                : publishedSolution.status === "REJECTED"
-                ? "red"
-                : "yellow"
-            }
-            borderRadius="md"
+            className={cn("bg-yellow-500", {
+              "bg-green-500": publishedSolution.status === "ACCEPTED",
+              "bg-green-400": publishedSolution.status === "ACKNOWLEDGED",
+              "bg-red-500": publishedSolution.status === "REJECTED",
+            })}
           >
             {publishedSolution.status || "POSTED"}
           </Badge>
-        </Flex>
+        </div>
       ) : (
         <Title title={solution.title} />
       )}
@@ -286,34 +218,3 @@ export const NonEditableContent = ({ content }: { content: Uint8Array }) => {
 
   return <>{parse(output, HtmlParseOptions)}</>;
 };
-const Preview = ({
-  quest,
-  solution,
-  content,
-  type,
-}: {
-  quest?: Quest;
-  content?: Uint8Array;
-  solution?: Solution;
-  type: "SOLUTION" | "QUEST";
-}) => {
-  if (type === "QUEST" && quest) {
-    return (
-      <>
-        <NonEditableQuestAttributes quest={quest} />
-
-        {content && <NonEditableContent content={content} />}
-      </>
-    );
-  }
-  if (type === "SOLUTION" && solution) {
-    return (
-      <>
-        <NonEditableSolutionAttributes solution={solution} />
-        {content && <NonEditableContent content={content} />}
-      </>
-    );
-  }
-  return <>hello</>;
-};
-export default Preview;

@@ -17,40 +17,56 @@ import { ulid } from "ulid";
 import { z } from "zod";
 import { env } from "~/env.mjs";
 import { M, mutators } from "~/repl/mutators";
-import { Quest, QuestZod, SolutionZod } from "~/types/types";
+import {
+  Post,
+  PostListComponent,
+  PostZod,
+  Quest,
+  QuestListComponent,
+  QuestZod,
+  Solution,
+  SolutionListComponent,
+  SolutionZod,
+} from "~/types/types";
 import { cn } from "~/utils/cn";
 import { Button } from "~/ui/Button";
+import { WORKSPACE_LIST } from "~/utils/constants";
 
 export default function List({
   showList,
   toggleShowList,
   userId,
 }: {
+  userId: string;
   showList: boolean;
   toggleShowList: Dispatch<SetStateAction<boolean>>;
-  userId: string;
 }) {
   const undoManagerRef = useRef(new UndoManager());
   const [rep, setRep] = useState<Replicache<M> | null>(null);
   const [parent, enableAnimations] = useAutoAnimate();
+  let quests: QuestListComponent[] = [];
+  let solutions: SolutionListComponent[] = [];
+  let posts: PostListComponent[] = [];
   useEffect(() => {
     if (rep) {
       return;
     }
-    const r = new Replicache({
-      name: "user1",
-      licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
-      pushURL: "/api/replicache-push?spaceId=WORKSPACE_LIST",
-      pullURL: `/api/replicache-pull?spaceId=WORKSPACE_LIST`,
-      mutators,
-      pullInterval: null,
-    });
-    setRep(r);
-  }, [rep]);
+    if (userId) {
+      const r = new Replicache({
+        name: userId,
+        licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
+        pushURL: `/api/replicache-push?spaceId=${WORKSPACE_LIST}`,
+        pullURL: `/api/replicache-pull?spaceId=${WORKSPACE_LIST}`,
+        mutators,
+        pullInterval: null,
+      });
+      setRep(r);
+    }
+  }, [rep, userId]);
 
-  const QuestAndSolutionsZod = z.union([QuestZod, SolutionZod]);
+  const WorkZod = z.union([QuestZod, SolutionZod, PostZod]);
 
-  const QuestsAndSolutions = useSubscribe(
+  const works = useSubscribe(
     rep,
     async (tx) => {
       const list = await tx.scan().entries().toArray();
@@ -60,6 +76,18 @@ export default function List({
     },
     []
   );
+  if (works) {
+    for (const [key, value] of works) {
+      const work = value as Post | Solution | Quest;
+      if (work.type === "QUEST") {
+        quests.push(work);
+      } else if (work.type === "SOLUTION") {
+        solutions.push(work);
+      } else {
+        posts.push(work as Post);
+      }
+    }
+  }
   const handleCreateQuest = async () => {
     if (rep) {
       const id = ulid();
@@ -130,11 +158,11 @@ export default function List({
         </span>
       </ListSettings>
       <ul ref={parent}>
-        {QuestsAndSolutions.map(([key, value]) => {
-          const QuestOrSolution = QuestAndSolutionsZod.parse(value);
+        {works.map(([key, value]) => {
+          const work = WorkZod.parse(value);
           return (
             <span
-              key={QuestOrSolution.id}
+              key={work.id}
               className={cn(
                 "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
                 // path === item.href ? "bg-accent" : "transparent",
@@ -142,7 +170,7 @@ export default function List({
               )}
             >
               <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                {QuestOrSolution.title || "Untitled"}
+                {work.title || "Untitled"}
               </span>
             </span>
           );

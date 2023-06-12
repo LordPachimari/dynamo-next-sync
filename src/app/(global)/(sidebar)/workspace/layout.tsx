@@ -4,7 +4,8 @@ import { useState, type ReactNode } from "react";
 
 import List from "./List";
 import { Button } from "~/ui/Button";
-import { userId } from "~/utils/constants";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 export default function WorkspaceLayout({
   children, // will be a page or nested layout
@@ -12,6 +13,12 @@ export default function WorkspaceLayout({
   children: ReactNode;
 }) {
   const [showList, toggleShowList] = useState(true);
+  const router = useRouter();
+
+  const { userId } = useAuth();
+  if (!userId) {
+    return router.push("/sign-in");
+  }
   return (
     <div className="relative flex">
       <List

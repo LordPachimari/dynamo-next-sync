@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/ui/Dialog";
+import Preview from "./Preview";
 
 const Publish = ({
   questCreatorId,
@@ -43,8 +44,7 @@ const Publish = ({
   );
   const [isInvalidating, setIsInvalidating] = useState(false);
 
-  const queryClient = useQueryClient();
-  const toast = useToast();
+
   const QuestAttributesZod = z.object({
     id: z.string(),
     title: z.string(),
@@ -189,13 +189,13 @@ const Publish = ({
               {type === "QUEST" ? (
                 <Preview
                   quest={work}
-                  content={QuestOrSolution?.content}
+                  content={work.content}
                   type="QUEST"
                 />
               ) : (
                 <Preview
-                  solution={QuestOrSolution}
-                  content={QuestOrSolution?.content}
+                  solution={work}
+                  content={work.content}
                   type="SOLUTION"
                 />
               )}

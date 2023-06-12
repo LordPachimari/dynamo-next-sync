@@ -1,16 +1,14 @@
-import { headers } from "next/dist/client/components/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-import { auth } from "@clerk/nextjs";
-import { space } from "postcss/lib/list";
 import { z } from "zod";
+import { getLastMutationId, getSpaceVersion } from "~/repl/general-data";
 import {
-  getChangedItems,
-  getLastMutationId,
-  getSpaceVersion,
-} from "~/repl/data";
-import { Quest, Solution } from "~/types/types";
-import { userId } from "~/utils/constants";
+  getWorkspaceListChangedItems,
+  getWorkspaceWork,
+} from "~/repl/workspace-data";
+
+import { Content, Post, Quest, Solution } from "~/types/types";
+import { WORKSPACE_LIST, userId } from "~/utils/constants";
 
 const cookieSchema = z.union([z.object({ version: z.number() }), z.null()]);
 
@@ -41,22 +39,36 @@ export async function POST(req: NextRequest, res: NextResponse) {
   console.log("spaceId", spaceId);
   console.log("clientId", pull.clientID);
 
+  const patch = [];
   const startTransact = Date.now();
   const processPull = async () => {
+    let items: any[] = [];
     const version = await getSpaceVersion({ spaceId, userId });
     const fromVersion =
       pull.cookie && pull.cookie.version ? pull.cookie.version : 0;
+    if (fromVersion === 0) {
+      patch.push({
+        op: "clear",
+      });
+    }
 
     console.log("cooookie version", fromVersion);
 
     const lastMutationIDPromise = getLastMutationId({
       clientId: pull.clientID,
     });
-    const items = getChangedItems({
-      prevVersion: fromVersion,
-      spaceId,
-      userId,
-    });
+    if (spaceId === WORKSPACE_LIST) {
+      items = await getWorkspaceListChangedItems({
+        prevVersion: fromVersion,
+        spaceId,
+        userId,
+      });
+    } else if (spaceId.startsWith("WORK")) {
+      items = await getWorkspaceWork({
+        userId,
+        spaceId,
+      });
+    }
 
     const responseCookie: Cookie = {
       version,
@@ -72,25 +84,36 @@ export async function POST(req: NextRequest, res: NextResponse) {
   console.log("lastMutationID: ", lastMutationID);
   console.log("responseCookie: ", responseCookie);
   console.log("items", items);
-  const patch = [];
+
+  //workspace items
+
+  if (spaceId === WORKSPACE_LIST || spaceId.startsWith("WORK")) {
+    for (const item of items) {
+      const QuestOrSolutionOrPost = item as (
+        | Quest
+        | Solution
+        | Post
+        | Content
+      ) & { SK: string };
+      if (QuestOrSolutionOrPost.inTrash) {
+        patch.push({
+          op: "del",
+          key: QuestOrSolutionOrPost.SK,
+        });
+      } else {
+        patch.push({
+          op: "put",
+          key: QuestOrSolutionOrPost.SK,
+          value: QuestOrSolutionOrPost,
+        });
+      }
+    }
+  }
+
   const resp = {
     lastMutationID: lastMutationID ?? 0,
     cookie: JSON.stringify(responseCookie) ?? 0,
-    patch: items.map((item) => {
-      const QuestOrSolution = item as Quest | Solution;
-      if (QuestOrSolution.inTrash) {
-        return {
-          op: "del",
-          key: QuestOrSolution.id,
-        };
-      } else {
-        return {
-          op: "put",
-          key: QuestOrSolution.id,
-          value: QuestOrSolution,
-        };
-      }
-    }),
+    patch,
   };
   console.log("patch", resp);
   console.log("Building patch took", Date.now() - startBuildingPatch);

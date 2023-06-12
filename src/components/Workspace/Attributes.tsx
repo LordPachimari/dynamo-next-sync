@@ -2,6 +2,7 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 
 import TextareaAutosize from "react-textarea-autosize";
 import { Topics, TopicsType } from "~/types/types";
+import { Badge } from "~/ui/Badge";
 
 import { Calendar } from "~/ui/Calendar";
 import { Input } from "~/ui/Input";
@@ -12,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/ui/Select";
-import styles from "./workspace.module.css";
 export const Title = ({
   title,
   placeholder,
@@ -178,7 +178,7 @@ export const Subtopic = ({
     ) {
       const placeholder = document.createElement("div");
       placeholder.textContent = subtopicPlaceholderText;
-      placeholder.className = styles.subtopicPlaceholder!;
+      // placeholder.className = styles.subtopicPlaceholder!;
       subtopicRef.current.appendChild(placeholder);
     }
   };
@@ -187,7 +187,6 @@ export const Subtopic = ({
       id="subtopic"
       contentEditable
       ref={subtopicRef}
-      className={styles.subtopicContainer}
       suppressContentEditableWarning={true}
       onFocus={handleSubtopicFocus}
       onBlur={handleSubtopicBlur}
@@ -203,8 +202,8 @@ export const Subtopic = ({
           const div2 = document.createElement("div");
 
           div2.innerHTML = "";
-          div.className = styles.subtopicBadge!;
-          div2.className = styles.subtopicBadge!;
+          // div.className = styles.subtopicBadge!;
+          // div2.className = styles.subtopicBadge!;
           div.textContent = subtopic[0]!;
           content.appendChild(div);
           content.appendChild(div2);
@@ -220,14 +219,12 @@ export const Subtopic = ({
     >
       {subtopic ? (
         subtopic.map((s, i) => (
-          <div className={styles.subtopicBadge} key={i}>
+          <Badge className="bg-blue-400" key={i}>
             {s}
-          </div>
+          </Badge>
         ))
       ) : (
-        <div className={styles.subtopicPlaceholder}>
-          {subtopicPlaceholderText}
-        </div>
+        <div>{subtopicPlaceholderText}</div>
       )}
     </div>
   );

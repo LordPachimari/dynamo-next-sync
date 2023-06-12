@@ -29,7 +29,8 @@ const config = {
       },
     ],
     "@typescript-eslint/no-unused-vars": ["off", { argsIgnorePattern: "^_" }],
-    "@typescript-eslint/no-explicit-any": "off"
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-non-null-assertion": "off"
   },
 };
 

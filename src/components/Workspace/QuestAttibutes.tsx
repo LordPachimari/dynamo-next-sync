@@ -1,32 +1,7 @@
-import {
-  ChangeEvent,
-  Dispatch,
-  FormEvent,
-  KeyboardEvent,
-  SetStateAction,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import {
-  Quest,
-  Topics,
-  TopicsType,
-  UpdateQueue,
-  WorkUpdate,
-} from "../../types/types";
+import { ChangeEvent, FormEvent } from "react";
+import { Quest, TopicsType, UpdateQueue, WorkUpdate } from "../../types/types";
 
-import styles from "./workspace.module.css";
 import { WorkspaceStore } from "../../zustand/workspace";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../ui/Select";
-import { Input } from "~/ui/Input";
-import { Calendar } from "~/ui/Calendar";
 import {
   DatePicker,
   Reward,

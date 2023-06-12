@@ -1,7 +1,7 @@
 import type { ReadTransaction, WriteTransaction } from "replicache";
 
 import { QUEST_PREFIX } from "../utils/constants";
-import type { Quest, WorkUpdates } from "~/types/types";
+import type { Quest, WorkUpdate } from "~/types/types";
 
 export type M = typeof mutators;
 export const mutators = {
@@ -22,7 +22,7 @@ export const mutators = {
       updates,
     }: {
       id: string;
-      updates: WorkUpdates;
+      updates: WorkUpdate;
     }
   ): Promise<void> => {
     const quest = (await getQuest(tx, { id })) as Quest;

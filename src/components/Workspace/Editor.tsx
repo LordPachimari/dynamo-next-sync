@@ -1,15 +1,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
-import { Post, Quest, Solution, UpdateQueue, WorkUpdate } from "~/types/types";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Content,
+  Post,
+  Quest,
+  Solution,
+  UpdateQueue,
+  WorkUpdate,
+} from "~/types/types";
 import debounce from "lodash.debounce";
 import {
   NonEditableContent,
   NonEditableQuestAttributes,
   NonEditableSolutionAttributes,
 } from "./NonEditableAttributes";
-import TiptapEditor from "./TiptapEditor";
+import TiptapEditor from "../Tiptap/TiptapEditor";
 import Publish from "./Publish";
 import { Button } from "../../ui/Button";
 import {
@@ -25,19 +32,61 @@ import {
 } from "../../ui/AlertDialog";
 import QuestAttributes from "./QuestAttibutes";
 import SolutionAttributes from "./SolutionAttributes";
+import { Replicache } from "replicache";
+import { M, mutators } from "~/repl/mutators";
+import { env } from "~/env.mjs";
+import { useSubscribe } from "replicache-react";
 // });
-const Editor = ({ id }: { id: string }) => {
-  const [work, setWork] = useState<
-    | (Quest & { status?: "OPEN" | "CLOSED" } & Solution &
-        Post & { type: "QUEST" | "SOLUTION" | "POST" })
-    | null
-    | undefined
-  >(undefined);
 
-  const [content, setContent] = useState<Uint8Array>();
-  const [isSaving, setIsSaving] = useState(false);
+type MergedWorkType = (Post & Quest & Solution) & {
+  type: "POST" | "QUEST" | "SOLUTION";
+};
+const Editor = ({ id }: { id: string }) => {
+  const [rep, setRep] = useState<Replicache<M> | null>(null);
+  // const [work, setWork] = useState<
+  //   | (Quest & { status?: "OPEN" | "CLOSED" } & Solution &
+  //       Post & { type: "QUEST" | "SOLUTION" | "POST" })
+  //   | null
+  //   | undefined
+  // >(undefined);
+  useEffect(() => {
+    if (rep) {
+      return;
+    }
+    const r = new Replicache({
+      name: "user1",
+      licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
+      pushURL: `/api/replicache-push?spaceId=WORK#${id}`,
+      pullURL: `/api/replicache-pull?spaceId=WORK#${id}`,
+      mutators,
+      pullInterval: null,
+    });
+    setRep(r);
+  }, [rep, id]);
+  let content: Content | undefined = undefined;
+  let work: MergedWorkType | undefined = undefined;
+  const WorkAndContent = useSubscribe(
+    rep,
+    async (tx) => {
+      const list = await tx.scan().entries().toArray();
+
+      console.log("list", list);
+      return list;
+    },
+    []
+  );
+  if (WorkAndContent) {
+    for (const [key, value] of WorkAndContent) {
+      const WorkOrContent = value as Quest | Post | Solution | Content;
+      if (WorkOrContent.type === "CONTENT") {
+        content = WorkOrContent as Content;
+      } else {
+        work = WorkOrContent as MergedWorkType;
+      }
+    }
+  }
+
   const router = useRouter();
-  const cancelRef = useRef(null);
 
   const updateAttributesHandler = useCallback(
     debounce(
@@ -66,7 +115,7 @@ const Editor = ({ id }: { id: string }) => {
     ),
     []
   );
-  const handleUnpublish = () => {};
+  // const handleUnpublish = () => {};
 
   return (
     <div className="mb-20 mt-10 flex flex-col items-center justify-center">
@@ -92,32 +141,21 @@ const Editor = ({ id }: { id: string }) => {
         {work && work.published && work.content ? (
           <NonEditableContent content={work.content} />
         ) : work ? (
-          <TiptapEditor
-            id={work.id}
-            content={work.content}
-            type={work.type}
-            setIsSaving={setIsSaving}
-          />
+          <TiptapEditor id={work.id} content={work.content} type={work.type} />
         ) : (
           <></>
         )}
       </div>
-      {work && !work.published && (
-        <Publish
-          workId={id}
-          type={}
-          isOpen={isOpen}
-          onClose={onClose}
-          onOpen={onOpen}
-          setwork={setwork}
-          isSaving={isSaving}
-        />
+      {work && !work.published && work.type === "QUEST" && (
+        <Publish type="QUEST" work={work} />
       )}
+      {work && !work.published && work.type === "SOLUTION" && (
+        <Publish type="SOLUTION" work={work} />
+      )}
+
       {work && work.published && (
         <div className="mt-3 flex gap-5">
-          <Button className="w-32 bg-red-500" onClick={onAlertOpen}>
-            Unpublish
-          </Button>
+          <Button className="w-32 bg-red-500">Unpublish</Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline">Show Dialog</Button>
@@ -139,7 +177,7 @@ const Editor = ({ id }: { id: string }) => {
           <Button
             className="w-full bg-green-500"
             onClick={() => {
-              void router.push(`/works/${work.id}`);
+              if (work) void router.push(`/quests/${work.id}`);
             }}
           >
             View Published work

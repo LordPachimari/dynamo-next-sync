@@ -35,12 +35,12 @@ const QuestAttributes = ({
       id: quest.id,
       value: { title: e.currentTarget.textContent as string },
     });
-    updateQuestAttributesListAttribute({
-      id: quest.id,
-      type: "QUEST",
-      attribute: "title",
-      value: e.currentTarget.textContent as string,
-    });
+    // updateQuestAttributesListAttribute({
+    //   id: quest.id,
+    //   type: "QUEST",
+    //   attribute: "title",
+    //   value: e.currentTarget.textContent as string,
+    // });
 
     updateAttributesHandler({
       updateQueue,
@@ -59,12 +59,12 @@ const QuestAttributes = ({
         topic: value,
       },
     });
-    updateQuestAttributesListAttribute({
-      id: quest.id,
-      attribute: "topic",
-      type: "QUEST",
-      value: value,
-    });
+    // updateQuestAttributesListAttribute({
+    //   id: quest.id,
+    //   attribute: "topic",
+    //   type: "QUEST",
+    //   value: value,
+    // });
     updateAttributesHandler({
       updateQueue,
       lastUpdate: {

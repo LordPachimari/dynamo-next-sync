@@ -77,9 +77,9 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
 
   async flush(): Promise<void> {
     const items = [...this._cache.entries()].map((item) => item);
-    // if (items.length === 0) {
-    //   throw new Error("nothing");
-    // }
+    if (items.length === 0) {
+      return;
+    }
 
     const itemsToPut: { key: string; value: JSONObject }[] = [];
     for (const item of items) {

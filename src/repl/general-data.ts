@@ -26,6 +26,8 @@ export const putItems = async ({
   if (items.length === 0) {
     return;
   }
+
+  console.log("putting items ");
   const putItems: {
     Put:
       | (Omit<Put, "ExpressionAttributeValues" | "Item"> & {
@@ -72,6 +74,8 @@ export const delItems = async ({
   if (keysToDel.length === 0) {
     return;
   }
+
+  console.log("putting items in trash");
   const updateItems: {
     Update:
       | (Omit<Update, "Key" | "ExpressionAttributeValues"> & {
@@ -121,6 +125,8 @@ export const delPermItems = async ({
   if (keysToDel.length === 0) {
     return;
   }
+
+  console.log("deleting items perm");
   const deleteItems: {
     Delete:
       | (Omit<Delete, "ExpressionAttributeValues" | "Key"> & {
@@ -164,6 +170,7 @@ export const getSpaceVersion = async ({
     AttributesToGet: ["version"],
   };
   try {
+    console.log("spaceId-------------", spaceId);
     const result = await dynamoClient.send(new GetCommand(getParam));
     if (result.Item) {
       const { version } = result.Item as SpaceVersion;

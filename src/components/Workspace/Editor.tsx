@@ -49,15 +49,18 @@ const Editor = ({ id }: { id: string }) => {
   //   | null
   //   | undefined
   // >(undefined);
+
   useEffect(() => {
     if (rep) {
       return;
     }
+    const pushURL = encodeURI(`/api/replicache-push?spaceId=EDITOR${id}`);
+    const pullURL = encodeURI(`/api/replicache-pull?spaceId=EDITOR${id}`);
     const r = new Replicache({
       name: "user1",
       licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
-      pushURL: `/api/replicache-push?spaceId=#WORK#${id}`,
-      pullURL: `/api/replicache-pull?spaceId=#WORK#${id}`,
+      pushURL,
+      pullURL,
       mutators,
       pullInterval: null,
     });
@@ -138,10 +141,14 @@ const Editor = ({ id }: { id: string }) => {
         ) : (
           <>No work found</>
         )}
-        {work && work.published && work.content ? (
-          <NonEditableContent content={work.content} />
-        ) : work ? (
-          <TiptapEditor id={work.id} content={work.content} type={work.type} />
+        {work && work.published && content ? (
+          <NonEditableContent content={content.content} />
+        ) : work && !work.published ? (
+          <TiptapEditor
+            id={work.id}
+            content={content ? content.content : undefined}
+            type={work.type}
+          />
         ) : (
           <></>
         )}

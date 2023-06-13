@@ -53,21 +53,22 @@ interface WorkspaceState {
 }
 
 export const WorkspaceStore = create<WorkspaceState>((set, get) => ({
-  workspaceList: { quests: [], solutions: [] },
+  workspaceList: { quests: [], solutions: [], posts: [] },
   updateQueue: new Map(),
 
-  addUpdate: (props) => {
-    const { id, value } = props;
-
-    const queue = get().updateQueue;
-    queue.set(id, value);
-    set({ updateQueue: queue });
-  },
-  clearQueue: () => {
-    const queue = get().updateQueue;
-    queue.clear();
-    set({ updateQueue: queue });
-  },
+  addUpdate: (props) =>
+    set(
+      produce((state: WorkspaceState) => {
+        const { id, value } = props;
+        state.updateQueue.set(id, value);
+      })
+    ),
+  clearQueue: () =>
+    set(
+      produce((state: WorkspaceState) => {
+        state.updateQueue.clear();
+      })
+    ),
   createWork: ({ id, type, userId }) => {
     const newDate = new Date().toISOString();
     if (type === "QUEST") {

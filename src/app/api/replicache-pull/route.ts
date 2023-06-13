@@ -37,13 +37,15 @@ export async function POST(req: NextRequest, res: NextResponse) {
   const adjustedSpaceId =
     //if the space is workspace list or
     //if the space is a work - quest/solution/post in workspace make it private by adding userId.
-    spaceId === (WORKSPACE_LIST || spaceId.startsWith("#WORK"))
+    spaceId === WORKSPACE_LIST || spaceId.startsWith("EDITOR")
       ? `${spaceId}#${userId}`
       : spaceId;
+  console.log("helooooooooooooooooooo", WORKSPACE_LIST);
+
   console.log("hello?", json);
   json.cookie = JSON.parse(json.cookie as string) as { version: number };
   const pull = pullRequestSchema.parse(json);
-  console.log("spaceId", spaceId);
+  console.log("spaceId", adjustedSpaceId);
   console.log("clientId", pull.clientID);
 
   const patch = [];
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
         prevVersion: fromVersion,
         spaceId: adjustedSpaceId,
       });
-    } else if (spaceId.startsWith("#WORK")) {
+    } else if (spaceId.startsWith("EDITOR")) {
       items = await getWorkspaceWork({
         userId,
         spaceId: adjustedSpaceId,
@@ -93,7 +95,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
   //workspace items
 
-  if (spaceId === WORKSPACE_LIST || spaceId.startsWith("#WORK")) {
+  if (spaceId === WORKSPACE_LIST || spaceId.startsWith("EDITOR")) {
     for (const item of items) {
       const QuestOrSolutionOrPost = item as (
         | Quest

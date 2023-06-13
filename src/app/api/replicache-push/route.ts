@@ -49,7 +49,7 @@ export async function POST(req: Request, res: Response) {
   const adjustedSpaceId =
     //if the space is workspace list or
     //if the space is a work - quest/solution/post in workspace make it private by adding userId.
-    spaceId === (WORKSPACE_LIST || spaceId.startsWith("#WORK"))
+    spaceId === WORKSPACE_LIST || spaceId.startsWith("EDITOR")
       ? `${spaceId}#${userId}`
       : spaceId;
 
@@ -89,6 +89,7 @@ export async function POST(req: Request, res: Response) {
           tx,
           lastMutationId,
           mutation,
+          userId,
         });
         lastMutationId = nextMutationId || lastMutationId;
       } catch (error) {
@@ -102,6 +103,7 @@ export async function POST(req: Request, res: Response) {
           lastMutationId,
           mutation,
           error,
+          userId,
         });
         lastMutationId = nextMutationId || lastMutationId;
       }
@@ -160,11 +162,13 @@ const processMutation = ({
   mutation,
   error,
   lastMutationId,
+  userId,
 }: {
   tx: ReplicacheTransaction;
   mutation: Mutation;
   lastMutationId: number;
   error?: any;
+  userId: string;
 }) => {
   const expectedMutationID = lastMutationId + 1;
   if (mutation.id < expectedMutationID) {
@@ -189,12 +193,12 @@ const processMutation = ({
       case "createQuest":
         const { quest } = createQuestArgsSchema.parse(mutation.args);
 
-        tx.put({ key: `#WORK#${quest.id}`, value: quest });
+        tx.put({ key: `EDITOR${quest.id}#${userId}`, value: quest });
 
         break;
       case "deleteQuest":
         const params = idSchema.parse(mutation.args);
-        tx.del({ key: `#WORK#${params.id}` });
+        tx.del({ key: `EDITOR#${params.id}#${userId}` });
       default:
         throw new Error(`Unknown mutation: ${mutation.name}`);
     }

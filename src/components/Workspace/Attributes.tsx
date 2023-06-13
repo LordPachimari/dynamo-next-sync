@@ -1,11 +1,15 @@
+import { CalendarIcon } from "lucide-react";
+import { format } from "path";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 
 import TextareaAutosize from "react-textarea-autosize";
 import { Topics, TopicsType } from "~/types/types";
 import { Badge } from "~/ui/Badge";
+import { Button } from "~/ui/Button";
 
 import { Calendar } from "~/ui/Calendar";
 import { Input } from "~/ui/Input";
+import { Popover, PopoverContent, PopoverTrigger } from "~/ui/Popover";
 import {
   Select,
   SelectContent,
@@ -13,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/ui/Select";
+import { cn } from "~/utils/cn";
 export const Title = ({
   title,
   placeholder,
@@ -56,14 +61,6 @@ export const Title = ({
         className="w-full resize-none appearance-none overflow-hidden bg-transparent text-5xl font-bold focus:outline-none"
         // {...register("title")}
       />
-      <div id="editor" className="min-h-[500px]" />
-      <p className="text-sm text-gray-500">
-        Use{" "}
-        <kbd className="rounded-md border bg-muted px-1 text-xs uppercase">
-          Tab
-        </kbd>{" "}
-        to open the command menu.
-      </p>
     </div>
     // <div
     //   id="title"
@@ -333,12 +330,30 @@ export const DatePicker = ({
   return (
     <div className="centerDivVertically">
       <p className="font-semibold">Deadline</p>
-      <Calendar
-        mode="single"
-        selected={dateState}
-        onSelect={handleDateChange}
-        initialFocus
-      />
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant={"outline"}
+            className={cn(
+              "w-[280px] justify-start text-left font-normal",
+              !date && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {date ? "shiity date" : <span>Pick a date</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <Calendar
+            mode="single"
+            selected={dateState}
+            onSelect={(e) => {
+              setDateState(e), handleDateChange(e);
+            }}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };

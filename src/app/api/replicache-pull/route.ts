@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { z } from "zod";
-import { getLastMutationId, getSpaceVersion } from "~/repl/general-data";
 import {
-  getWorkspaceListChangedItems,
-  getWorkspaceWork,
-} from "~/repl/workspace-data";
+  getChangedItems,
+  getLastMutationId,
+  getSpaceVersion,
+} from "~/repl/general-data";
 
 import { Content, Post, Quest, Solution } from "~/types/types";
 import { WORKSPACE_LIST } from "~/utils/constants";
@@ -37,10 +37,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
   const adjustedSpaceId =
     //if the space is workspace list or
     //if the space is a work - quest/solution/post in workspace make it private by adding userId.
-    spaceId === WORKSPACE_LIST || spaceId.startsWith("EDITOR")
-      ? `${spaceId}#${userId}`
-      : spaceId;
-  console.log("helooooooooooooooooooo", WORKSPACE_LIST);
+    spaceId === WORKSPACE_LIST ? `${spaceId}#${userId}` : spaceId;
 
   console.log("hello?", json);
   json.cookie = JSON.parse(json.cookie as string) as { version: number };
@@ -51,7 +48,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
   const patch = [];
   const startTransact = Date.now();
   const processPull = async () => {
-    let items: any[] = [];
+    // let items: any[] = [];
     const version = await getSpaceVersion({ spaceId: adjustedSpaceId, userId });
     const fromVersion =
       pull.cookie && pull.cookie.version ? pull.cookie.version : 0;
@@ -66,17 +63,10 @@ export async function POST(req: NextRequest, res: NextResponse) {
     const lastMutationIDPromise = getLastMutationId({
       clientId: pull.clientID,
     });
-    if (spaceId === WORKSPACE_LIST) {
-      items = await getWorkspaceListChangedItems({
-        prevVersion: fromVersion,
-        spaceId: adjustedSpaceId,
-      });
-    } else if (spaceId.startsWith("EDITOR")) {
-      items = await getWorkspaceWork({
-        userId,
-        spaceId: adjustedSpaceId,
-      });
-    }
+    const items = await getChangedItems({
+      prevVersion: fromVersion,
+      spaceId: adjustedSpaceId,
+    });
 
     const responseCookie: Cookie = {
       version,
@@ -95,7 +85,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
   //workspace items
 
-  if (spaceId === WORKSPACE_LIST || spaceId.startsWith("EDITOR")) {
+  if (spaceId === WORKSPACE_LIST) {
     for (const item of items) {
       const QuestOrSolutionOrPost = item as (
         | Quest

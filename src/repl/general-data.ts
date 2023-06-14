@@ -2,6 +2,8 @@ import { Delete, Put, Update } from "@aws-sdk/client-dynamodb";
 import {
   GetCommand,
   GetCommandInput,
+  QueryCommand,
+  QueryCommandInput,
   TransactWriteCommand,
   TransactWriteCommandInput,
   UpdateCommand,
@@ -11,6 +13,44 @@ import { JSONObject } from "replicache";
 import { dynamoClient } from "~/clients/dynamodb";
 import { env } from "~/env.mjs";
 import { LastMutationId, SpaceVersion } from "~/types/types";
+export const getChangedItems = async ({
+  spaceId,
+  prevVersion,
+}: {
+  spaceId: string;
+  prevVersion: number;
+}) => {
+  const queryParams: QueryCommandInput = {
+    TableName: env.MAIN_TABLE_NAME,
+    KeyConditionExpression: "#PK = :PK",
+
+    FilterExpression: "#version > :version",
+    ExpressionAttributeNames: {
+      "#PK": "PK",
+      "#version": "version",
+      "#type": "type",
+    },
+    ExpressionAttributeValues: {
+      ":PK": spaceId,
+      ":version": prevVersion,
+    },
+    ProjectionExpression: "id, title, topic, inTrash, published, SK, #type",
+  };
+  console.log("space id from dynamo", spaceId);
+  try {
+    const result = await dynamoClient.send(new QueryCommand(queryParams));
+    if (result.Items) {
+      console.log("workspacelist dynamo", prevVersion, result);
+      result.Items.pop();
+
+      return result.Items;
+    }
+    return [];
+  } catch (error) {
+    console.log(error);
+    throw new Error("failed to get changed entries");
+  }
+};
 
 export const putItems = async ({
   spaceId,

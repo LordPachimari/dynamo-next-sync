@@ -36,36 +36,28 @@ import { Replicache } from "replicache";
 import { M, mutators } from "~/repl/mutators";
 import { env } from "~/env.mjs";
 import { useSubscribe } from "replicache-react";
+import { useQueryState } from "next-usequerystate";
 // });
-
 type MergedWorkType = (Post & Quest & Solution) & {
   type: "POST" | "QUEST" | "SOLUTION";
 };
-const Editor = ({ id }: { id: string }) => {
-  const [rep, setRep] = useState<Replicache<M> | null>(null);
-  // const [work, setWork] = useState<
-  //   | (Quest & { status?: "OPEN" | "CLOSED" } & Solution &
-  //       Post & { type: "QUEST" | "SOLUTION" | "POST" })
-  //   | null
-  //   | undefined
-  // >(undefined);
-
-  useEffect(() => {
-    if (rep) {
-      return;
-    }
-    const pushURL = encodeURI(`/api/replicache-push?spaceId=EDITOR${id}`);
-    const pullURL = encodeURI(`/api/replicache-pull?spaceId=EDITOR${id}`);
-    const r = new Replicache({
-      name: "user1",
-      licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
-      pushURL,
-      pullURL,
-      mutators,
-      pullInterval: null,
-    });
-    setRep(r);
-  }, [rep, id]);
+const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
+  // useEffect(() => {
+  //   if (rep) {
+  //     return;
+  //   }
+  //   const pushURL = encodeURI(`/api/replicache-push?spaceId=EDITOR${id}`);
+  //   const pullURL = encodeURI(`/api/replicache-pull?spaceId=EDITOR${id}`);
+  //   const r = new Replicache({
+  //     name: "user1",
+  //     licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
+  //     pushURL,
+  //     pullURL,
+  //     mutators,
+  //     pullInterval: null,
+  //   });
+  //   setRep(r);
+  // }, [rep, id]);
   let content: Content | undefined = undefined;
   let work: MergedWorkType | undefined = undefined;
   const WorkAndContent = useSubscribe(
@@ -139,7 +131,7 @@ const Editor = ({ id }: { id: string }) => {
             updateAttributesHandler={updateAttributesHandler}
           />
         ) : (
-          <>No work found</>
+          <div className="h-[250px]">No work found</div>
         )}
         {work && work.published && content ? (
           <NonEditableContent content={content.content} />
@@ -150,7 +142,7 @@ const Editor = ({ id }: { id: string }) => {
             type={work.type}
           />
         ) : (
-          <></>
+          <div className="h-[255px]">No work found</div>
         )}
       </div>
       {work && !work.published && work.type === "QUEST" && (

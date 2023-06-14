@@ -49,9 +49,7 @@ export async function POST(req: Request, res: Response) {
   const adjustedSpaceId =
     //if the space is workspace list or
     //if the space is a work - quest/solution/post in workspace make it private by adding userId.
-    spaceId === WORKSPACE_LIST || spaceId.startsWith("EDITOR")
-      ? `${spaceId}#${userId}`
-      : spaceId;
+    spaceId === WORKSPACE_LIST ? `${spaceId}#${userId}` : spaceId;
 
   console.log("json", json);
   const push = pushRequestSchema.parse(json);
@@ -193,7 +191,7 @@ const processMutation = ({
       case "createQuest":
         const { quest } = createQuestArgsSchema.parse(mutation.args);
 
-        tx.put({ key: `EDITOR${quest.id}#${userId}`, value: quest });
+        tx.put({ key: `EDITOR#${quest.id}#${userId}`, value: quest });
 
         break;
       case "deleteQuest":

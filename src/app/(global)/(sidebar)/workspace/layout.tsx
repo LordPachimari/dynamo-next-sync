@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, useEffect } from "react";
 
 import List from "./List";
 import { Button } from "~/ui/Button";
 import { useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { Replicache } from "replicache";
+import { M, mutators } from "~/repl/mutators";
+import { env } from "~/env.mjs";
+import { WORKSPACE_LIST } from "~/utils/constants";
+import Editor from "~/components/Workspace/Editor";
+import Actions from "./Actions";
 
 export default function WorkspaceLayout({
   children, // will be a page or nested layout
@@ -13,17 +19,39 @@ export default function WorkspaceLayout({
   children: ReactNode;
 }) {
   const [showList, toggleShowList] = useState(true);
-  const router = useRouter();
 
+  const [rep, setRep] = useState<Replicache<M> | null>(null);
   const { userId } = useAuth();
+  const { id } = useParams();
+  console.log("id", id);
+
+  useEffect(() => {
+    if (rep) {
+      return;
+    }
+    if (userId) {
+      const r = new Replicache({
+        name: userId,
+        licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
+        pushURL: `/api/replicache-push?spaceId=${WORKSPACE_LIST}`,
+        pullURL: `/api/replicache-pull?spaceId=${WORKSPACE_LIST}`,
+        mutators,
+        pullInterval: null,
+      });
+      setRep(r);
+    }
+  }, [rep, userId]);
+  const router = useRouter();
   if (!userId) {
     return router.push("/sign-in");
   }
+
   return (
     <div className="relative flex">
       <List
         showList={showList}
         toggleShowList={toggleShowList}
+        rep={rep}
         userId={userId}
       />
       <div className={`workspaceContainer ${showList ? "adjust" : ""}`}>
@@ -47,6 +75,13 @@ export default function WorkspaceLayout({
             </svg>
           </Button>
         ) : null}
+        {id ? (
+          <Editor id={id} rep={rep} />
+        ) : (
+          <div className="flex w-full flex-col items-center p-5">
+            <Actions />
+          </div>
+        )}
 
         {children}
       </div>

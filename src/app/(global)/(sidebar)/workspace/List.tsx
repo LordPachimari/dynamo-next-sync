@@ -35,38 +35,34 @@ import { cn } from "~/utils/cn";
 import { Button } from "~/ui/Button";
 import { WORKSPACE_LIST } from "~/utils/constants";
 import Link from "next/link";
+import { produce } from "immer";
+import { queryTypes, useQueryState, useQueryStates } from "next-usequerystate";
+import { useRouter } from "next/navigation";
 
 export default function List({
   showList,
   toggleShowList,
+  rep,
   userId,
 }: {
-  userId: string;
   showList: boolean;
   toggleShowList: Dispatch<SetStateAction<boolean>>;
+  rep: Replicache<M> | null;
+  userId: string;
 }) {
   const undoManagerRef = useRef(new UndoManager());
-  const [rep, setRep] = useState<Replicache<M> | null>(null);
   const [parent, enableAnimations] = useAutoAnimate();
-  const quests: QuestListComponent[] = [];
-  const solutions: SolutionListComponent[] = [];
-  const posts: PostListComponent[] = [];
-  useEffect(() => {
-    if (rep) {
-      return;
-    }
-    if (userId) {
-      const r = new Replicache({
-        name: userId,
-        licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
-        pushURL: `/api/replicache-push?spaceId=${WORKSPACE_LIST}`,
-        pullURL: `/api/replicache-pull?spaceId=${WORKSPACE_LIST}`,
-        mutators,
-        pullInterval: null,
-      });
-      setRep(r);
-    }
-  }, [rep, userId]);
+  // const [listComponents, setListComponents] = useState<{
+  //   quests: QuestListComponent[];
+  //   solutions: SolutionListComponent[];
+  //   posts: PostListComponent[];
+  // }>({ posts: [], quests: [], solutions: [] });
+  let quests: QuestListComponent[] = [];
+  let solutions: SolutionListComponent[] = [];
+  let posts: PostListComponent[] = [];
+  const pathname = location.pathname.split("/");
+  console.log("spaceId", pathname);
+  const router = useRouter();
 
   const WorkZod = z.union([
     QuestListComponentZod,
@@ -77,25 +73,36 @@ export default function List({
   const works = useSubscribe(
     rep,
     async (tx) => {
-      const list = await tx.scan({ prefix: "EDITOR" }).entries().toArray();
+      const list = await tx.scan().entries().toArray();
 
       console.log("list", list);
       return list;
     },
     []
   );
+  // useEffect(() => {
   if (works) {
+    const _quests: QuestListComponent[] = [];
+    const _solutions: SolutionListComponent[] = [];
+    const _posts: PostListComponent[] = [];
     for (const [key, value] of works) {
       const work = value as Post | Solution | Quest;
       if (work.type === "QUEST") {
-        quests.push(work);
+        _quests.push(work);
       } else if (work.type === "SOLUTION") {
-        solutions.push(work);
-      } else {
-        posts.push(work as Post);
+        _solutions.push(work);
+      } else if (work.type === "POST") {
+        _posts.push(work as Post);
       }
     }
+    quests = _quests;
+    solutions = _solutions;
+    posts = _posts;
   }
+  //     setListComponents({ quests, solutions, posts });
+  //   }
+  // }, [works]);
+
   const handleCreateQuest = async () => {
     if (rep) {
       const id = ulid();
@@ -169,24 +176,27 @@ export default function List({
         {quests.map((value) => {
           const work = WorkZod.parse(value);
           return (
-            <Link key={work.id} href={`/workspace/${work.id}`}>
-              <span
-                key={work.id}
-                className={cn(
-                  "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
-                  // path === item.href ? "bg-accent" : "transparent",
-                  // item.disabled && "cursor-not-allowed opacity-80",
-                )}
-              >
-                <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                  {work.title || "Untitled"}
-                </span>
+            <span
+              // eslint-disable-next-line @typescript-eslint/no-misused-promises
+              onMouseDown={() => {
+                router.push(`/workspace/${work.id}`);
+              }}
+              key={work.id}
+              className={cn(
+                "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
+                // path === item.href ? "bg-accent" : "transparent",
+                // item.disabled && "cursor-not-allowed opacity-80",
+              )}
+            >
+              <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                {work.title || "Untitled"}
               </span>
-            </Link>
+            </span>
           );
         })}
       </ul>
       <span
+        onMouseDown={() => router.push("/workspace/quest1")}
         className={cn(
           "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
           // path === item.href ? "bg-accent" : "transparent",

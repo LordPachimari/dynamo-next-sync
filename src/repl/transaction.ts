@@ -1,5 +1,5 @@
 import { JSONObject, JSONValue, WriteTransaction } from "replicache";
-import { delItems, delPermItems, putItems } from "./general-data";
+import { delItems, delPermItems, putItems } from "./data";
 
 const DELETE_PERMANENTLY = "DELETE_PERMANENTLY" as const;
 const DELETE = "DELETE" as const;
@@ -16,7 +16,7 @@ declare type ReadonlyJSONObject = {
   readonly [key: string]: ReadonlyJSONValue;
 };
 interface CustomWriteTransaction {
-  put({ key, value }: { key: string; value: ReadonlyJSONValue }): void;
+  put({ key, value }: { key: string; value: JSONObject }): void;
   /**
    * Removes a `key` and its value from the database. Returns `true` if there was a
    * `key` to remove.
@@ -27,7 +27,7 @@ interface CustomWriteTransaction {
 
 export class ReplicacheTransaction implements CustomWriteTransaction {
   private readonly _spaceID: string;
-  private readonly _clientID: string;
+  private _clientID: string;
   private readonly _version: number;
   private readonly _cache: Map<
     string,
@@ -38,20 +38,18 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
   > = new Map();
   private readonly _userId: string;
 
-  constructor(
-    spaceID: string,
-    clientID: string,
-    version: number,
-    userId: string
-  ) {
+  constructor(spaceID: string, version: number, userId: string) {
     this._spaceID = spaceID;
-    this._clientID = clientID;
     this._version = version;
     this._userId = userId;
+    this._clientID = ""
   }
 
-  get clientID(): string {
+  getClientID(): string {
     return this._clientID;
+  }
+  setClientID({ clientID }: { clientID: string }): void {
+    this._clientID = clientID;
   }
 
   put({ key, value }: { key: string; value: JSONObject }) {

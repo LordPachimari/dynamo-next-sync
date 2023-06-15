@@ -8,7 +8,6 @@ import {
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import debounce from "lodash.debounce";
-import * as pako from "pako";
 import {
   ChangeEvent,
   Dispatch,
@@ -18,21 +17,20 @@ import {
   useRef,
   useState,
 } from "react";
-
+import * as lz from "lz-string";
 import FileExtension from "./FileExtension";
 import ImageExtension from "./ImageExtension";
 
 const TiptapEditor = (props: {
   id: string;
-  content: Uint8Array | undefined;
+  content: string | undefined;
   type: "QUEST" | "SOLUTION" | "POST";
 }) => {
   let contentRestored: string | undefined;
   const { id, content, type } = props;
 
   if (content) {
-    const restored = pako.inflate(content, { to: "string" });
-
+    const restored = lz.decompressFromBase64(content);
     contentRestored = restored;
   }
 
@@ -60,8 +58,8 @@ const TiptapEditor = (props: {
       }) => {
         //transactionQueue is immutable, but I'll allow myself to mutate the copy of it
         const updateTime = new Date().toISOString();
-        const compressedContent = pako.deflate(content);
-        const compressedTextContent = pako.deflate(textContent);
+        const compressedContent = lz.compressToBase64(content);
+        const compressedTextContent = lz.compressToBase64(textContent);
       },
       1000
     ),

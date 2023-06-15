@@ -158,7 +158,6 @@ export const PublishedQuestZod = QuestRequiredZod.extend({
   winnerId: z.optional(z.string()),
   status: z.enum(QuestStatus),
   solverCount: z.number(),
-  content: z.optional(z.instanceof(Uint8Array)),
   text: z.string(),
   _event_time: z.optional(z.string()),
 }).omit({
@@ -256,10 +255,9 @@ export type UpdateInventory = z.infer<typeof UpdateInventoryZod>;
 const SolutionPartialZod = z
   .object({
     id: z.string(),
-    content: z.instanceof(Uint8Array),
     creatorId: z.string(),
     topic: z.enum(Topics),
-    contributors: z.set(z.string()),
+    contributors: z.array(z.string()),
     inTrash: z.boolean(),
     createdAt: z.string(),
     published: z.boolean(),
@@ -268,7 +266,6 @@ const SolutionPartialZod = z
     title: z.string(),
     lastUpdated: z.string(),
     viewed: z.boolean(),
-    text: z.optional(z.instanceof(Uint8Array)),
     questCreatorId: z.string(),
     type: z.enum(Entity),
   })
@@ -290,7 +287,6 @@ export const PublishedSolutionZod = SolutionPartialZod.omit({
   .required()
   .extend({
     status: z.optional(z.enum(SolutionStatus)),
-    content: z.optional(z.instanceof(Uint8Array)),
     viewed: z.optional(z.boolean()),
     text: z.string(),
   })
@@ -311,8 +307,8 @@ export const SolutionListComponentZod = SolutionZod.pick({
 });
 export type SolutionListComponent = z.infer<typeof SolutionListComponentZod>;
 export const ContentZod = z.object({
-  content: z.instanceof(Uint8Array),
-  text: z.instanceof(Uint8Array),
+  content: z.string(),
+  text: z.string(),
   inTrash: z.boolean(),
   type: z.enum(Entity),
 });
@@ -359,7 +355,6 @@ export const PostZod = z.object({
   title: z.string(),
   topic: z.enum(Topics),
   publishedAt: z.string(),
-  content: z.optional(z.instanceof(Uint8Array)),
   text: z.string(),
   type: z.enum(Entity),
   inTrash: z.boolean(),
@@ -418,6 +413,6 @@ export type SpaceVersion = {
 };
 
 export type LastMutationId = {
-  clientId: string;
+  id: string;
   lastMutationId: number;
 };

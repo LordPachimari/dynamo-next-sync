@@ -6,7 +6,6 @@ import parse, {
   HTMLReactParserOptions,
 } from "html-react-parser";
 import Image, { ImageLoaderProps } from "next/image";
-import * as pako from "pako";
 import { useMemo } from "react";
 import FileExtension from "../Tiptap/FileExtension";
 import ImageExtension from "../Tiptap/ImageExtension";
@@ -23,6 +22,7 @@ import {
 } from "~/types/types";
 import { Badge } from "~/ui/Badge";
 import { cn } from "~/utils/cn";
+import * as lz from "lz-string";
 export const HtmlParseOptions: HTMLReactParserOptions = {
   replace: (_domNode) => {
     const domNode = _domNode as Element;
@@ -204,8 +204,8 @@ export const NonEditableSolutionAttributes = ({
     </>
   );
 };
-export const NonEditableContent = ({ content }: { content: Uint8Array }) => {
-  const restoredContent = pako.inflate(content, { to: "string" });
+export const NonEditableContent = ({ content }: { content: string }) => {
+  const restoredContent = lz.decompressFromBase64(content);
   const contentJSON = JSON.parse(restoredContent) as JSONContent;
   const output = useMemo(() => {
     return generateHTML(contentJSON, [

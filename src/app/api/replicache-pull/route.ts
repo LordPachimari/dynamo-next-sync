@@ -3,25 +3,33 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
   getChangedItems,
-  getLastMutationId,
+  getLastMutationIdsSince,
   getSpaceVersion,
-} from "~/repl/general-data";
+} from "~/repl/data";
 
 import { Content, Post, Quest, Solution } from "~/types/types";
 import { WORKSPACE_LIST } from "~/utils/constants";
 
 import { auth } from "@clerk/nextjs";
-const cookieSchema = z.union([z.object({ version: z.number() }), z.null()]);
+import { ClientID, PatchOperation } from "replicache";
 
-type Cookie = z.TypeOf<typeof cookieSchema>;
+export type PullResponse = {
+  cookie: number;
+  lastMutationIDChanges: Record<ClientID, number>;
+  patch: PatchOperation[];
+};
 
 const pullRequestSchema = z.object({
-  clientID: z.string(),
-  cookie: cookieSchema,
+  pullVersion: z.literal(1),
+  profileID: z.string(),
+  clientGroupID: z.string(),
+  cookie: z.union([z.number(), z.null()]),
+  schemaVersion: z.string(),
 });
 type PullRequestSchemaType = {
-  clientID: string;
-  cookie: string | { version: number };
+  clientGroupID: string;
+
+  cookie: number;
 };
 export async function POST(req: NextRequest, res: NextResponse) {
   console.log("----------------------------------------------------");
@@ -40,18 +48,19 @@ export async function POST(req: NextRequest, res: NextResponse) {
     spaceId === WORKSPACE_LIST ? `${spaceId}#${userId}` : spaceId;
 
   console.log("hello?", json);
-  json.cookie = JSON.parse(json.cookie as string) as { version: number };
   const pull = pullRequestSchema.parse(json);
   console.log("spaceId", adjustedSpaceId);
-  console.log("clientId", pull.clientID);
+  console.log("clientGroupId", pull.clientGroupID);
 
-  const patch = [];
+  const patch: PatchOperation[] = [];
   const startTransact = Date.now();
   const processPull = async () => {
     // let items: any[] = [];
-    const version = await getSpaceVersion({ spaceId: adjustedSpaceId, userId });
-    const fromVersion =
-      pull.cookie && pull.cookie.version ? pull.cookie.version : 0;
+    const versionPromise = getSpaceVersion({
+      spaceId: adjustedSpaceId,
+      userId,
+    });
+    const fromVersion = pull.cookie ? pull.cookie : 0;
     if (fromVersion === 0) {
       patch.push({
         op: "clear",
@@ -60,27 +69,25 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
     console.log("cooookie version", fromVersion);
 
-    const lastMutationIDPromise = getLastMutationId({
-      clientId: pull.clientID,
+    const lastMutationIDsPromise = getLastMutationIdsSince({
+      clientGroupId: pull.clientGroupID,
+      prevVersion: fromVersion,
     });
-    const items = await getChangedItems({
+    const itemsPromise = getChangedItems({
       prevVersion: fromVersion,
       spaceId: adjustedSpaceId,
     });
 
-    const responseCookie: Cookie = {
-      version,
-    };
-    return Promise.all([items, lastMutationIDPromise, responseCookie]);
+    return Promise.all([itemsPromise, lastMutationIDsPromise, versionPromise]);
   };
 
   console.log("transact took", Date.now() - startTransact);
 
-  const [items, lastMutationID, responseCookie] = await processPull();
+  const [items, lastMutationIDChanges, version] = await processPull();
   const startBuildingPatch = Date.now();
 
-  console.log("lastMutationID: ", lastMutationID);
-  console.log("responseCookie: ", responseCookie);
+  console.log("lastMutationIDs: ", lastMutationIDChanges);
+  console.log("response version for cookie: ", version);
   console.log("items", items);
 
   //workspace items
@@ -108,9 +115,9 @@ export async function POST(req: NextRequest, res: NextResponse) {
     }
   }
 
-  const resp = {
-    lastMutationID: lastMutationID ?? 0,
-    cookie: JSON.stringify(responseCookie) ?? 0,
+  const resp: PullResponse = {
+    lastMutationIDChanges,
+    cookie: version,
     patch,
   };
   console.log("patch", resp);

@@ -1,5 +1,12 @@
-import { Delete, Put, Update } from "@aws-sdk/client-dynamodb";
 import {
+  Delete,
+  KeysAndAttributes,
+  Put,
+  Update,
+} from "@aws-sdk/client-dynamodb";
+import {
+  BatchGetCommand,
+  BatchGetCommandInput,
   GetCommand,
   GetCommandInput,
   QueryCommand,
@@ -28,19 +35,16 @@ export const getChangedItems = async ({
     ExpressionAttributeNames: {
       "#PK": "PK",
       "#version": "version",
-      "#type": "type",
     },
     ExpressionAttributeValues: {
       ":PK": spaceId,
       ":version": prevVersion,
     },
-    ProjectionExpression: "id, title, topic, inTrash, published, SK, #type",
   };
   console.log("space id from dynamo", spaceId);
   try {
     const result = await dynamoClient.send(new QueryCommand(queryParams));
     if (result.Items) {
-      console.log("workspacelist dynamo", prevVersion, result);
       result.Items.pop();
 
       return result.Items;
@@ -51,7 +55,33 @@ export const getChangedItems = async ({
     throw new Error("failed to get changed entries");
   }
 };
-
+// export const getItem = async ({
+//   spaceId,
+//   key,
+//   userId,
+// }: {
+//   spaceId: string;
+//   key: string;
+//   userId: string;
+// }) => {
+//   const getParams: GetCommandInput = {
+//     Key: {
+//       PK: spaceId === "WORKSPACE_LIST" ? `${spaceId}#${userId}` : `${spaceId}`,
+//       SK: key,
+//     },
+//     TableName: env.MAIN_TABLE_NAME,
+//   };
+//   try {
+//     const result = await dynamoClient.send(new GetCommand(getParams));
+//     if (result.Item) {
+//       return result.Item;
+//     }
+//     return undefined;
+//   } catch (error) {
+//     console.log(error);
+//     throw new Error("Failed to get item");
+//   }
+// };
 export const putItems = async ({
   spaceId,
   version,
@@ -255,43 +285,161 @@ export const setSpaceVersion = async ({
     throw new Error("failed to set space version");
   }
 };
-export const getLastMutationId = async ({ clientId }: { clientId: string }) => {
-  const getParam: GetCommandInput = {
-    Key: { PK: `CLIENT#${clientId}`, SK: "LAST_MUTATION_ID" },
-    TableName: env.MAIN_TABLE_NAME,
-    AttributesToGet: ["lastMutationId"],
+export const getLastMutationIds = async ({
+  clientIDs,
+  clientGroupID,
+}: {
+  clientIDs: string[];
+  clientGroupID: string;
+}) => {
+  const tableName = env.MAIN_TABLE_NAME;
+  const RequestItems: Record<
+    string,
+    Omit<KeysAndAttributes, "Keys"> & {
+      Keys: Record<string, any>[] | undefined;
+    }
+  > = {};
+  const Keys = clientIDs.map((id) => ({
+    PK: `CLIENT_GROUP#${clientGroupID}`,
+    SK: `CLIENT#${id}`,
+  }));
+
+  RequestItems[tableName] = {
+    Keys,
+  };
+  const batchParams: BatchGetCommandInput = {
+    RequestItems,
   };
   try {
-    const result = await dynamoClient.send(new GetCommand(getParam));
-    if (result.Item) {
-      const { lastMutationId } = result.Item as LastMutationId;
-      return lastMutationId;
+    const result = await dynamoClient.send(new BatchGetCommand(batchParams));
+    if (result.Responses) {
+      const responses = result.Responses[tableName] as LastMutationId[];
+      return Object.fromEntries(
+        responses.map((val) => {
+          return [val.id, val.lastMutationId ?? 0] as const;
+        })
+      );
     }
-    return undefined;
+    return {};
   } catch (error) {
     console.log(error);
-    throw new Error("Failed to get last mutation");
+    throw new Error("Failed to get last mutation Ids for each client");
+  }
+};
+export const getLastMutationIdsSince = async ({
+  clientGroupId,
+  prevVersion,
+}: {
+  clientGroupId: string;
+  prevVersion: number;
+}) => {
+  const queryParams: QueryCommandInput = {
+    TableName: env.MAIN_TABLE_NAME,
+    KeyConditionExpression: "#PK = :PK",
+
+    FilterExpression: "#version > :version",
+    ExpressionAttributeNames: {
+      "#PK": "PK",
+      "#version": "version",
+    },
+    ExpressionAttributeValues: {
+      ":PK": `CLIENT_GROUP#${clientGroupId}`,
+      ":version": prevVersion,
+    },
+  };
+  try {
+    const result = await dynamoClient.send(new QueryCommand(queryParams));
+    if (result.Items) {
+      const lastMutationIDArray = result.Items as LastMutationId[];
+      lastMutationIDArray.pop();
+      return Object.fromEntries(
+        lastMutationIDArray.map((l) => [l.id, l.lastMutationId] as const)
+      );
+    }
+    return {};
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to get client IDS");
   }
 };
 export const setLastMutationId = async ({
   clientId,
   lastMutationId,
+  clientGroupId,
 }: {
   clientId: string;
   lastMutationId: number;
+  clientGroupId: string;
 }) => {
   const updateParams: UpdateCommandInput = {
     TableName: env.MAIN_TABLE_NAME,
 
-    Key: { PK: `CLIENT#${clientId}`, SK: "LAST_MUTATION_ID" },
-    UpdateExpression: "SET #lastMutationId = :lastMutationId",
-    ExpressionAttributeNames: { "#lastMutationId": "lastMutationId" },
-    ExpressionAttributeValues: { ":lastMutationId": lastMutationId },
+    Key: { PK: `CLIENT_GROUP#${clientGroupId}`, SK: `CLIENT#${clientId}` },
+    UpdateExpression: "SET #lastMutationId = :lastMutationId, #id = :id",
+    ExpressionAttributeNames: {
+      "#lastMutationId": "lastMutationId",
+      "#id": "id",
+    },
+    ExpressionAttributeValues: {
+      ":lastMutationId": lastMutationId,
+      ":id": clientId,
+    },
   };
   try {
     await dynamoClient.send(new UpdateCommand(updateParams));
   } catch (error) {
     console.log(error);
     throw new Error("failed to set last mutation");
+  }
+};
+export const setLastMutationIds = async ({
+  clientGroupId,
+  version,
+  lmids,
+}: {
+  clientGroupId: string;
+  lmids: Record<string, number>;
+  version: number;
+}) => {
+  const updateItems = [...Object.entries(lmids)].map(
+    ([clientId, lastMutationId]) => {
+      const updateItem: {
+        Update:
+          | Omit<Update, "Key" | "ExpressionAttributeValues"> & {
+              Key: Record<string, any> | undefined;
+              ExpressionAttributeValues?: Record<string, any> | undefined;
+            };
+      } = {
+        Update: {
+          TableName: env.MAIN_TABLE_NAME,
+          Key: {
+            PK: `CLIENT_GROUP#${clientGroupId}`,
+            SK: `CLIENT#${clientId}`,
+          },
+          UpdateExpression:
+            "SET #id = :id, #lastMutationId = :lastMutationId, #version = :version",
+          ExpressionAttributeNames: {
+            "#id": "id",
+            "#lastMutationId": "lastMutationId",
+            "#version": "version",
+          },
+          ExpressionAttributeValues: {
+            ":id": clientId,
+            ":lastMutationId": lastMutationId,
+            ":version": version,
+          },
+        },
+      };
+      return updateItem;
+    }
+  );
+  const transactPutParams: TransactWriteCommandInput = {
+    TransactItems: updateItems,
+  };
+  try {
+    await dynamoClient.send(new TransactWriteCommand(transactPutParams));
+  } catch (error) {
+    console.log(error);
+    throw new Error("Transact update lastMutationIds failed");
   }
 };

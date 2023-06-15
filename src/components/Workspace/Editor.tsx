@@ -36,50 +36,31 @@ import { Replicache } from "replicache";
 import { M, mutators } from "~/repl/mutators";
 import { env } from "~/env.mjs";
 import { useSubscribe } from "replicache-react";
-import { useQueryState } from "next-usequerystate";
 // });
 type MergedWorkType = (Post & Quest & Solution) & {
   type: "POST" | "QUEST" | "SOLUTION";
 };
 const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
-  // useEffect(() => {
-  //   if (rep) {
-  //     return;
-  //   }
-  //   const pushURL = encodeURI(`/api/replicache-push?spaceId=EDITOR${id}`);
-  //   const pullURL = encodeURI(`/api/replicache-pull?spaceId=EDITOR${id}`);
-  //   const r = new Replicache({
-  //     name: "user1",
-  //     licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
-  //     pushURL,
-  //     pullURL,
-  //     mutators,
-  //     pullInterval: null,
-  //   });
-  //   setRep(r);
-  // }, [rep, id]);
-  let content: Content | undefined = undefined;
-  let work: MergedWorkType | undefined = undefined;
-  const WorkAndContent = useSubscribe(
+  const work = useSubscribe(
     rep,
     async (tx) => {
-      const list = await tx.scan().entries().toArray();
+      const editor = (await tx.get(`EDITOR#${id}`)) || null;
 
-      console.log("list", list);
-      return list;
+      console.log("editor frmo subscribe", editor);
+      return editor;
     },
     []
-  );
-  if (WorkAndContent) {
-    for (const [key, value] of WorkAndContent) {
-      const WorkOrContent = value as Quest | Post | Solution | Content;
-      if (WorkOrContent.type === "CONTENT") {
-        content = WorkOrContent as Content;
-      } else {
-        work = WorkOrContent as MergedWorkType;
-      }
-    }
-  }
+  ) as MergedWorkType;
+  const content = useSubscribe(
+    rep,
+    async (tx) => {
+      const c = (await tx.get(`CONTENT#${id}`)) || null;
+
+      console.log("content from subscrive", c);
+      return c;
+    },
+    []
+  ) as { content: string; text: string };
 
   const router = useRouter();
 

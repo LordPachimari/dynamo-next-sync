@@ -36,7 +36,6 @@ import { Button } from "~/ui/Button";
 import { WORKSPACE_LIST } from "~/utils/constants";
 import Link from "next/link";
 import { produce } from "immer";
-import { queryTypes, useQueryState, useQueryStates } from "next-usequerystate";
 import { useRouter } from "next/navigation";
 
 export default function List({
@@ -73,7 +72,7 @@ export default function List({
   const works = useSubscribe(
     rep,
     async (tx) => {
-      const list = await tx.scan().entries().toArray();
+      const list = await tx.scan({ prefix: "EDITOR#" }).entries().toArray();
 
       console.log("list", list);
       return list;
@@ -120,10 +119,9 @@ export default function List({
       // await rep.mutate.createQuest({ quest: newQuest });
       await undoManagerRef.current.add({
         execute: () => rep.mutate.createQuest({ quest: newQuest }),
-        undo: () => rep.mutate.deleteQuest({ id: newQuest.id }),
+        undo: () => rep.mutate.deleteWork({ id: newQuest.id }),
       });
     }
-    console.log("no rep");
   };
   return (
     <div className={`listContainer ${showList ? "showList" : ""}`}>

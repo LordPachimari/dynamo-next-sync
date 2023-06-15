@@ -7,11 +7,13 @@ import { QuestZod } from "~/types/types";
 import { QUEST_PREFIX, WORKSPACE_LIST } from "~/utils/constants";
 import { ReplicacheTransaction } from "~/repl/transaction";
 import {
-  getLastMutationId,
+  getLastMutationIds,
+  getLastMutationIdsSince,
   getSpaceVersion,
   setLastMutationId,
+  setLastMutationIds,
   setSpaceVersion,
-} from "~/repl/general-data";
+} from "~/repl/data";
 import { auth } from "@clerk/nextjs";
 
 // See notes in bug: https://github.com/rocicorp/replidraw/issues/47
@@ -19,6 +21,7 @@ const mutationSchema = z.object({
   id: z.number(),
   name: z.string(),
   args: jsonSchema,
+  clientID: z.string(),
 });
 const idSchema = z.object({
   id: z.string(),
@@ -28,7 +31,9 @@ const createQuestArgsSchema = z.object({ quest: QuestZod });
 type Mutation = z.infer<typeof mutationSchema>;
 
 const pushRequestSchema = z.object({
-  clientID: z.string(),
+  pushVersion: z.literal(1),
+  profileID: z.string(),
+  clientGroupID: z.string(),
   mutations: z.array(mutationSchema),
 });
 
@@ -67,21 +72,22 @@ export async function POST(req: Request, res: Response) {
     });
 
     const nextVersion = prevVersion + 1;
-    let lastMutationId =
-      (await getLastMutationId({ clientId: push.clientID })) ?? 0;
+    const clientIDs = [...new Set(push.mutations.map((m) => m.clientID))];
+    const lastMutationIds = await getLastMutationIds({
+      clientGroupID: push.clientGroupID,
+      clientIDs,
+    });
 
     console.log("prevVersion: ", prevVersion);
-    console.log("lastMutationID:", lastMutationId);
+    console.log("lastMutationIDs:", lastMutationIds);
 
-    const tx = new ReplicacheTransaction(
-      adjustedSpaceId,
-      push.clientID,
-      nextVersion,
-      userId
-    );
+    const tx = new ReplicacheTransaction(adjustedSpaceId, nextVersion, userId);
 
     for (let i = 0; i < push.mutations.length; i++) {
       const mutation = push.mutations[i] as Mutation;
+
+      tx.setClientID({ clientID: mutation.clientID });
+      const lastMutationId = lastMutationIds[mutation.clientID] || 0;
       try {
         const nextMutationId = processMutation({
           tx,
@@ -89,7 +95,9 @@ export async function POST(req: Request, res: Response) {
           mutation,
           userId,
         });
-        lastMutationId = nextMutationId || lastMutationId;
+        lastMutationIds[mutation.clientID] = nextMutationId
+          ? nextMutationId
+          : lastMutationId;
       } catch (error) {
         if (error instanceof Error) {
           if (error.message === "UNAUTHORIZED") {
@@ -103,14 +111,18 @@ export async function POST(req: Request, res: Response) {
           error,
           userId,
         });
-        lastMutationId = nextMutationId || lastMutationId;
+
+        lastMutationIds[mutation.clientID] = nextMutationId
+          ? nextMutationId
+          : lastMutationId;
       }
     }
 
     return await Promise.all([
-      setLastMutationId({
-        clientId: push.clientID,
-        lastMutationId,
+      setLastMutationIds({
+        clientGroupId: push.clientGroupID,
+        lmids: lastMutationIds,
+        version: nextVersion,
       }),
 
       //each workspace list is a private list. So each user can view only its own workspace list.
@@ -191,12 +203,12 @@ const processMutation = ({
       case "createQuest":
         const { quest } = createQuestArgsSchema.parse(mutation.args);
 
-        tx.put({ key: `EDITOR#${quest.id}#${userId}`, value: quest });
+        tx.put({ key: `EDITOR#${quest.id}`, value: quest });
 
         break;
       case "deleteQuest":
         const params = idSchema.parse(mutation.args);
-        tx.del({ key: `EDITOR#${params.id}#${userId}` });
+        tx.del({ key: `EDITOR#${params.id}` });
       default:
         throw new Error(`Unknown mutation: ${mutation.name}`);
     }

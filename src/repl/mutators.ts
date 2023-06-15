@@ -1,20 +1,43 @@
 import type { ReadTransaction, WriteTransaction } from "replicache";
 
-import { QUEST_PREFIX } from "../utils/constants";
-import type { Quest, WorkUpdate } from "~/types/types";
+import {
+  Post,
+  PostZod,
+  Quest,
+  QuestZod,
+  Solution,
+  SolutionZod,
+  WorkUpdate,
+} from "~/types/types";
 
 export type M = typeof mutators;
 export const mutators = {
   createQuest: async (tx: WriteTransaction, { quest }: { quest: Quest }) => {
     console.log("mutators, putQuest");
-    await tx.put(`${QUEST_PREFIX}${quest.id}`, quest);
+    const parsedQuest = QuestZod.parse(quest);
+
+    await tx.put(`EDITOR#${quest.id}`, parsedQuest);
+  },
+  createSolution: async (
+    tx: WriteTransaction,
+    { solution }: { solution: Solution }
+  ) => {
+    console.log("mutators, putSolution");
+    const parsedSolution = SolutionZod.parse(solution);
+    await tx.put(`EDITOR#${solution.id}`, parsedSolution);
+  },
+  createPost: async (tx: WriteTransaction, { post }: { post: Post }) => {
+    console.log("mutators, putPost");
+
+    const parsedPost = PostZod.parse(post);
+    await tx.put(`EDITOR#${post.id}`, parsedPost);
   },
 
-  deleteQuest: async (tx: WriteTransaction, { id }: { id: string }) => {
-    console.log("mutators, deleteQuest");
-    await tx.del(`${QUEST_PREFIX}${id}`);
+  deleteWork: async (tx: WriteTransaction, { id }: { id: string }) => {
+    console.log("mutators, deleteWork");
+    await tx.del(`EDITOR#${id}`);
   },
-  updateQuest: async (
+  updateWork: async (
     tx: WriteTransaction,
     {
       id,
@@ -25,29 +48,29 @@ export const mutators = {
       updates: WorkUpdate;
     }
   ): Promise<void> => {
-    const quest = (await getQuest(tx, { id })) as Quest;
+    const quest = (await getWork(tx, { id })) as Quest;
     if (!quest) {
       console.info(`Quest ${id} not found`);
       return;
     }
     const updatedQuest = { ...quest, updates };
-    await putQuest(tx, { id: `${QUEST_PREFIX}${id}`, quest: updatedQuest });
+    await putWork(tx, { id: `EDITOR#${id}`, quest: updatedQuest });
   },
 };
-export const getQuest = async (tx: ReadTransaction, { id }: { id: string }) => {
-  const quest = (await tx.get(`${QUEST_PREFIX}${id}`)) as Quest;
-  if (!quest) {
+export const getWork = async (tx: ReadTransaction, { id }: { id: string }) => {
+  const work = await tx.get(`EDITOR#${id}`);
+  if (!work) {
     return undefined;
   }
-  return quest;
+  return work;
 };
-export const putQuest = async (
+export const putWork = async (
   tx: WriteTransaction,
   { quest, id }: { quest: Quest; id: string }
 ) => {
   await tx.put(id, quest);
 };
-export const deleteQuest = async (
+export const deleteWork = async (
   tx: WriteTransaction,
   { id }: { id: string }
 ) => {

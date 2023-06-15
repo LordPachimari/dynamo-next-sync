@@ -23,7 +23,6 @@ specifiers:
   '@types/eslint': ^8.37.0
   '@types/lodash.debounce': ^4.0.7
   '@types/node': ^18.16.0
-  '@types/pako': ^2.0.0
   '@types/prettier': ^2.7.2
   '@types/react': ^18.2.6
   '@types/react-dom': ^18.2.4
@@ -41,8 +40,8 @@ specifiers:
   immer: ^10.0.2
   lodash.debounce: ^4.0.8
   lucide-react: ^0.241.0
+  lz-string: ^1.5.0
   next: ^13.4.4
-  pako: ^2.1.0
   postcss: ^8.4.21
   prettier: ^2.8.8
   prettier-plugin-tailwindcss: ^0.2.8
@@ -52,7 +51,7 @@ specifiers:
   react-day-picker: ^8.7.1
   react-dom: 18.2.0
   react-textarea-autosize: ^8.4.1
-  replicache: ^12.2.2
+  replicache: 13.0.0-beta.1
   replicache-react: ^2.11.0
   server-only: ^0.0.1
   superjson: 1.9.1
@@ -93,15 +92,15 @@ dependencies:
   immer: 10.0.2
   lodash.debounce: 4.0.8
   lucide-react: 0.241.0_react@18.2.0
+  lz-string: 1.5.0
   next: 13.4.4_biqbaboplfbrettd7655fr4n2y
-  pako: 2.1.0
   pusher: 5.1.3
   pusher-js: 8.0.2
   react: 18.2.0
   react-day-picker: 8.7.1_kzhlcyde2l6xjiirkbg7jzhosa
   react-dom: 18.2.0_react@18.2.0
   react-textarea-autosize: 8.4.1_j4swkgacdxrhexoapez3itylte
-  replicache: 12.2.2
+  replicache: 13.0.0-beta.1
   replicache-react: 2.11.0_biqbaboplfbrettd7655fr4n2y
   server-only: 0.0.1
   superjson: 1.9.1
@@ -115,7 +114,6 @@ devDependencies:
   '@types/eslint': 8.40.1
   '@types/lodash.debounce': 4.0.7
   '@types/node': 18.16.17
-  '@types/pako': 2.0.0
   '@types/prettier': 2.7.3
   '@types/react': 18.2.11
   '@types/react-dom': 18.2.4
@@ -2171,6 +2169,22 @@ packages:
       type-fest: 2.19.0
     dev: false
 
+  /@rocicorp/lock/1.0.1:
+    resolution: {integrity: sha512-sYbcbiyEf61guk2DfcA6zzgDrW6ncJJW11JIFNSbByqYx80olhyp0IyXUMA3xmNK0YQSkAuufWvLExaWQXuzUQ==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dependencies:
+      '@rocicorp/resolver': 1.0.0
+    dev: false
+
+  /@rocicorp/logger/5.2.0:
+    resolution: {integrity: sha512-PhnXnTxq8EdD/5e+eI/BQv1aSMG7bjVDI7Ngkje9rbo7RepsppdbwYW1CYfMXr2ZYmA46yhQbFz8bceTyRwRfA==}
+    dev: false
+
+  /@rocicorp/resolver/1.0.0:
+    resolution: {integrity: sha512-iK0QW74BKR0ogY4QwBEAMoevqypi5S/jjKqL6mc7KH7z2PFuOinOebsD1Ol8VIxrh23IPrMNwDNSrnfhKga9Vw==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dev: false
+
   /@rocicorp/undo/0.2.0:
     resolution: {integrity: sha512-tYwXp6T/dGb55EYZpuU7P2SF6FF5VRrKQDWFn5PUjPbpkwM5qqdpFcK0Qqr9Me0RHr2aOos2B7olC0oMKUunoA==}
     dev: false
@@ -2639,10 +2653,6 @@ packages:
   /@types/object.pick/1.3.2:
     resolution: {integrity: sha512-sn7L+qQ6RLPdXRoiaE7bZ/Ek+o4uICma/lBFPyJEKDTPTBP1W8u0c4baj3EiS4DiqLs+Hk+KUGvMVJtAw3ePJg==}
     dev: false
-
-  /@types/pako/2.0.0:
-    resolution: {integrity: sha512-10+iaz93qR5WYxTo+PMifD5TSxiOtdRaxBf7INGGXMQgTCu8Z/7GYWYFUOS3q/G0nE5boj1r4FEB+WSy7s5gbA==}
-    dev: true
 
   /@types/prettier/2.7.3:
     resolution: {integrity: sha512-+68kP9yzs4LMp7VNh8gdzMSPZFL44MLGqiHWvttYJe+6qnuVr4Ek9wSBQoveqY/r+LwjCcU29kNVkidwim+kYA==}
@@ -4616,6 +4626,11 @@ packages:
       react: 18.2.0
     dev: false
 
+  /lz-string/1.5.0:
+    resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
+    hasBin: true
+    dev: false
+
   /make-error/1.3.6:
     resolution: {integrity: sha512-s8UhlNe7vPKomQhC1qFelMokr/Sc3AgNbso3n74mVPA5LTZwkB9NlXf4XPamLxJE8h0gh73rM94xvwRT2CVInw==}
     dev: false
@@ -4955,10 +4970,6 @@ packages:
     dependencies:
       p-limit: 3.1.0
     dev: true
-
-  /pako/2.1.0:
-    resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
-    dev: false
 
   /parent-module/1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
@@ -5482,10 +5493,14 @@ packages:
       react-dom: 18.2.0_react@18.2.0
     dev: false
 
-  /replicache/12.2.2:
-    resolution: {integrity: sha512-vdbRUEMJKpgdyxiqZPSa2fDRx/WYSwOTfiCKzsyPyw2JO8vaBDHl2AV6lvr7yVVdl8TzTQOknn4fbc22NG7q8g==}
+  /replicache/13.0.0-beta.1:
+    resolution: {integrity: sha512-+hXf7Hk/SHUx0qgZcx3sQyhzuP8ICpaWs+L+UaH28cnJavi49NwQcfwBZIhMKpiuw4UhcIe5NtRYiQWRmG7F2w==}
     engines: {node: '>=14.8.0'}
     hasBin: true
+    dependencies:
+      '@rocicorp/lock': 1.0.1
+      '@rocicorp/logger': 5.2.0
+      '@rocicorp/resolver': 1.0.0
     dev: false
 
   /resolve-from/4.0.0:

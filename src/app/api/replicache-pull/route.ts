@@ -99,7 +99,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
         | Post
         | Content
       ) & { SK: string };
-      if (QuestOrSolutionOrPost.inTrash) {
+      if (QuestOrSolutionOrPost.deleted) {
         patch.push({
           op: "del",
           key: QuestOrSolutionOrPost.SK,

@@ -55,33 +55,33 @@ export const getChangedItems = async ({
     throw new Error("failed to get changed entries");
   }
 };
-// export const getItem = async ({
-//   spaceId,
-//   key,
-//   userId,
-// }: {
-//   spaceId: string;
-//   key: string;
-//   userId: string;
-// }) => {
-//   const getParams: GetCommandInput = {
-//     Key: {
-//       PK: spaceId === "WORKSPACE_LIST" ? `${spaceId}#${userId}` : `${spaceId}`,
-//       SK: key,
-//     },
-//     TableName: env.MAIN_TABLE_NAME,
-//   };
-//   try {
-//     const result = await dynamoClient.send(new GetCommand(getParams));
-//     if (result.Item) {
-//       return result.Item;
-//     }
-//     return undefined;
-//   } catch (error) {
-//     console.log(error);
-//     throw new Error("Failed to get item");
-//   }
-// };
+export const getItem = async ({
+  spaceId,
+  key,
+  userId,
+}: {
+  spaceId: string;
+  key: string;
+  userId: string;
+}) => {
+  const getParams: GetCommandInput = {
+    Key: {
+      PK: spaceId === "WORKSPACE_LIST" ? `${spaceId}#${userId}` : `${spaceId}`,
+      SK: key,
+    },
+    TableName: env.MAIN_TABLE_NAME,
+  };
+  try {
+    const result = await dynamoClient.send(new GetCommand(getParams));
+    if (result.Item) {
+      return result.Item;
+    }
+    return undefined;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to get item");
+  }
+};
 export const putItems = async ({
   spaceId,
   version,
@@ -151,14 +151,13 @@ export const updateItems = async ({
       ExpressionAttributeValues?: Record<string, any> | undefined;
     };
   }[] = [];
-  const lastUpdated = new Date().toISOString();
   for (const { key, value } of items) {
     const attributes = Object.keys(value).map((attribute) => {
       return `${attribute} = :${attribute}`;
     });
     const UpdateExpression = `set ${attributes.join(
       ", "
-    )}, #version = :version, lastUpdated = :lastUpdated`;
+    )}, #version = :version`;
     const ExpressionAttributeValues: Record<string, JSONValue | undefined> = {};
     Object.entries(value).forEach(([attr, val]) => {
       ExpressionAttributeValues[`:${attr}`] = val;
@@ -181,7 +180,6 @@ export const updateItems = async ({
         UpdateExpression,
         ExpressionAttributeValues: {
           ":published": false,
-          ":lastUpdated": lastUpdated,
           ":version": version,
           ...ExpressionAttributeValues,
         },
@@ -252,6 +250,60 @@ export const delItems = async ({
     throw new Error("Transact delete items failed");
   }
 };
+
+export const restoreItems = async ({
+  spaceId,
+  keysToDel,
+  version,
+  userId,
+}: {
+  spaceId: string;
+  keysToDel: string[];
+  version: number;
+  userId: string;
+}) => {
+  if (keysToDel.length === 0) {
+    return;
+  }
+
+  console.log("putting items in trash");
+  const updateItems: {
+    Update:
+      | (Omit<Update, "Key" | "ExpressionAttributeValues"> & {
+          Key: Record<string, any> | undefined;
+          ExpressionAttributeValues?: Record<string, any> | undefined;
+        })
+      | undefined;
+  }[] = [];
+  for (const key of keysToDel) {
+    updateItems.push({
+      Update: {
+        Key: {
+          PK: spaceId,
+
+          SK: key,
+        },
+        UpdateExpression: "SET #inTrash = :value, #version = :version",
+        ConditionExpression: "inTrash <> :value",
+        ExpressionAttributeNames: {
+          "#inTrash": "inTrash",
+          "#version": "version",
+        },
+        ExpressionAttributeValues: { ":value": false, ":version": version },
+        TableName: env.MAIN_TABLE_NAME,
+      },
+    });
+  }
+  const transactUpdateParams: TransactWriteCommandInput = {
+    TransactItems: updateItems,
+  };
+  try {
+    await dynamoClient.send(new TransactWriteCommand(transactUpdateParams));
+  } catch (error) {
+    console.log(error);
+    throw new Error("Transact restore items failed");
+  }
+};
 export const delPermItems = async ({
   spaceId,
   keysToDel,
@@ -264,35 +316,58 @@ export const delPermItems = async ({
   if (keysToDel.length === 0) {
     return;
   }
-
-  console.log("deleting items perm");
-  const deleteItems: {
-    Delete:
-      | (Omit<Delete, "ExpressionAttributeValues" | "Key"> & {
+  const updateItems: {
+    Update:
+      | (Omit<Update, "Key" | "ExpressionAttributeValues"> & {
           Key: Record<string, any> | undefined;
           ExpressionAttributeValues?: Record<string, any> | undefined;
         })
       | undefined;
   }[] = [];
   for (const key of keysToDel) {
-    deleteItems.push({
-      Delete: {
+    updateItems.push({
+      Update: {
         Key: {
           PK: spaceId,
+
           SK: key,
         },
+        UpdateExpression: "SET #ttl = :ttl, deleted = :deleted",
+        ExpressionAttributeNames: {
+          "#version": "version",
+          "#ttl": "ttl",
+        },
+        ExpressionAttributeValues: { ":ttl": 3600, ":deleted": true },
         TableName: env.MAIN_TABLE_NAME,
       },
     });
+    if (key.startsWith("EDITOR")) {
+      updateItems.push({
+        Update: {
+          Key: {
+            PK: spaceId,
+
+            SK: `CONTENT#${key.substring(7)}`,
+          },
+          UpdateExpression: "SET #ttl = :ttl, deleted = :deleted",
+          ExpressionAttributeNames: {
+            "#version": "version",
+            "#ttl": "ttl",
+          },
+          ExpressionAttributeValues: { ":ttl": 3600, ":deleted": true },
+          TableName: env.MAIN_TABLE_NAME,
+        },
+      });
+    }
   }
-  const transactDelParams: TransactWriteCommandInput = {
-    TransactItems: deleteItems,
+  const transactUpdateParams: TransactWriteCommandInput = {
+    TransactItems: updateItems,
   };
   try {
-    await dynamoClient.send(new TransactWriteCommand(transactDelParams));
+    await dynamoClient.send(new TransactWriteCommand(transactUpdateParams));
   } catch (error) {
     console.log(error);
-    throw new Error("Transact delete permanently failed");
+    throw new Error("Transact delete items failed");
   }
 };
 export const getSpaceVersion = async ({

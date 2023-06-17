@@ -2,11 +2,18 @@ import { NextResponse } from "next/server";
 
 import { z } from "zod";
 import { jsonSchema } from "~/utils/json";
-import { QuestZod, WorkUpdatesZod, WorkZod } from "~/types/types";
+import {
+  Content,
+  ContentUpdatesZod,
+  QuestZod,
+  WorkUpdatesZod,
+  WorkZod,
+} from "~/types/types";
 
 import { QUEST_PREFIX, WORKSPACE_LIST } from "~/utils/constants";
 import { ReplicacheTransaction } from "~/repl/transaction";
 import {
+  getItem,
   getLastMutationIds,
   getLastMutationIdsSince,
   getSpaceVersion,
@@ -93,11 +100,12 @@ export async function POST(req: Request, res: Response) {
 
       const lastMutationId = lastMutationIds[mutation.clientID] || 0;
       // try {
-      const nextMutationId = processMutation({
+      const nextMutationId = await processMutation({
         tx,
         lastMutationId,
         mutation,
         userId,
+        spaceId,
       });
       lastMutationIds[mutation.clientID] = nextMutationId;
       if (nextMutationId > lastMutationId) {
@@ -174,18 +182,20 @@ export async function POST(req: Request, res: Response) {
   return NextResponse.json({});
 }
 
-const processMutation = ({
+const processMutation = async ({
   tx,
   mutation,
   error,
   lastMutationId,
   userId,
+  spaceId,
 }: {
   tx: ReplicacheTransaction;
   mutation: Mutation;
   lastMutationId: number;
   error?: any;
   userId: string;
+  spaceId: string;
 }) => {
   const expectedMutationID = lastMutationId + 1;
   if (mutation.id < expectedMutationID) {
@@ -207,21 +217,50 @@ const processMutation = ({
     // For each possible mutation, run the server-side logic to apply the
     // mutation.
     switch (mutation.name) {
-      case "createQuest":
-        const { quest } = createQuestArgsSchema.parse(mutation.args);
+      case "createWork":
+        const { work } = z.object({ work: WorkZod }).parse(mutation.args);
+        const newContent: Content = {
+          inTrash: false,
+          lastUpdated: work.lastUpdated,
+          published: false,
+          type: "CONTENT",
+        };
 
-        tx.put({ key: `EDITOR#${quest.id}`, value: quest });
+        tx.put({ key: `EDITOR#${work.id}`, value: work });
+        tx.put({ key: `CONTENT#${work.id}`, value: newContent });
         break;
 
       case "deleteWork":
         const params = idSchema.parse(mutation.args);
         tx.del({ key: `EDITOR#${params.id}` });
         break;
+      case "deleteWorkPermanently":
+        const permDeleteParams = idSchema.parse(mutation.args);
+        tx.permDel({ key: `EDITOR#${permDeleteParams.id}` });
+        break;
       case "duplicateWork":
-        const { duplicatedWork } = z
-          .object({ duplicatedWork: WorkZod })
+        const { id, newId, createdAt, lastUpdated } = z
+          .object({
+            id: z.string(),
+            newId: z.string(),
+            lastUpdated: z.string(),
+            createdAt: z.string(),
+          })
           .parse(mutation.args);
-        tx.put({ key: `EDITOR#${duplicatedWork.id}`, value: duplicatedWork });
+        const result = await Promise.all([
+          getItem({ key: `EDITOR#${id}`, spaceId, userId }),
+          getItem({ key: `CONTENT#${id}`, spaceId, userId }),
+        ]);
+        if (result) {
+          tx.put({
+            key: `EDITOR#${newId}`,
+            value: { ...result[0], newId, lastUpdated, createdAt },
+          });
+          tx.put({
+            key: `CONTENT#${newId}`,
+            value: { ...result[1], lastUpdated, createdAt },
+          });
+        }
         break;
       case "updateWork":
         console.log("mutations args", mutation.args);
@@ -231,6 +270,17 @@ const processMutation = ({
           value: updateWorkParams.updates,
         });
         break;
+      case "restoreWork":
+        const idParams = idSchema.parse(mutation.args);
+        tx.restore({ key: `EDITOR#${idParams.id}` });
+        break;
+      case "updateContent":
+        const content = z
+          .object({ id: z.string(), content: ContentUpdatesZod })
+          .parse(mutation.args);
+        tx.update({ key: `CONTENT#${content.id}`, value: content.content });
+        break;
+
       default:
         throw new Error(`Unknown mutation: ${mutation.name}`);
     }

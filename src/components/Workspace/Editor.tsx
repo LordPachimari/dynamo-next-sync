@@ -64,7 +64,6 @@ const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
   ) as { content: string; text: string } | undefined;
   console.log("content", content);
   console.log("work", work);
-  console.log("rep", rep);
   const router = useRouter();
 
   const updateAttributesHandler = useCallback(
@@ -79,15 +78,15 @@ const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
         updateQueue: UpdateQueue;
         lastUpdate: WorkUpdates;
       }) => {
-        console.log("...update", rep);
         if (rep) {
           //transactionQueue is immutable, but I'll allow myself to mutate the copy of it
           const _updateQueue = structuredClone(updateQueue);
           const update = _updateQueue.get(id);
+          const lastUpdated = new Date().toISOString();
           if (!update) {
             _updateQueue.set(id, lastUpdate);
           } else {
-            const newUpdate = { ...update, ...lastUpdate };
+            const newUpdate = { ...update, ...lastUpdate, lastUpdated };
             _updateQueue.set(id, newUpdate);
           }
           for (const [key, value] of _updateQueue.entries()) {
@@ -130,6 +129,7 @@ const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
             id={work.id}
             content={content ? content.content : undefined}
             type={work.type}
+            rep={rep}
           />
         ) : (
           <div className="h-[255px]">No work found</div>

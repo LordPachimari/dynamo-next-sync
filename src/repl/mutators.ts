@@ -3,8 +3,13 @@ import type {
   ReadonlyJSONValue,
   WriteTransaction,
 } from "replicache";
+import { ulid } from "ulid";
 
 import {
+  Content,
+  ContentUpdates,
+  ContentUpdatesZod,
+  ContentZod,
   MergedWorkType,
   Post,
   PostZod,
@@ -12,44 +17,66 @@ import {
   QuestZod,
   Solution,
   SolutionZod,
+  WorkType,
   WorkUpdates,
   WorkZod,
 } from "~/types/types";
 
 export type M = typeof mutators;
 export const mutators = {
-  createQuest: async (tx: WriteTransaction, { quest }: { quest: Quest }) => {
+  createWork: async (tx: WriteTransaction, { work }: { work: WorkType }) => {
     console.log("mutators, putQuest");
-    const parsedQuest = QuestZod.parse(quest);
+    const parsedWork = WorkZod.parse(work);
 
-    await tx.put(`EDITOR#${quest.id}`, parsedQuest);
-  },
-  createSolution: async (
-    tx: WriteTransaction,
-    { solution }: { solution: Solution }
-  ) => {
-    console.log("mutators, putSolution");
-    const parsedSolution = SolutionZod.parse(solution);
-    await tx.put(`EDITOR#${solution.id}`, parsedSolution);
-  },
-  createPost: async (tx: WriteTransaction, { post }: { post: Post }) => {
-    console.log("mutators, putPost");
-
-    const parsedPost = PostZod.parse(post);
-    await tx.put(`EDITOR#${post.id}`, parsedPost);
+    await tx.put(`EDITOR#${work.id}`, parsedWork);
   },
 
   duplicateWork: async (
     tx: WriteTransaction,
-    { work }: { work: MergedWorkType }
+    {
+      id,
+      newId,
+      createdAt,
+      lastUpdated,
+    }: { id: string; newId: string; lastUpdated: string; createdAt: string }
   ) => {
     console.log("mutators, duplicateWork");
-    const parsedWork = WorkZod.parse(work);
-    await tx.put(`EDITOR#${parsedWork.id}`, parsedWork);
+    const work = await getWork(tx, { id });
+    const content = (await tx.get(`CONTENT#${id}`)) as Content;
+    const copy = structuredClone(work) as WorkType;
+    if (work && content) {
+      await tx.put(`EDITOR#${newId}`, {
+        ...copy,
+        id: newId,
+        createdAt,
+        lastUpdated,
+      });
+      await tx.put(`CONTENT#${newId}`, {
+        ...content,
+        lastUpdated,
+      } as Content);
+    }
   },
   deleteWork: async (tx: WriteTransaction, { id }: { id: string }) => {
     console.log("mutators, deleteWork");
+    const work = (await tx.get(`EDITOR#${id}`)) as MergedWorkType | undefined;
+    if (work) {
+      await tx.put(`EDITOR#${id}`, { ...work, inTrash: true });
+    }
+  },
+  deleteWorkPermanently: async (
+    tx: WriteTransaction,
+    { id }: { id: string }
+  ) => {
+    console.log("mutators, perm delete");
     await tx.del(`EDITOR#${id}`);
+  },
+  restoreWork: async (tx: WriteTransaction, { id }: { id: string }) => {
+    console.log("mutators, restore");
+    const work = (await tx.get(`EDITOR#${id}`)) as MergedWorkType | undefined;
+    if (work) {
+      await tx.put(`EDITOR#${id}`, { ...work, inTrash: false });
+    }
   },
   updateWork: async (
     tx: WriteTransaction,
@@ -70,6 +97,19 @@ export const mutators = {
     const updated = { ...work, ...updates };
     await putWork(tx, { id: `EDITOR#${id}`, work: updated });
   },
+  updateContent: async (
+    tx: WriteTransaction,
+    {
+      id,
+      content,
+    }: {
+      id: string;
+      content: ContentUpdates;
+    }
+  ) => {
+    const contentUpdates = ContentUpdatesZod.parse(content);
+    await tx.put(`CONTENT#${id}`, contentUpdates);
+  },
 };
 export const getWork = async (tx: ReadTransaction, { id }: { id: string }) => {
   const work = await tx.get(`EDITOR#${id}`);
@@ -83,10 +123,4 @@ export const putWork = async (
   { work, id }: { work: ReadonlyJSONValue; id: string }
 ) => {
   await tx.put(id, work);
-};
-export const deleteWork = async (
-  tx: WriteTransaction,
-  { id }: { id: string }
-) => {
-  await tx.del(id);
 };

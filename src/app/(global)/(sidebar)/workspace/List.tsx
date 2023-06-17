@@ -4,7 +4,7 @@ import { useRef, type Dispatch, type SetStateAction } from "react";
 
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { UndoManager } from "@rocicorp/undo";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Replicache } from "replicache";
 import { useSubscribe } from "replicache-react";
 import { ulid } from "ulid";
@@ -57,6 +57,7 @@ export default function List({
   let solutions: SolutionListComponent[] = [];
   let posts: PostListComponent[] = [];
   const router = useRouter();
+  const { id: routerId } = useParams();
 
   const WorkZod = z.union([
     QuestListComponentZod,
@@ -81,11 +82,11 @@ export default function List({
     const _posts: PostListComponent[] = [];
     for (const [key, value] of works) {
       const work = value as Post | Solution | Quest;
-      if (work.type === "QUEST") {
+      if (work.type === "QUEST" && !work.inTrash) {
         _quests.push(work);
-      } else if (work.type === "SOLUTION") {
+      } else if (work.type === "SOLUTION" && !work.inTrash) {
         _solutions.push(work);
-      } else if (work.type === "POST") {
+      } else if (work.type === "POST" && !work.inTrash) {
         _posts.push(work as Post);
       }
     }
@@ -113,20 +114,42 @@ export default function List({
       };
       // await rep.mutate.createQuest({ quest: newQuest });
       await undoManagerRef.current.add({
-        execute: () => rep.mutate.createQuest({ quest: newQuest }),
+        execute: () => rep.mutate.createWork({ work: newQuest }),
         undo: () => rep.mutate.deleteWork({ id: newQuest.id }),
       });
       router.push(`/workspace/${id}`);
     }
   };
-  const handleDeleteWork = async () => {
+  const handleDeleteWork = async ({ id }: { id: string }) => {
     if (rep) {
       // await rep.mutate.createQuest({ quest: newQuest });
       await undoManagerRef.current.add({
-        execute: () => rep.mutate.createQuest({ quest: newQuest }),
-        undo: () => rep.mutate.deleteWork({ id: newQuest.id }),
+        execute: async () => {
+          await rep.mutate.deleteWork({ id });
+          if (routerId === id) {
+            void router.push("/workspace");
+          }
+        },
+        undo: () => rep.mutate.restoreWork({ id }),
       });
-      router.push(`/workspace/${id}`);
+    }
+  };
+  const handleDuplicateWork = async ({ id }: { id: string }) => {
+    const newId = ulid();
+    const lastUpdated = new Date().toISOString();
+    if (rep) {
+      // await rep.mutate.createQuest({ quest: newQuest });
+      await undoManagerRef.current.add({
+        execute: async () => {
+          await rep.mutate.duplicateWork({
+            id,
+            newId: newId,
+            lastUpdated,
+            createdAt: lastUpdated,
+          });
+        },
+        undo: () => rep.mutate.deleteWork({ id: newId }),
+      });
     }
   };
   return (
@@ -200,14 +223,23 @@ export default function List({
                   <LucidList className="w-5 text-orange-500" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-30">
-                  <DropdownMenuItem className="focus:bg-orange-100">
+                  <DropdownMenuItem
+                    className="focus:bg-orange-100"
+                    onClick={(e) => {
+                      handleDuplicateWork({ id: work.id }).catch((err) =>
+                        console.log(err)
+                      );
+                    }}
+                  >
                     <Copy className="mr-2 h-4 w-4" />
 
                     <span>Duplicate</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={(e) => {
-                      e.stopPropagation();
+                      handleDeleteWork({ id: work.id }).catch((err) =>
+                        console.log(err)
+                      );
                     }}
                     className="focus:bg-orange-100"
                   >

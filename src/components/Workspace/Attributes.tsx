@@ -37,9 +37,6 @@ export const Title = ({
   placeholder: string;
   handleTitleChange: (e: FormEvent<HTMLTextAreaElement>) => Promise<void>;
 }) => {
-  console.log("titke", title);
-  const titlePlaceholderText = "Write title here";
-  const titleRef = useRef<HTMLDivElement>(null);
   const [titleState, setTitleState] = useState("");
   useEffect(() => {
     setTitleState(title || "");
@@ -188,7 +185,6 @@ export const Reward = ({
 }) => {
   const [stateReward, setStateReward] = useState<number | "">("");
   useEffect(() => {
-    console.log("reward should change", reward);
     setStateReward(reward || 0);
   }, [reward]);
   return (

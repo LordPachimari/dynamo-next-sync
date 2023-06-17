@@ -142,6 +142,7 @@ const QuestPartialZod = z
     lastUpdated: z.string(),
     allowUnpublish: z.optional(z.boolean()),
     type: z.enum(Entity),
+    deleted: z.boolean(),
   })
   .partial();
 
@@ -261,6 +262,7 @@ const SolutionPartialZod = z
     viewed: z.boolean(),
     questCreatorId: z.string(),
     type: z.enum(Entity),
+    deleted: z.boolean(),
   })
   .partial();
 export const SolutionZod = SolutionPartialZod.required({
@@ -300,13 +302,22 @@ export const SolutionListComponentZod = SolutionZod.pick({
 });
 export type SolutionListComponent = z.infer<typeof SolutionListComponentZod>;
 export const ContentZod = z.object({
-  content: z.string(),
-  text: z.string(),
+  content: z.optional(z.string()),
+  textContent: z.optional(z.string()),
   inTrash: z.boolean(),
   type: z.enum(Entity),
+  deleted: z.optional(z.boolean()),
+  lastUpdated: z.string(),
+  published: z.boolean(),
 });
 
 export type Content = z.infer<typeof ContentZod>;
+export const ContentUpdatesZod = ContentZod.pick({
+  content: true,
+  textContent: true,
+  lastUpdated: true,
+});
+export type ContentUpdates = z.infer<typeof ContentUpdatesZod>;
 export type WorkspaceList = {
   quests: QuestListComponent[];
   solutions: SolutionListComponent[];
@@ -343,15 +354,24 @@ export type Message = {
   channel: TopicsType | "GENERAL";
 };
 
-export const PostZod = z.object({
-  id: z.string(),
-  title: z.string(),
-  topic: z.enum(Topics),
-  publishedAt: z.string(),
-  text: z.string(),
-  type: z.enum(Entity),
-  inTrash: z.boolean(),
-  lastUpdated: z.string(),
+export const PostZodPartial = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    topic: z.enum(Topics),
+    publishedAt: z.string(),
+    text: z.string(),
+    type: z.enum(Entity),
+    inTrash: z.boolean(),
+    lastUpdated: z.string(),
+    deleted: z.boolean(),
+  })
+  .partial();
+export const PostZod = PostZodPartial.required({
+  id: true,
+  type: true,
+  inTrash: true,
+  lastUpdated: true,
 });
 export type Post = z.infer<typeof PostZod>;
 export const PostListComponentZod = PostZod.pick({
@@ -410,6 +430,7 @@ export type LastMutationId = {
   lastMutationId: number;
 };
 export const WorkZod = z.union([QuestZod, SolutionZod, PostZod]);
+export type WorkType = z.infer<typeof WorkZod>;
 
 export type MergedWorkType = (Post & Quest & Solution) & {
   type: "POST" | "QUEST" | "SOLUTION";

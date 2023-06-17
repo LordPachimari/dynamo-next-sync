@@ -1,9 +1,17 @@
 import { JSONObject, JSONValue, WriteTransaction } from "replicache";
-import { delItems, delPermItems, putItems, updateItems } from "./data";
+import {
+  delItems,
+  delPermItems,
+  putItems,
+  restoreItems,
+  updateItems,
+} from "./data";
 
 const DELETE = "DELETE" as const;
+const PERM_DELETE = "PERM_DELETE" as const;
 const PUT = "PUT" as const;
 const UPDATE = "UPDATE" as const;
+const RESTORE = "RESTORE";
 declare type ReadonlyJSONValue =
   | null
   | string
@@ -22,6 +30,8 @@ interface CustomWriteTransaction {
    */
   del({ key }: { key: string }): void;
   update({ key, value }: { key: string; value: JSONObject }): void;
+  permDel({ key }: { key: string }): void;
+  restore({ key }: { key: string }): void;
 }
 
 export class ReplicacheTransaction implements CustomWriteTransaction {
@@ -30,7 +40,12 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
   private readonly _cache: Map<
     string,
     {
-      method: typeof PUT | typeof DELETE | typeof UPDATE;
+      method:
+        | typeof PUT
+        | typeof DELETE
+        | typeof PERM_DELETE
+        | typeof UPDATE
+        | typeof RESTORE;
       value?: JSONObject;
     }
   > = new Map();
@@ -50,6 +65,12 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
   }
   del({ key }: { key: string }) {
     this._cache.set(key, { method: DELETE });
+  }
+  restore({ key }: { key: string }) {
+    this._cache.set(key, { method: RESTORE });
+  }
+  permDel({ key }: { key: string }) {
+    this._cache.set(key, { method: PERM_DELETE });
   }
 
   // TODO!
@@ -71,23 +92,37 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
 
     const itemsToPut: { key: string; value: JSONObject }[] = [];
     const itemsToUpdate: { key: string; value: JSONObject }[] = [];
-    const keysToDelete: string[] = [];
+    const keysToDel: string[] = [];
+    const keysToPermDelete: string[] = [];
+    const keysToRestore: string[] = [];
     for (const item of items) {
       if (item[1].method === PUT && item[1].value) {
         itemsToPut.push({ key: item[0], value: item[1].value });
-      } else if (item[1].method === DELETE && item[1].value) {
-        keysToDelete.push(item[0]);
+      } else if (item[1].method === DELETE) {
+        keysToDel.push(item[0]);
       } else if (item[1].method === UPDATE && item[1].value) {
         itemsToUpdate.push({ key: item[0], value: item[1].value });
+      } else if (item[1].method === PERM_DELETE) {
+        keysToPermDelete.push(item[0]);
+      } else if (item[1].method === RESTORE) {
+        keysToRestore.push(item[0]);
       }
     }
-    const keysToDel = items
-      .filter(([, { method }]) => method === DELETE)
-      .map(([key]) => key);
 
     await Promise.all([
       delItems({
         keysToDel,
+        spaceId: this._spaceID,
+        userId: this._userId,
+        version: this._version,
+      }),
+      delPermItems({
+        keysToDel: keysToPermDelete,
+        spaceId: this._spaceID,
+        userId: this._userId,
+      }),
+      restoreItems({
+        keysToDel: keysToRestore,
         spaceId: this._spaceID,
         userId: this._userId,
         version: this._version,

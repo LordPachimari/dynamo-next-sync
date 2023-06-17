@@ -12,7 +12,7 @@ export const Preview = ({
   type,
 }: {
   quest?: Quest;
-  content?: Uint8Array;
+  content?: string;
   solution?: Solution;
   type: "SOLUTION" | "QUEST";
 }) => {

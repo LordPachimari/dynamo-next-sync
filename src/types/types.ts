@@ -22,6 +22,13 @@ const SPACE_NAMES = [
   "PUBLISHED_SOLUTION",
   "GUILD",
 ] as const;
+export const SubtopicSuggestion = [
+  "LOGO",
+  "AI",
+  "MACHINE LEARNING",
+  "WEB",
+  "MOBILE-DEV",
+];
 export const SpaceNamesZod = z.enum(SPACE_NAMES);
 export type SpaceNamesType = z.infer<typeof SpaceNamesZod>;
 export type EntityType = typeof Entity;
@@ -210,20 +217,6 @@ export const SolverPartialZod = SolverZod.pick({
 });
 export type SolverPartial = z.infer<typeof SolverPartialZod>;
 
-export const WorkUpdateZod = QuestZod.pick({
-  title: true,
-  topic: true,
-  subtopic: true,
-  reward: true,
-  slots: true,
-  deadline: true,
-  lastUpdated: true,
-}).partial();
-
-export type WorkUpdate = z.infer<typeof WorkUpdateZod>;
-
-export const UpdateQueueZod = z.map(z.string(), WorkUpdateZod);
-export type UpdateQueue = z.infer<typeof UpdateQueueZod>;
 export const PublishedQuestsInputZod = z.object({
   topic: z.optional(z.array(z.string())),
   subtopic: z.optional(z.array(z.string())),
@@ -416,3 +409,22 @@ export type LastMutationId = {
   id: string;
   lastMutationId: number;
 };
+export const WorkZod = z.union([QuestZod, SolutionZod, PostZod]);
+
+export type MergedWorkType = (Post & Quest & Solution) & {
+  type: "POST" | "QUEST" | "SOLUTION";
+};
+
+export const WorkUpdatesZod = QuestZod.pick({
+  title: true,
+  topic: true,
+  subtopic: true,
+  reward: true,
+  slots: true,
+  deadline: true,
+  lastUpdated: true,
+}).partial();
+
+export type WorkUpdates = z.infer<typeof WorkUpdatesZod>;
+export const UpdateQueueZod = z.map(z.string(), WorkUpdatesZod);
+export type UpdateQueue = z.infer<typeof UpdateQueueZod>;

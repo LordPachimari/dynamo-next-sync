@@ -15,7 +15,7 @@ const SolutionAttributes = ({
   }: {
     updateQueue: UpdateQueue;
     lastUpdate: WorkUpdate;
-  }) => void;
+  }) => Promise<void> | undefined;
 }) => {
   const { id } = solution;
 
@@ -25,7 +25,7 @@ const SolutionAttributes = ({
   const updateQueue = WorkspaceStore((state) => state.updateQueue);
   const titlePlaceholderText = "Write title here";
   const titleRef = useRef<HTMLDivElement>(null);
-  const handleTitleChange = (e: FormEvent<HTMLTextAreaElement>) => {
+  const handleTitleChange = async (e: FormEvent<HTMLTextAreaElement>) => {
     updateSolutionListAttribute({
       type: "SOLUTION",
       id,
@@ -33,7 +33,7 @@ const SolutionAttributes = ({
       value: e.currentTarget.textContent as string,
     });
 
-    updateAttributesHandler({
+    await updateAttributesHandler({
       updateQueue,
       lastUpdate: {
         title: e.currentTarget.textContent as string,

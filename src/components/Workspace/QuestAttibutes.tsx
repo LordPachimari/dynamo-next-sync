@@ -1,15 +1,17 @@
 import { ChangeEvent, FormEvent } from "react";
-import { Quest, TopicsType, UpdateQueue, WorkUpdate } from "../../types/types";
+import { Quest, TopicsType, UpdateQueue, WorkUpdates } from "../../types/types";
 
 import { WorkspaceStore } from "../../zustand/workspace";
 import {
   DatePicker,
+  OptionType,
   Reward,
   Slots,
   Subtopic,
   Title,
   TopicSelect,
 } from "./Attributes";
+import { MultiValue, SingleValue } from "react-select";
 
 const QuestAttributes = ({
   quest,
@@ -21,8 +23,8 @@ const QuestAttributes = ({
     lastUpdate,
   }: {
     updateQueue: UpdateQueue;
-    lastUpdate: WorkUpdate;
-  }) => void;
+    lastUpdate: WorkUpdates;
+  }) => Promise<void> | undefined;
 }) => {
   const updateQuestAttributesListAttribute = WorkspaceStore(
     (state) => state.updateListState
@@ -30,10 +32,10 @@ const QuestAttributes = ({
   const addUpdate = WorkspaceStore((state) => state.addUpdate);
   const updateQueue = WorkspaceStore((state) => state.updateQueue);
 
-  const handleTitleChange = (e: FormEvent<HTMLTextAreaElement>) => {
+  const handleTitleChange = async (e: FormEvent<HTMLTextAreaElement>) => {
     addUpdate({
       id: quest.id,
-      value: { title: e.currentTarget.textContent as string },
+      value: { title: e.currentTarget.value },
     });
     // updateQuestAttributesListAttribute({
     //   id: quest.id,
@@ -42,21 +44,19 @@ const QuestAttributes = ({
     //   value: e.currentTarget.textContent as string,
     // });
 
-    updateAttributesHandler({
+    await updateAttributesHandler({
       updateQueue,
       lastUpdate: {
-        title: e.currentTarget.textContent as string,
+        title: e.currentTarget.value,
       },
     });
   };
 
-  const handleTopicChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value as TopicsType;
-
+  const handleTopicChange = async (value: string) => {
     addUpdate({
       id: quest.id,
       value: {
-        topic: value,
+        topic: value as TopicsType,
       },
     });
     // updateQuestAttributesListAttribute({
@@ -65,78 +65,61 @@ const QuestAttributes = ({
     //   type: "QUEST",
     //   value: value,
     // });
-    updateAttributesHandler({
+    await updateAttributesHandler({
       updateQueue,
       lastUpdate: {
-        topic: value,
+        topic: value as TopicsType,
       },
     });
   };
 
-  const handleSubtopicChange = () => {
-    const content = document.getElementById("subtopic");
-
-    const subtopicValues: string[] = [];
-    content?.childNodes.forEach((c) => {
-      if (c.textContent) {
-        subtopicValues.push(c.textContent);
-      }
+  const handleSubtopicChange = async ({
+    subtopics,
+  }: {
+    subtopics: MultiValue<OptionType>;
+  }) => {
+    const strings = subtopics.map((val) => val.value);
+    console.log("strings,", strings);
+    addUpdate({
+      id: quest.id,
+      value: {
+        subtopic: strings,
+      },
     });
-    if (subtopicValues.length > 0) {
-      addUpdate({
-        id: quest.id,
-        value: {
-          subtopic: subtopicValues,
-        },
-      });
-      updateAttributesHandler({
-        updateQueue,
-        lastUpdate: {
-          subtopic: subtopicValues,
-        },
-      });
-    } else {
-      addUpdate({
-        id: quest.id,
-        value: {
-          subtopic: [],
-        },
-      });
-      updateAttributesHandler({
-        updateQueue,
-        lastUpdate: {
-          subtopic: [],
-        },
-      });
-    }
+    await updateAttributesHandler({
+      updateQueue,
+      lastUpdate: {
+        subtopic: strings,
+      },
+    });
   };
-  const handleRewardChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleRewardChange = async (e: ChangeEvent<HTMLInputElement>) => {
     addUpdate({
       value: { reward: e.currentTarget.valueAsNumber || 0 },
       id: quest.id,
     });
-    updateAttributesHandler({
+    await updateAttributesHandler({
       updateQueue,
       lastUpdate: {
         reward: e.currentTarget.valueAsNumber || 0,
       },
     });
   };
-  const handleSlotsChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleSlotsChange = async (e: ChangeEvent<HTMLInputElement>) => {
     addUpdate({
       id: quest.id,
       value: {
         slots: e.currentTarget.valueAsNumber || 0,
       },
     });
-    updateAttributesHandler({
+    await updateAttributesHandler({
       updateQueue,
       lastUpdate: {
         slots: e.currentTarget.valueAsNumber || 0,
       },
     });
   };
-  const handleDateChange = (event: Date | undefined) => {
+  const handleDateChange = async (event: Date | undefined) => {
     if (event) {
       addUpdate({
         id: quest.id,
@@ -144,7 +127,7 @@ const QuestAttributes = ({
           deadline: event.toISOString(),
         },
       });
-      updateAttributesHandler({
+      await updateAttributesHandler({
         lastUpdate: {
           deadline: event.toISOString(),
         },
@@ -165,8 +148,11 @@ const QuestAttributes = ({
         handleSubtopicChange={handleSubtopicChange}
         subtopic={quest.subtopic}
       />
-      <Reward handleRewardChange={handleRewardChange} reward={quest.reward} />
-      <Slots handleSlotsChange={handleSlotsChange} slots={quest.slots} />
+      <div className="flex items-center gap-2">
+        <Reward handleRewardChange={handleRewardChange} reward={quest.reward} />
+        <Slots handleSlotsChange={handleSlotsChange} slots={quest.slots} />
+      </div>
+
       <DatePicker handleDateChange={handleDateChange} date={quest.deadline} />
     </div>
   );

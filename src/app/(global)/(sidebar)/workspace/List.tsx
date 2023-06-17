@@ -1,42 +1,39 @@
 "use client";
 
-import {
-  ReactNode,
-  useEffect,
-  useRef,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
+import { useRef, type Dispatch, type SetStateAction } from "react";
 
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { UndoManager } from "@rocicorp/undo";
+import { useRouter } from "next/navigation";
 import { Replicache } from "replicache";
 import { useSubscribe } from "replicache-react";
 import { ulid } from "ulid";
 import { z } from "zod";
-import { env } from "~/env.mjs";
-import { M, mutators } from "~/repl/mutators";
+import { M } from "~/repl/mutators";
 import {
   Post,
   PostListComponent,
   PostListComponentZod,
-  PostZod,
   Quest,
   QuestListComponent,
   QuestListComponentZod,
-  QuestZod,
   Solution,
   SolutionListComponent,
   SolutionListComponentZod,
-  SolutionZod,
 } from "~/types/types";
-import { cn } from "~/utils/cn";
 import { Button } from "~/ui/Button";
-import { WORKSPACE_LIST } from "~/utils/constants";
-import Link from "next/link";
-import { produce } from "immer";
-import { useRouter } from "next/navigation";
+import { cn } from "~/utils/cn";
+import { List as LucidList, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/ui/Dropdown";
+import { Copy } from "lucide-react";
 
 export default function List({
   showList,
@@ -59,8 +56,6 @@ export default function List({
   let quests: QuestListComponent[] = [];
   let solutions: SolutionListComponent[] = [];
   let posts: PostListComponent[] = [];
-  const pathname = location.pathname.split("/");
-  console.log("spaceId", pathname);
   const router = useRouter();
 
   const WorkZod = z.union([
@@ -121,6 +116,17 @@ export default function List({
         execute: () => rep.mutate.createQuest({ quest: newQuest }),
         undo: () => rep.mutate.deleteWork({ id: newQuest.id }),
       });
+      router.push(`/workspace/${id}`);
+    }
+  };
+  const handleDeleteWork = async () => {
+    if (rep) {
+      // await rep.mutate.createQuest({ quest: newQuest });
+      await undoManagerRef.current.add({
+        execute: () => rep.mutate.createQuest({ quest: newQuest }),
+        undo: () => rep.mutate.deleteWork({ id: newQuest.id }),
+      });
+      router.push(`/workspace/${id}`);
     }
   };
   return (
@@ -171,8 +177,7 @@ export default function List({
         </span>
       </ListSettings>
       <ul ref={parent}>
-        {quests.map((value) => {
-          const work = WorkZod.parse(value);
+        {quests.map((work) => {
           return (
             <span
               // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -181,7 +186,7 @@ export default function List({
               }}
               key={work.id}
               className={cn(
-                "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
+                "mx-2 flex cursor-pointer items-center justify-between gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
                 // path === item.href ? "bg-accent" : "transparent",
                 // item.disabled && "cursor-not-allowed opacity-80",
               )}
@@ -189,14 +194,36 @@ export default function List({
               <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                 {work.title || "Untitled"}
               </span>
+              {/* <Button className="h-6 w-5 bg-orange-300 hover:bg-orange-400"> */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <LucidList className="w-5 text-orange-500" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-30">
+                  <DropdownMenuItem className="focus:bg-orange-100">
+                    <Copy className="mr-2 h-4 w-4" />
+
+                    <span>Duplicate</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                    className="focus:bg-orange-100"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Delete</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {/* </Button> */}
             </span>
           );
         })}
       </ul>
       <span
-        onMouseDown={() => router.push("/workspace/quest1")}
         className={cn(
-          "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
+          "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 "
           // path === item.href ? "bg-accent" : "transparent",
           // item.disabled && "cursor-not-allowed opacity-80",
         )}

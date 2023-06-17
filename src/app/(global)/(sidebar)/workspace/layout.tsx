@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, type ReactNode, useEffect } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
-import List from "./List";
-import { Button } from "~/ui/Button";
 import { useAuth } from "@clerk/nextjs";
 import { useParams, useRouter } from "next/navigation";
 import { Replicache } from "replicache";
-import { M, mutators } from "~/repl/mutators";
-import { env } from "~/env.mjs";
-import { WORKSPACE_LIST } from "~/utils/constants";
 import Editor from "~/components/Workspace/Editor";
+import { env } from "~/env.mjs";
+import { M, mutators } from "~/repl/mutators";
+import { Button } from "~/ui/Button";
+import { WORKSPACE_LIST } from "~/utils/constants";
 import Actions from "./Actions";
+import List from "./List";
 
 export default function WorkspaceLayout({
   children, // will be a page or nested layout
@@ -41,6 +41,7 @@ export default function WorkspaceLayout({
       setRep(r);
     }
   }, [rep, userId]);
+
   const router = useRouter();
   if (!userId) {
     return router.push("/sign-in");
@@ -75,12 +76,14 @@ export default function WorkspaceLayout({
             </svg>
           </Button>
         ) : null}
-        {id ? (
+        {id && rep ? (
           <Editor id={id} rep={rep} />
-        ) : (
+        ) : !id ? (
           <div className="flex w-full flex-col items-center p-5">
             <Actions />
           </div>
+        ) : (
+          <></>
         )}
 
         {children}

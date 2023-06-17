@@ -43,8 +43,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
   const { searchParams } = new URL(req.url);
   const spaceId = z.string().parse(searchParams.get("spaceId"));
   const adjustedSpaceId =
-    //if the space is workspace list or
-    //if the space is a work - quest/solution/post in workspace make it private by adding userId.
+    //if the space is workspace list or is a work - quest/solution/post -- make it private by adding userId.
     spaceId === WORKSPACE_LIST ? `${spaceId}#${userId}` : spaceId;
 
   console.log("hello?", json);

@@ -4,11 +4,12 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Content,
+  MergedWorkType,
   Post,
   Quest,
   Solution,
   UpdateQueue,
-  WorkUpdate,
+  WorkUpdates,
 } from "~/types/types";
 import debounce from "lodash.debounce";
 import {
@@ -37,36 +38,38 @@ import { M, mutators } from "~/repl/mutators";
 import { env } from "~/env.mjs";
 import { useSubscribe } from "replicache-react";
 // });
-type MergedWorkType = (Post & Quest & Solution) & {
-  type: "POST" | "QUEST" | "SOLUTION";
-};
+
 const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
+  console.log("id from editor", id);
   const work = useSubscribe(
     rep,
     async (tx) => {
+      console.log("id from subscribe", id);
       const editor = (await tx.get(`EDITOR#${id}`)) || null;
 
-      console.log("editor frmo subscribe", editor);
       return editor;
     },
-    []
+    null,
+    [id]
   ) as MergedWorkType;
   const content = useSubscribe(
     rep,
     async (tx) => {
       const c = (await tx.get(`CONTENT#${id}`)) || null;
 
-      console.log("content from subscrive", c);
       return c;
     },
-    []
-  ) as { content: string; text: string };
-
+    null,
+    [id]
+  ) as { content: string; text: string } | undefined;
+  console.log("content", content);
+  console.log("work", work);
+  console.log("rep", rep);
   const router = useRouter();
 
   const updateAttributesHandler = useCallback(
     debounce(
-      ({
+      async ({
         updateQueue,
         //last transaction needs to be pushed into transactionQueue,
         //as the last addTransaction function is executed in parallel with updateQuestAttributeHandler,
@@ -74,22 +77,29 @@ const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
         lastUpdate,
       }: {
         updateQueue: UpdateQueue;
-        lastUpdate: WorkUpdate;
+        lastUpdate: WorkUpdates;
       }) => {
-        //transactionQueue is immutable, but I'll allow myself to mutate the copy of it
-        console.log("update...");
-        const _updateQueue = structuredClone(updateQueue);
-        const update = _updateQueue.get(id);
-        if (!update) {
-          _updateQueue.set(id, lastUpdate);
-        } else {
-          const newUpdate = { ...update, lastUpdate };
-          _updateQueue.set(id, newUpdate);
+        console.log("...update", rep);
+        if (rep) {
+          //transactionQueue is immutable, but I'll allow myself to mutate the copy of it
+          const _updateQueue = structuredClone(updateQueue);
+          const update = _updateQueue.get(id);
+          if (!update) {
+            _updateQueue.set(id, lastUpdate);
+          } else {
+            const newUpdate = { ...update, ...lastUpdate };
+            _updateQueue.set(id, newUpdate);
+          }
+          for (const [key, value] of _updateQueue.entries()) {
+            console.log("value", value);
+            console.log("queue", _updateQueue);
+            await rep.mutate.updateWork({ id: key, updates: value });
+          }
         }
       },
       1000
     ),
-    []
+    [id]
   );
   // const handleUnpublish = () => {};
 
@@ -101,7 +111,6 @@ const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
         ) : work && work.type === "QUEST" ? (
           <QuestAttributes
             quest={work}
-            // isLoading={shouldUpdate && serverwork.isLoading}
             updateAttributesHandler={updateAttributesHandler}
           />
         ) : work && work.published && work.type === "SOLUTION" ? (
@@ -127,10 +136,18 @@ const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
         )}
       </div>
       {work && !work.published && work.type === "QUEST" && (
-        <Publish type="QUEST" work={work} />
+        <Publish
+          type="QUEST"
+          work={work}
+          content={content ? content.content : undefined}
+        />
       )}
       {work && !work.published && work.type === "SOLUTION" && (
-        <Publish type="SOLUTION" work={work} />
+        <Publish
+          type="SOLUTION"
+          work={work}
+          content={content ? content.content : undefined}
+        />
       )}
 
       {work && work.published && (

@@ -28,12 +28,13 @@ const Publish = ({
   questCreatorId,
   type,
   work,
+  content,
   questId,
   solutionId,
 }: {
   solutionId?: string;
   work: Quest & Solution & Post;
-
+  content: string | undefined;
   questId?: string;
   questCreatorId?: string;
 
@@ -43,7 +44,6 @@ const Publish = ({
     undefined
   );
   const [isInvalidating, setIsInvalidating] = useState(false);
-
 
   const QuestAttributesZod = z.object({
     id: z.string(),
@@ -136,7 +136,7 @@ const Publish = ({
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button
-            className="mt-3 w-full bg-green-400"
+            className="mt-3 w-full bg-emerald-500 hover:bg-emerald-600"
             onClick={() => {
               validate();
               setErrorMessage(undefined);
@@ -164,45 +164,44 @@ const Publish = ({
               </AlertDialogDescription>
             )}
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex items-end">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <Button
-              className="mt-3 w-full bg-yellow-400"
-              onClick={() => {
-                validate();
-                setErrorMessage(undefined);
-              }}
-            >
-              Preview
-            </Button>
+            <Dialog>
+              <DialogTrigger>
+                <Button
+                  className="mt-3 w-full bg-amber-400 hover:bg-amber-500"
+                  onClick={() => {
+                    validate();
+                    setErrorMessage(undefined);
+                  }}
+                >
+                  Preview
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Preview</DialogTitle>
+                  <DialogDescription>
+                    {type === "QUEST" ? (
+                      <Preview quest={work} content={content} type="QUEST" />
+                    ) : (
+                      <Preview
+                        solution={work}
+                        content={content}
+                        type="SOLUTION"
+                      />
+                    )}
+                  </DialogDescription>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
 
-            <AlertDialogAction>Continue</AlertDialogAction>
+            <AlertDialogAction className="bg-emerald-500 hover:bg-emerald-600">
+              Continue
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <Dialog>
-        <DialogTrigger>Open</DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Preview</DialogTitle>
-            <DialogDescription>
-              {type === "QUEST" ? (
-                <Preview
-                  quest={work}
-                  content={work.content}
-                  type="QUEST"
-                />
-              ) : (
-                <Preview
-                  solution={work}
-                  content={work.content}
-                  type="SOLUTION"
-                />
-              )}
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

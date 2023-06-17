@@ -1,13 +1,19 @@
-import type { ReadTransaction, WriteTransaction } from "replicache";
+import type {
+  ReadTransaction,
+  ReadonlyJSONValue,
+  WriteTransaction,
+} from "replicache";
 
 import {
+  MergedWorkType,
   Post,
   PostZod,
   Quest,
   QuestZod,
   Solution,
   SolutionZod,
-  WorkUpdate,
+  WorkUpdates,
+  WorkZod,
 } from "~/types/types";
 
 export type M = typeof mutators;
@@ -33,6 +39,14 @@ export const mutators = {
     await tx.put(`EDITOR#${post.id}`, parsedPost);
   },
 
+  duplicateWork: async (
+    tx: WriteTransaction,
+    { work }: { work: MergedWorkType }
+  ) => {
+    console.log("mutators, duplicateWork");
+    const parsedWork = WorkZod.parse(work);
+    await tx.put(`EDITOR#${parsedWork.id}`, parsedWork);
+  },
   deleteWork: async (tx: WriteTransaction, { id }: { id: string }) => {
     console.log("mutators, deleteWork");
     await tx.del(`EDITOR#${id}`);
@@ -45,16 +59,16 @@ export const mutators = {
       updates,
     }: {
       id: string;
-      updates: WorkUpdate;
+      updates: WorkUpdates;
     }
   ): Promise<void> => {
-    const quest = (await getWork(tx, { id })) as Quest;
-    if (!quest) {
+    const work = (await getWork(tx, { id })) as Quest;
+    if (!work) {
       console.info(`Quest ${id} not found`);
       return;
     }
-    const updatedQuest = { ...quest, updates };
-    await putWork(tx, { id: `EDITOR#${id}`, quest: updatedQuest });
+    const updated = { ...work, ...updates };
+    await putWork(tx, { id: `EDITOR#${id}`, work: updated });
   },
 };
 export const getWork = async (tx: ReadTransaction, { id }: { id: string }) => {
@@ -66,9 +80,9 @@ export const getWork = async (tx: ReadTransaction, { id }: { id: string }) => {
 };
 export const putWork = async (
   tx: WriteTransaction,
-  { quest, id }: { quest: Quest; id: string }
+  { work, id }: { work: ReadonlyJSONValue; id: string }
 ) => {
-  await tx.put(id, quest);
+  await tx.put(id, work);
 };
 export const deleteWork = async (
   tx: WriteTransaction,

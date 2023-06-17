@@ -16,6 +16,7 @@ import {
   UpdateCommand,
   UpdateCommandInput,
 } from "@aws-sdk/lib-dynamodb";
+import { JSONValue } from "replicache";
 import { JSONObject } from "replicache";
 import { dynamoClient } from "~/clients/dynamodb";
 import { env } from "~/env.mjs";
@@ -41,7 +42,6 @@ export const getChangedItems = async ({
       ":version": prevVersion,
     },
   };
-  console.log("space id from dynamo", spaceId);
   try {
     const result = await dynamoClient.send(new QueryCommand(queryParams));
     if (result.Items) {
@@ -97,7 +97,6 @@ export const putItems = async ({
     return;
   }
 
-  console.log("putting items ");
   const putItems: {
     Put:
       | (Omit<Put, "ExpressionAttributeValues" | "Item"> & {
@@ -120,6 +119,7 @@ export const putItems = async ({
       },
     });
   }
+  console.log("put items from dynamodb", JSON.stringify(putItems));
   const transactPutParams: TransactWriteCommandInput = {
     TransactItems: putItems,
   };
@@ -128,6 +128,75 @@ export const putItems = async ({
   } catch (error) {
     console.log(error);
     throw new Error("Transact put failed");
+  }
+};
+export const updateItems = async ({
+  spaceId,
+  version,
+  userId,
+  items,
+}: {
+  spaceId: string;
+  items: { key: string; value: JSONObject }[];
+  version: number;
+  userId: string;
+}) => {
+  if (items.length === 0) {
+    return;
+  }
+
+  const updateItems: {
+    Update: Omit<Update, "Key" | "ExpressionAttributeValues"> & {
+      Key: Record<string, any> | undefined;
+      ExpressionAttributeValues?: Record<string, any> | undefined;
+    };
+  }[] = [];
+  const lastUpdated = new Date().toISOString();
+  for (const { key, value } of items) {
+    const attributes = Object.keys(value).map((attribute) => {
+      return `${attribute} = :${attribute}`;
+    });
+    const UpdateExpression = `set ${attributes.join(
+      ", "
+    )}, #version = :version, lastUpdated = :lastUpdated`;
+    const ExpressionAttributeValues: Record<string, JSONValue | undefined> = {};
+    Object.entries(value).forEach(([attr, val]) => {
+      ExpressionAttributeValues[`:${attr}`] = val;
+    });
+
+    updateItems.push({
+      Update: {
+        TableName: env.MAIN_TABLE_NAME,
+        Key: {
+          PK: spaceId,
+          SK: key,
+        },
+
+        ConditionExpression: "#published = :published",
+
+        ExpressionAttributeNames: {
+          "#published": "published",
+          "#version": "version",
+        },
+        UpdateExpression,
+        ExpressionAttributeValues: {
+          ":published": false,
+          ":lastUpdated": lastUpdated,
+          ":version": version,
+          ...ExpressionAttributeValues,
+        },
+      },
+    });
+  }
+  console.log("update items from dynamodb", JSON.stringify(updateItems));
+  const transactPutParams: TransactWriteCommandInput = {
+    TransactItems: updateItems,
+  };
+  try {
+    await dynamoClient.send(new TransactWriteCommand(transactPutParams));
+  } catch (error) {
+    console.log(error);
+    throw new Error("Transact update failed");
   }
 };
 export const delItems = async ({
@@ -401,6 +470,7 @@ export const setLastMutationIds = async ({
   lmids: Record<string, number>;
   version: number;
 }) => {
+  console.log("last mutation ids dynamo setLastMutationIds", lmids);
   const updateItems = [...Object.entries(lmids)].map(
     ([clientId, lastMutationId]) => {
       const updateItem: {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { z } from "zod";
 import { jsonSchema } from "~/utils/json";
-import { QuestZod } from "~/types/types";
+import { QuestZod, WorkUpdatesZod, WorkZod } from "~/types/types";
 
 import { QUEST_PREFIX, WORKSPACE_LIST } from "~/utils/constants";
 import { ReplicacheTransaction } from "~/repl/transaction";
@@ -27,6 +27,10 @@ const idSchema = z.object({
   id: z.string(),
 });
 const createQuestArgsSchema = z.object({ quest: QuestZod });
+const updateWorkArgsSchema = z.object({
+  id: z.string(),
+  updates: WorkUpdatesZod,
+});
 
 type Mutation = z.infer<typeof mutationSchema>;
 
@@ -77,6 +81,7 @@ export async function POST(req: Request, res: Response) {
       clientGroupID: push.clientGroupID,
       clientIDs,
     });
+    let updated = false;
 
     console.log("prevVersion: ", prevVersion);
     console.log("lastMutationIDs:", lastMutationIds);
@@ -86,53 +91,55 @@ export async function POST(req: Request, res: Response) {
     for (let i = 0; i < push.mutations.length; i++) {
       const mutation = push.mutations[i] as Mutation;
 
-      tx.setClientID({ clientID: mutation.clientID });
       const lastMutationId = lastMutationIds[mutation.clientID] || 0;
-      try {
-        const nextMutationId = processMutation({
-          tx,
-          lastMutationId,
-          mutation,
-          userId,
-        });
-        lastMutationIds[mutation.clientID] = nextMutationId
-          ? nextMutationId
-          : lastMutationId;
-      } catch (error) {
-        if (error instanceof Error) {
-          if (error.message === "UNAUTHORIZED") {
-            throw new Error("UNAUTHORISED");
-          }
-        }
-        const nextMutationId = processMutation({
-          tx,
-          lastMutationId,
-          mutation,
-          error,
-          userId,
-        });
-
-        lastMutationIds[mutation.clientID] = nextMutationId
-          ? nextMutationId
-          : lastMutationId;
-      }
-    }
-
-    return await Promise.all([
-      setLastMutationIds({
-        clientGroupId: push.clientGroupID,
-        lmids: lastMutationIds,
-        version: nextVersion,
-      }),
-
-      //each workspace list is a private list. So each user can view only its own workspace list.
-      setSpaceVersion({
-        spaceId: adjustedSpaceId,
-        version: nextVersion,
+      // try {
+      const nextMutationId = processMutation({
+        tx,
+        lastMutationId,
+        mutation,
         userId,
-      }),
-      tx.flush(),
-    ]);
+      });
+      lastMutationIds[mutation.clientID] = nextMutationId;
+      if (nextMutationId > lastMutationId) {
+        updated = true;
+      }
+      // } catch (error) {
+      //   if (error instanceof Error) {
+      //     if (error.message === "UNAUTHORIZED") {
+      //       throw new Error("UNAUTHORISED");
+      //     }
+      //   }
+      //   const nextMutationId = processMutation({
+      //     tx,
+      //     lastMutationId,
+      //     mutation,
+      //     error,
+      //     userId,
+      //   });
+
+      //   lastMutationIds[mutation.clientID] = nextMutationId
+      //     ? nextMutationId
+      //     : lastMutationId;
+      // }
+    }
+    if (updated) {
+      return await Promise.all([
+        setLastMutationIds({
+          clientGroupId: push.clientGroupID,
+          lmids: lastMutationIds,
+          version: nextVersion,
+        }),
+
+        setSpaceVersion({
+          spaceId: adjustedSpaceId,
+          version: nextVersion,
+          userId,
+        }),
+        tx.flush(),
+      ]);
+    }
+    console.log("Nothing to update");
+    return;
   };
   try {
     await processMutations();
@@ -185,7 +192,7 @@ const processMutation = ({
     console.log(
       `Mutation ${mutation.id} has already been processed - skipping`
     );
-    return;
+    return lastMutationId;
   }
   if (mutation.id > expectedMutationID) {
     console.warn(`Mutation ${mutation.id} is from the future - aborting`);
@@ -204,11 +211,26 @@ const processMutation = ({
         const { quest } = createQuestArgsSchema.parse(mutation.args);
 
         tx.put({ key: `EDITOR#${quest.id}`, value: quest });
-
         break;
-      case "deleteQuest":
+
+      case "deleteWork":
         const params = idSchema.parse(mutation.args);
         tx.del({ key: `EDITOR#${params.id}` });
+        break;
+      case "duplicateWork":
+        const { duplicatedWork } = z
+          .object({ duplicatedWork: WorkZod })
+          .parse(mutation.args);
+        tx.put({ key: `EDITOR#${duplicatedWork.id}`, value: duplicatedWork });
+        break;
+      case "updateWork":
+        console.log("mutations args", mutation.args);
+        const updateWorkParams = updateWorkArgsSchema.parse(mutation.args);
+        tx.update({
+          key: `EDITOR#${updateWorkParams.id}`,
+          value: updateWorkParams.updates,
+        });
+        break;
       default:
         throw new Error(`Unknown mutation: ${mutation.name}`);
     }
@@ -226,5 +248,6 @@ const processMutation = ({
       JSON.stringify(mutation),
       error
     );
+    return lastMutationId;
   }
 };

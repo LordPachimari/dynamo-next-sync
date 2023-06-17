@@ -36,7 +36,14 @@
     --radius: 0.5rem;
     --blue: #3b82f6;
     --orange: #f97316;
-    --button: linear-gradient(180deg, rgba(255, 118, 60, 0) -2.17%, rgba(255, 118, 60, 0.8) 7.69%, #f97316 100%), #FFFFFF;
+    --button: linear-gradient(
+        180deg,
+        rgba(255, 118, 60, 0) -2.17%,
+        rgba(255, 118, 60, 0.8) 7.69%,
+        #f97316 100%
+      ),
+      #ffffff;
+    --purple: #a855f7;
   }
 
   .dark {
@@ -82,7 +89,6 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
-
 
 .childrenContainer {
   width: 100%;
@@ -210,4 +216,16 @@
 .image-control-wrapper--resizing {
   touch-action: none;
 }
-  
+.ProseMirror {
+  position: relative;
+  outline: none;
+  height: 100%;
+  margin-top: 10px;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

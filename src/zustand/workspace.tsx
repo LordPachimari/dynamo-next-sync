@@ -8,14 +8,14 @@ import {
   SolutionListComponent,
   QuestAttributesType,
   UpdateQueue,
-  WorkUpdate,
+  WorkUpdates,
   WorkspaceList,
 } from "../types/types";
 enableMapSet();
 
 interface WorkspaceState {
   updateQueue: UpdateQueue;
-  addUpdate: (props: { id: string; value: WorkUpdate }) => void;
+  addUpdate: (props: { id: string; value: WorkUpdates }) => void;
   clearQueue: () => void;
   workspaceList: WorkspaceList;
   createWork: ({
@@ -60,7 +60,8 @@ export const WorkspaceStore = create<WorkspaceState>((set, get) => ({
     set(
       produce((state: WorkspaceState) => {
         const { id, value } = props;
-        state.updateQueue.set(id, value);
+        const existingChanges = state.updateQueue.get(id);
+        state.updateQueue.set(id, { ...existingChanges, ...value });
       })
     ),
   clearQueue: () =>

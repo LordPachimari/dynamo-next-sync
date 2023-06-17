@@ -1,5 +1,4 @@
 import { generateHTML } from "@tiptap/html";
-import dayjs from "dayjs";
 import parse, {
   attributesToProps,
   Element,
@@ -12,7 +11,6 @@ import ImageExtension from "../Tiptap/ImageExtension";
 
 import { JSONContent } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
-import { FromNow } from "~/utils/dayjs";
 import {
   PublishedQuest,
   PublishedSolution,
@@ -136,9 +134,9 @@ const DateComponent = ({ questDate }: { questDate: string }) => {
   return (
     <div className="flex gap-3">
       <p>DUE</p>
-      <Badge className="bg-blue-300">{FromNow({ date: questDate })}</Badge>
+      {/* <Badge className="bg-blue-300">{FromNow({ date: questDate })}</Badge> */}
       <Badge className="bg-blue-300">
-        {dayjs(questDate).format("MMM D, YYYY")}
+        {/* {dayjs(questDate).format("MMM D, YYYY")} */}
       </Badge>
     </div>
   );

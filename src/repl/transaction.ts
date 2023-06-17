@@ -1,10 +1,9 @@
 import { JSONObject, JSONValue, WriteTransaction } from "replicache";
-import { delItems, delPermItems, putItems } from "./data";
+import { delItems, delPermItems, putItems, updateItems } from "./data";
 
-const DELETE_PERMANENTLY = "DELETE_PERMANENTLY" as const;
 const DELETE = "DELETE" as const;
 const PUT = "PUT" as const;
-
+const UPDATE = "UPDATE" as const;
 declare type ReadonlyJSONValue =
   | null
   | string
@@ -22,17 +21,16 @@ interface CustomWriteTransaction {
    * `key` to remove.
    */
   del({ key }: { key: string }): void;
-  delPerm({ key }: { key: string }): void;
+  update({ key, value }: { key: string; value: JSONObject }): void;
 }
 
 export class ReplicacheTransaction implements CustomWriteTransaction {
   private readonly _spaceID: string;
-  private _clientID: string;
   private readonly _version: number;
   private readonly _cache: Map<
     string,
     {
-      method: typeof PUT | typeof DELETE | typeof DELETE_PERMANENTLY;
+      method: typeof PUT | typeof DELETE | typeof UPDATE;
       value?: JSONObject;
     }
   > = new Map();
@@ -42,24 +40,16 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
     this._spaceID = spaceID;
     this._version = version;
     this._userId = userId;
-    this._clientID = ""
-  }
-
-  getClientID(): string {
-    return this._clientID;
-  }
-  setClientID({ clientID }: { clientID: string }): void {
-    this._clientID = clientID;
   }
 
   put({ key, value }: { key: string; value: JSONObject }) {
     this._cache.set(key, { method: PUT, value });
   }
+  update({ key, value }: { key: string; value: JSONObject }) {
+    this._cache.set(key, { method: UPDATE, value });
+  }
   del({ key }: { key: string }) {
     this._cache.set(key, { method: DELETE });
-  }
-  delPerm({ key }: { key: string }) {
-    this._cache.set(key, { method: DELETE_PERMANENTLY });
   }
 
   // TODO!
@@ -80,21 +70,21 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
     }
 
     const itemsToPut: { key: string; value: JSONObject }[] = [];
+    const itemsToUpdate: { key: string; value: JSONObject }[] = [];
+    const keysToDelete: string[] = [];
     for (const item of items) {
-      if (
-        item[1].method !== DELETE &&
-        item[1].method !== DELETE_PERMANENTLY &&
-        item[1].value
-      ) {
+      if (item[1].method === PUT && item[1].value) {
         itemsToPut.push({ key: item[0], value: item[1].value });
+      } else if (item[1].method === DELETE && item[1].value) {
+        keysToDelete.push(item[0]);
+      } else if (item[1].method === UPDATE && item[1].value) {
+        itemsToUpdate.push({ key: item[0], value: item[1].value });
       }
     }
     const keysToDel = items
       .filter(([, { method }]) => method === DELETE)
       .map(([key]) => key);
-    const keysToDelPerm = items
-      .filter(([, { method }]) => method === DELETE_PERMANENTLY)
-      .map(([key]) => key);
+
     await Promise.all([
       delItems({
         keysToDel,
@@ -102,13 +92,15 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
         userId: this._userId,
         version: this._version,
       }),
-      delPermItems({
-        keysToDel: keysToDelPerm,
-        spaceId: this._spaceID,
-        userId: this._userId,
-      }),
+
       putItems({
         items: itemsToPut,
+        spaceId: this._spaceID,
+        userId: this._userId,
+        version: this._version,
+      }),
+      updateItems({
+        items: itemsToUpdate,
         spaceId: this._spaceID,
         userId: this._userId,
         version: this._version,

@@ -66,6 +66,7 @@ const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
   console.log("work", work);
   const router = useRouter();
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateAttributesHandler = useCallback(
     debounce(
       async ({

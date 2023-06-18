@@ -1,7 +1,7 @@
 import React, { Dispatch, SetStateAction, useState } from "react";
 import { z } from "zod";
 
-import { Post, Quest, Solution } from "~/types/types";
+import { ContentZod, Post, Quest, QuestZod, Solution } from "~/types/types";
 import { Button } from "~/ui/Button";
 import {
   AlertDialog,
@@ -50,7 +50,7 @@ const Publish = ({
     title: z.string(),
     subtopic: z.array(z.string()).min(1, { message: "Missing subtopic" }),
     topic: z.string(),
-    content: z.instanceof(Uint8Array, { message: "Missing content" }),
+    content: z.string(),
     reward: z
       .number()
       .min(1, { message: "Number of diamonds must be greater than 1" }),

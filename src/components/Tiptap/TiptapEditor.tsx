@@ -16,7 +16,7 @@ import { cn } from "~/utils/cn";
 import FileExtension from "./FileExtension";
 import ImageExtension from "./ImageExtension";
 import { Button } from "~/ui/Button";
-import { Image } from "lucide-react";
+import { Image as ImageIcon } from "lucide-react";
 import { Replicache } from "replicache";
 import { M } from "~/repl/mutators";
 
@@ -187,52 +187,49 @@ const TiptapEditor = (props: {
       // }
       e.target.value = "";
     },
-    [editor]
+    []
   );
-  const addFile = useCallback(
-    async (e: ChangeEvent<HTMLInputElement>) => {
-      // const files = e.target.files;
-      // if (!files) {
-      //   return;
-      // }
-      // const file = files[0];
-      // if (!file) {
-      //   return;
-      // }
-      // const filename = encodeURIComponent(file.name);
-      // const fileType = encodeURIComponent(file.type);
-      // const res = await fetch(
-      //   `/api/upload-file?file=${filename}&fileType=${fileType}`
-      // );
-      // const { url, fields } = (await res.json()) as PresignedPost;
-      // const formData = new FormData();
-      // Object.entries({ ...fields, file }).forEach(([key, value]) => {
-      //   formData.append(key, value);
-      // });
-      // const upload = await fetch(url, {
-      //   method: "POST",
-      //   body: formData,
-      // });
-      // const fileUrl = new URL(`${url}${fields.key}`);
-      // if (upload.ok) {
-      //   console.log("Uploaded successfully!");
-      //   if (url && editor) {
-      //     console.log("hello from the underworld image");
-      //     editor
-      //       .chain()
-      //       .focus()
-      //       .insertContent(
-      //         `<file-component link=${fileUrl} src=${fields.key}></file-component><p></p>`
-      //       )
-      //       .run();
-      //   }
-      // } else {
-      //   console.log("upload failed", upload.statusText);
-      // }
-      // e.target.value = "";
-    },
-    [editor]
-  );
+  const addFile = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
+    // const files = e.target.files;
+    // if (!files) {
+    //   return;
+    // }
+    // const file = files[0];
+    // if (!file) {
+    //   return;
+    // }
+    // const filename = encodeURIComponent(file.name);
+    // const fileType = encodeURIComponent(file.type);
+    // const res = await fetch(
+    //   `/api/upload-file?file=${filename}&fileType=${fileType}`
+    // );
+    // const { url, fields } = (await res.json()) as PresignedPost;
+    // const formData = new FormData();
+    // Object.entries({ ...fields, file }).forEach(([key, value]) => {
+    //   formData.append(key, value);
+    // });
+    // const upload = await fetch(url, {
+    //   method: "POST",
+    //   body: formData,
+    // });
+    // const fileUrl = new URL(`${url}${fields.key}`);
+    // if (upload.ok) {
+    //   console.log("Uploaded successfully!");
+    //   if (url && editor) {
+    //     console.log("hello from the underworld image");
+    //     editor
+    //       .chain()
+    //       .focus()
+    //       .insertContent(
+    //         `<file-component link=${fileUrl} src=${fields.key}></file-component><p></p>`
+    //       )
+    //       .run();
+    //   }
+    // } else {
+    //   console.log("upload failed", upload.statusText);
+    // }
+    // e.target.value = "";
+  }, []);
   return (
     <div className="min-h-[200px]">
       {editor && (
@@ -346,7 +343,7 @@ const TiptapEditor = (props: {
                 className="flex justify-around border-gray-500 hover:border-orange-300 hover:bg-orange-100"
                 onClick={imageInputClick}
               >
-                <Image />
+                <ImageIcon />
                 Image
               </Button>
               <input

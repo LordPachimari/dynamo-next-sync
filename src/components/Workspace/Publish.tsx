@@ -23,31 +23,23 @@ import {
   DialogTrigger,
 } from "~/ui/Dialog";
 import Preview from "./Preview";
+import { UpdateAttributeErrorsZod, WorkspaceStore } from "~/zustand/workspace";
 
 const Publish = ({
-  questCreatorId,
-  type,
   work,
   content,
-  questId,
-  solutionId,
 }: {
-  solutionId?: string;
   work: Quest & Solution & Post;
   content: string | undefined;
-  questId?: string;
-  questCreatorId?: string;
-
-  type: "QUEST" | "SOLUTION";
 }) => {
-  const [errorMessage, setErrorMessage] = useState<string | undefined>(
-    undefined
+  const [isValid, setIsValid] = useState(false);
+  const setAttributeErrors = WorkspaceStore(
+    (state) => state.setAttributeErrors
   );
-  const [isInvalidating, setIsInvalidating] = useState(false);
 
   const QuestAttributesZod = z.object({
     id: z.string(),
-    title: z.string(),
+    title: z.string().min(1, { message: "Missing title" }),
     subtopic: z.array(z.string()).min(1, { message: "Missing subtopic" }),
     topic: z.string(),
     content: z.string(),
@@ -71,51 +63,50 @@ const Publish = ({
   const SolutionAttributesZod = z.object({
     id: z.string(),
     title: z.string(),
-    content: z.instanceof(Uint8Array),
+    content: z.string(),
+    questId: z.string(),
+    questCreatorId: z.string(),
   });
 
-  const cancelRef = React.useRef<any>();
-
   const validate = () => {
-    if (type === "QUEST" && work) {
+    if (work && work.type === "QUEST") {
       const result = QuestAttributesZod.safeParse(work);
 
       if (!result.success) {
-        console.log("error", result.error);
-        setErrorMessage(
-          result.error.issues[0]?.message.startsWith("Required")
-            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `${result.error.issues[0]?.message} ${result.error.issues[0].path}`
-            : result.error.issues[0]?.message
-            ? result.error.issues[0].message
-            : "Please fill all the quest attributes"
+        console.log("error", result.error.issues);
+        const errors: Record<string, { error: boolean; message: string }> = {};
+        result.error.issues.forEach(
+          (e) =>
+            (errors[e.path[0] as string] = { error: true, message: e.message })
         );
-
-        return false;
+        console.log("errors", errors);
+        const newAttributeErrors = UpdateAttributeErrorsZod.parse(errors);
+        setAttributeErrors(newAttributeErrors);
+        setIsValid(false);
+      } else {
+        setIsValid(true);
       }
     }
-    if (type === "SOLUTION" && work) {
+    if (work && work.type === "SOLUTION") {
       const result = SolutionAttributesZod.safeParse(work);
 
       if (!result.success) {
         console.log("error", result.error.issues);
-        setErrorMessage(
-          result.error.issues[0]?.message.startsWith("Required")
-            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `${result.error.issues[0]?.message} ${result.error.issues[0].path}`
-            : result.error.issues[0]?.message
-            ? result.error.issues[0].message
-            : "Please fill all the quest attributes"
+        const errors: Record<string, { error: boolean; message: string }> = {};
+        result.error.issues.forEach(
+          (e) =>
+            (errors[e.path[0] as string] = { error: true, message: e.message })
         );
+        console.log("errors", errors);
 
-        return false;
-      }
-      if (!questId) {
-        setErrorMessage("Please, add the target quest to publish to");
-        return false;
+        const newAttributeErrors = UpdateAttributeErrorsZod.parse(errors);
+        setAttributeErrors(newAttributeErrors);
+
+        setIsValid(false);
+      } else {
+        setIsValid(true);
       }
     }
-    return false;
   };
 
   const handlePublish = ({
@@ -125,32 +116,28 @@ const Publish = ({
     solutionId?: string;
     questId?: string;
   }) => {
-    if (questId && type === "QUEST") {
-    }
-    if (solutionId && type === "SOLUTION" && questId && questCreatorId) {
-    }
+    return;
   };
 
   return (
     <div className="flex items-center justify-center">
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-            className="mt-3 w-full bg-emerald-500 hover:bg-emerald-600"
-            onClick={() => {
-              validate();
-              setErrorMessage(undefined);
-            }}
-          >
-            Publish
-          </Button>
-        </AlertDialogTrigger>
+      <Button
+        className="mt-3 w-full bg-emerald-500 hover:bg-emerald-600"
+        onClick={() => {
+          validate();
+        }}
+      >
+        Publish
+      </Button>
+      <AlertDialog open={isValid}>
+        {/* <AlertDialogTrigger asChild> */}
+
+        {/* </AlertDialogTrigger> */}
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm publish</AlertDialogTitle>
-            {type === "QUEST" ? (
+            {work.type === "QUEST" ? (
               <AlertDialogDescription>
-                {errorMessage && <p className="text-red-500">{errorMessage}</p>}
                 You will pay {(work as Quest)?.reward || 0}
                 diamonds for publishing the quest.
                 <p className="font-bold">
@@ -159,22 +146,14 @@ const Publish = ({
                 </p>
               </AlertDialogDescription>
             ) : (
-              <AlertDialogDescription>
-                {errorMessage && <p className="text-red-500">{errorMessage}</p>}
-              </AlertDialogDescription>
+              <AlertDialogDescription></AlertDialogDescription>
             )}
           </AlertDialogHeader>
           <AlertDialogFooter className="flex items-end">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <Dialog>
               <DialogTrigger>
-                <Button
-                  className="mt-3 w-full bg-amber-400 hover:bg-amber-500"
-                  onClick={() => {
-                    validate();
-                    setErrorMessage(undefined);
-                  }}
-                >
+                <Button className="mt-3 w-full bg-amber-400 hover:bg-amber-500">
                   Preview
                 </Button>
               </DialogTrigger>
@@ -182,14 +161,8 @@ const Publish = ({
                 <DialogHeader>
                   <DialogTitle>Preview</DialogTitle>
                   <DialogDescription>
-                    {type === "QUEST" ? (
-                      <Preview quest={work} content={content} type="QUEST" />
-                    ) : (
-                      <Preview
-                        solution={work}
-                        content={content}
-                        type="SOLUTION"
-                      />
+                    {content && work && (
+                      <Preview work={work} content={content} />
                     )}
                   </DialogDescription>
                 </DialogHeader>

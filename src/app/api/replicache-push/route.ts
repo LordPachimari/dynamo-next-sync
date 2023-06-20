@@ -254,7 +254,7 @@ const processMutation = async ({
         if (result) {
           tx.put({
             key: `EDITOR#${newId}`,
-            value: { ...result[0], newId, lastUpdated, createdAt },
+            value: { ...result[0], id: newId, lastUpdated, createdAt },
           });
           tx.put({
             key: `CONTENT#${newId}`,

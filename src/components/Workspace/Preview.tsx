@@ -1,4 +1,4 @@
-import { Quest, Solution } from "~/types/types";
+import { MergedWorkType, Quest, Solution, WorkType } from "~/types/types";
 import {
   NonEditableContent,
   NonEditableQuestAttributes,
@@ -6,15 +6,11 @@ import {
 } from "./NonEditableAttributes";
 
 export const Preview = ({
-  quest,
-  solution,
+  work,
   content,
-  type,
 }: {
-  quest?: Quest;
-  content?: string;
-  solution?: Solution;
-  type: "SOLUTION" | "QUEST";
+  work: WorkType;
+  content: string;
 }) => {
   if (type === "QUEST" && quest) {
     return (

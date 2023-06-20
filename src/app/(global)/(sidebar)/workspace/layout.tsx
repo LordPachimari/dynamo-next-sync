@@ -12,6 +12,7 @@ import { Button } from "~/ui/Button";
 import { WORKSPACE_LIST } from "~/utils/constants";
 import Actions from "./Actions";
 import List from "./List";
+import { WorkspaceStore } from "~/zustand/workspace";
 
 export default function WorkspaceLayout({
   children, // will be a page or nested layout
@@ -19,8 +20,9 @@ export default function WorkspaceLayout({
   children: ReactNode;
 }) {
   const [showList, toggleShowList] = useState(true);
+  const rep = WorkspaceStore((state) => state.rep);
+  const setRep = WorkspaceStore((state) => state.setRep);
 
-  const [rep, setRep] = useState<Replicache<M> | null>(null);
   const { userId } = useAuth();
   const { id } = useParams();
   console.log("id", id);
@@ -77,7 +79,7 @@ export default function WorkspaceLayout({
           </Button>
         ) : null}
         {id && rep ? (
-          <Editor id={id} rep={rep} />
+          <Editor id={id} />
         ) : !id ? (
           <div className="flex w-full flex-col items-center p-5">
             <Actions />

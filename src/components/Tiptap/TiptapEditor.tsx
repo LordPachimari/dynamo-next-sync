@@ -11,7 +11,7 @@ import StarterKit from "@tiptap/starter-kit";
 import debounce from "lodash.debounce";
 import { Bold, Italic, Strikethrough } from "lucide-react";
 import * as lz from "lz-string";
-import { ChangeEvent, useCallback, useRef } from "react";
+import { ChangeEvent, memo, useCallback, useRef } from "react";
 import { cn } from "~/utils/cn";
 import FileExtension from "./FileExtension";
 import ImageExtension from "./ImageExtension";
@@ -19,20 +19,25 @@ import { Button } from "~/ui/Button";
 import { Image as ImageIcon } from "lucide-react";
 import { Replicache } from "replicache";
 import { M } from "~/repl/mutators";
+import TitleExtension from "./TitleExtension";
+import { UpdateQueue, WorkUpdates } from "~/types/types";
+import SelectExtension from "./SelectExtension";
+import SubtopicExtension from "./SubtopicExtension";
+import RewardExtension from "./RewardExtension";
+import DatePickerExtension from "./DatePickerExtension";
 
 const TiptapEditor = (props: {
   id: string;
-  content: string | undefined;
-  type: "QUEST" | "SOLUTION" | "POST";
-  rep: Replicache<M> | null;
+  //  content: string | undefined
 }) => {
   let contentRestored: string | undefined;
-  const { id, content, type, rep } = props;
+  // const { id, content, rep } = props;
+  const { id } = props;
 
-  if (content) {
-    const restored = lz.decompressFromBase64(content);
-    contentRestored = restored;
-  }
+  // if (content) {
+  //   const restored = lz.decompressFromBase64(content);
+  //   contentRestored = restored;
+  // }
 
   // const provider = new HocuspocusProvider({
   //   url: "ws://0.0.0.0:80",
@@ -47,30 +52,22 @@ const TiptapEditor = (props: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateContent = useCallback(
     debounce(
-      async ({
-        content,
-        textContent,
-        type,
-      }: {
-        content: string;
-        textContent: string;
-        type: "QUEST" | "SOLUTION" | "POST";
-      }) => {
+      ({ content, textContent }: { content: string; textContent: string }) => {
         //transactionQueue is immutable, but I'll allow myself to mutate the copy of it
         const updateTime = new Date().toISOString();
         const compressedContent = lz.compressToBase64(content);
         const compressedTextContent = lz.compressToBase64(textContent);
 
-        if (rep) {
-          await rep.mutate.updateContent({
-            id,
-            content: {
-              content: compressedContent,
-              textContent: compressedTextContent,
-              lastUpdated: updateTime,
-            },
-          });
-        }
+        // if (rep) {
+        //   await rep.mutate.updateContent({
+        //     id,
+        //     content: {
+        //       content: compressedContent,
+        //       textContent: compressedTextContent,
+        //       lastUpdated: updateTime,
+        //     },
+        //   });
+        // }
       },
       1000
     ),
@@ -90,6 +87,11 @@ const TiptapEditor = (props: {
         // }),
         ImageExtension,
         FileExtension,
+        TitleExtension,
+        SelectExtension,
+        SubtopicExtension,
+        RewardExtension,
+        DatePickerExtension,
         Placeholder.configure({
           placeholder: "Write something …",
         }),
@@ -104,29 +106,38 @@ const TiptapEditor = (props: {
         //   document: ydoc,
         // }),
       ],
-      // content: JSON.parse(quest.content),
-      ...(contentRestored && {
-        content: JSON.parse(contentRestored) as JSONContent,
-      }),
-      // onCreate: () => {
-      //   console.log("editor created");
-      // },
 
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      onUpdate: async ({ editor }) => {
+      // content: JSON.parse(quest.content),
+      // ...(contentRestored && {
+      //   content: JSON.parse(contentRestored) as JSONContent,
+      // }),
+
+      content:
+        // contentRestored
+        // ? (JSON.parse(contentRestored) as JSONContent)
+        // :
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `<title-component id=${id} ></title-component>
+        <select-component id=${id} ></select-component>
+        <subtopic-component id=${id} ></subtopic-component>
+        <reward-component id=${id} ></reward-component>
+        <date-component id=${id} ></date-component>
+        <p></p>`,
+
+      onUpdate: ({ editor }) => {
         console.log("update content");
         const json = editor.getJSON();
         const jsonString = JSON.stringify(json);
+        console.log(jsonString);
         // updateQuest();
         // send the content to an API here
-        await updateContent({
-          content: jsonString,
-          textContent: editor.getText(),
-          type,
-        });
+        // await updateContent({
+        //   content: jsonString,
+        //   textContent: editor.getText(),
+        // });
       },
     },
-    [id, content]
+    [id]
   );
 
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -231,7 +242,7 @@ const TiptapEditor = (props: {
     // e.target.value = "";
   }, []);
   return (
-    <div className="min-h-[200px]">
+    <div className="min-h-[500px]">
       {editor && (
         <>
           <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
@@ -407,5 +418,6 @@ const TiptapEditor = (props: {
     </div>
   );
 };
+const TiptapEditorMemo = memo(TiptapEditor);
 
-export default TiptapEditor;
+export default TiptapEditorMemo;

@@ -28,14 +28,17 @@ import makeAnimated from "react-select/animated";
 import { cn } from "~/utils/cn";
 import SingleValue from "react-select/dist/declarations/src/components/SingleValue";
 import { produce } from "immer";
+import { AttributeError } from "~/zustand/workspace";
 export const Title = ({
   title,
   placeholder,
   handleTitleChange,
+  error,
 }: {
   title: string | undefined;
   placeholder: string;
   handleTitleChange: (e: FormEvent<HTMLTextAreaElement>) => Promise<void>;
+  error: AttributeError;
 }) => {
   const [titleState, setTitleState] = useState("");
   useEffect(() => {

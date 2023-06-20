@@ -37,10 +37,12 @@ import { Replicache } from "replicache";
 import { M, mutators } from "~/repl/mutators";
 import { env } from "~/env.mjs";
 import { useSubscribe } from "replicache-react";
+import { WorkspaceStore } from "~/zustand/workspace";
 // });
 
-const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
+const Editor = ({ id }: { id: string }) => {
   console.log("id from editor", id);
+  const rep = WorkspaceStore((state) => state.rep);
   const work = useSubscribe(
     rep,
     async (tx) => {
@@ -49,6 +51,7 @@ const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
 
       return editor;
     },
+
     null,
     [id]
   ) as MergedWorkType;
@@ -62,93 +65,22 @@ const Editor = ({ id, rep }: { id: string; rep: Replicache<M> | null }) => {
     null,
     [id]
   ) as { content: string; text: string } | undefined;
-  console.log("content", content);
-  console.log("work", work);
-  const router = useRouter();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const updateAttributesHandler = useCallback(
-    debounce(
-      async ({
-        updateQueue,
-        //last transaction needs to be pushed into transactionQueue,
-        //as the last addTransaction function is executed in parallel with updateQuestAttributeHandler,
-        //and cannot be captured inside of updateQuestAttributeHandler function
-        lastUpdate,
-      }: {
-        updateQueue: UpdateQueue;
-        lastUpdate: WorkUpdates;
-      }) => {
-        if (rep) {
-          //transactionQueue is immutable, but I'll allow myself to mutate the copy of it
-          const _updateQueue = structuredClone(updateQueue);
-          const update = _updateQueue.get(id);
-          const lastUpdated = new Date().toISOString();
-          if (!update) {
-            _updateQueue.set(id, lastUpdate);
-          } else {
-            const newUpdate = { ...update, ...lastUpdate, lastUpdated };
-            _updateQueue.set(id, newUpdate);
-          }
-          for (const [key, value] of _updateQueue.entries()) {
-            console.log("value", value);
-            console.log("queue", _updateQueue);
-            await rep.mutate.updateWork({ id: key, updates: value });
-          }
-        }
-      },
-      1000
-    ),
-    [id]
-  );
-  // const handleUnpublish = () => {};
+  const router = useRouter();
 
   return (
     <div className="mb-20 mt-10 flex flex-col items-center justify-center">
       <div className="b w-5/6 max-w-2xl rounded-md bg-white p-5 drop-shadow-lg">
-        {work && work.published && work.type === "QUEST" ? (
-          <NonEditableQuestAttributes quest={work} />
-        ) : work && work.type === "QUEST" ? (
-          <QuestAttributes
-            quest={work}
-            updateAttributesHandler={updateAttributesHandler}
-          />
-        ) : work && work.published && work.type === "SOLUTION" ? (
-          <NonEditableSolutionAttributes solution={work} />
-        ) : work && work.type === "SOLUTION" ? (
-          <SolutionAttributes
-            solution={work}
-            updateAttributesHandler={updateAttributesHandler}
-          />
-        ) : (
-          <div className="h-[250px]">No work found</div>
-        )}
         {work && work.published && content ? (
           <NonEditableContent content={content.content} />
         ) : work && !work.published ? (
-          <TiptapEditor
-            id={work.id}
-            content={content ? content.content : undefined}
-            type={work.type}
-            rep={rep}
-          />
+          <TiptapEditor id={id} />
         ) : (
           <div className="h-[255px]">No work found</div>
         )}
       </div>
-      {work && !work.published && work.type === "QUEST" && (
-        <Publish
-          type="QUEST"
-          work={work}
-          content={content ? content.content : undefined}
-        />
-      )}
-      {work && !work.published && work.type === "SOLUTION" && (
-        <Publish
-          type="SOLUTION"
-          work={work}
-          content={content ? content.content : undefined}
-        />
+      {work && !work.published && (
+        <Publish work={work} content={content ? content.content : undefined} />
       )}
 
       {work && work.published && (

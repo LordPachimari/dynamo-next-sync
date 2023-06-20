@@ -26,31 +26,9 @@ const QuestAttributes = ({
     lastUpdate: WorkUpdates;
   }) => Promise<void> | undefined;
 }) => {
-  const updateQuestAttributesListAttribute = WorkspaceStore(
-    (state) => state.updateListState
-  );
-  const addUpdate = WorkspaceStore((state) => state.addUpdate);
   const updateQueue = WorkspaceStore((state) => state.updateQueue);
-
-  const handleTitleChange = async (e: FormEvent<HTMLTextAreaElement>) => {
-    addUpdate({
-      id: quest.id,
-      value: { title: e.currentTarget.value },
-    });
-    // updateQuestAttributesListAttribute({
-    //   id: quest.id,
-    //   type: "QUEST",
-    //   attribute: "title",
-    //   value: e.currentTarget.textContent as string,
-    // });
-
-    await updateAttributesHandler({
-      updateQueue,
-      lastUpdate: {
-        title: e.currentTarget.value,
-      },
-    });
-  };
+  const addUpdate = WorkspaceStore((state) => state.addUpdate);
+  const attributeErrors = WorkspaceStore((state) => state.attributeErrors);
 
   const handleTopicChange = async (value: string) => {
     addUpdate({
@@ -59,12 +37,7 @@ const QuestAttributes = ({
         topic: value as TopicsType,
       },
     });
-    // updateQuestAttributesListAttribute({
-    //   id: quest.id,
-    //   attribute: "topic",
-    //   type: "QUEST",
-    //   value: value,
-    // });
+
     await updateAttributesHandler({
       updateQueue,
       lastUpdate: {
@@ -138,10 +111,11 @@ const QuestAttributes = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <Title
+      {/* <Title
         placeholder="Untitled"
         handleTitleChange={handleTitleChange}
         title={quest.title}
+        error={attributeErrors.title}
       />
       <TopicSelect handleTopicChange={handleTopicChange} topic={quest.topic} />
       <Subtopic
@@ -153,7 +127,7 @@ const QuestAttributes = ({
         <Slots handleSlotsChange={handleSlotsChange} slots={quest.slots} />
       </div>
 
-      <DatePicker handleDateChange={handleDateChange} date={quest.deadline} />
+      <DatePicker handleDateChange={handleDateChange} date={quest.deadline} /> */}
     </div>
   );
 };

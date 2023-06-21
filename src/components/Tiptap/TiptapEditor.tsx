@@ -17,6 +17,7 @@ import { useSubscribe } from "replicache-react";
 import { WorkspaceStore } from "~/zustand/workspace";
 import { YJSKey, editorKey } from "~/repl/mutators";
 import * as base64 from "base64-js";
+import { YJSContent } from "~/types/types";
 const TiptapEditor = (props: {
   id: string;
   //  content: string | undefined
@@ -31,9 +32,11 @@ const TiptapEditor = (props: {
   const docStateFromReplicache = useSubscribe(
     rep,
     async (tx) => {
-      const v = await tx.get(YJSKey(id));
-      if (typeof v === "string") {
-        return v;
+      const content = (await tx.get(YJSKey(id))) as YJSContent;
+      console.log(content);
+      if (content.Ydoc) {
+        console.log("ydoc from subscribe", content.Ydoc);
+        return content.Ydoc;
       }
       return null;
     },
@@ -83,17 +86,17 @@ const TiptapEditor = (props: {
       //   content: JSON.parse(contentRestored) as JSONContent,
       // }),
 
-      content:
-        // contentRestored
-        // ? (JSON.parse(contentRestored) as JSONContent)
-        // :
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `<title-component id=${id} ></title-component>
-        <select-component id=${id} ></select-component>
-        <subtopic-component id=${id} ></subtopic-component>
-        <reward-component id=${id} ></reward-component>
-        <date-component id=${id} ></date-component>
-        <p></p>`,
+      // content:
+      // contentRestored
+      // ? (JSON.parse(contentRestored) as JSONContent)
+      // :
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      // `<title-component id=${id} ></title-component>
+      // <select-component id=${id} ></select-component>
+      // <subtopic-component id=${id} ></subtopic-component>
+      // <reward-component id=${id} ></reward-component>
+      // <date-component id=${id} ></date-component>
+      // <p></p>`,
 
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       onUpdate: async ({ editor }) => {
@@ -102,7 +105,7 @@ const TiptapEditor = (props: {
         await updateContent();
       },
     },
-    [id]
+    [id, docStateFromReplicache]
   );
 
   const imageInputRef = useRef<HTMLInputElement>(null);

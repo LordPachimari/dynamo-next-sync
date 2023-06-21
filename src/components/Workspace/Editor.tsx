@@ -41,12 +41,10 @@ import { WorkspaceStore } from "~/zustand/workspace";
 // });
 
 const Editor = ({ id }: { id: string }) => {
-  console.log("id from editor", id);
   const rep = WorkspaceStore((state) => state.rep);
   const work = useSubscribe(
     rep,
     async (tx) => {
-      console.log("id from subscribe", id);
       const editor = (await tx.get(`EDITOR#${id}`)) || null;
 
       return editor;

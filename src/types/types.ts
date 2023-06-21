@@ -363,6 +363,7 @@ export const PostZodPartial = z
     inTrash: z.boolean(),
     lastUpdated: z.string(),
     deleted: z.boolean(),
+    published: z.boolean(),
   })
   .partial();
 export const PostZod = PostZodPartial.required({

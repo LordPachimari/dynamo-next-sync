@@ -1,4 +1,4 @@
-import { TopicsType } from "~/types/main";
+import { TopicsType } from "~/types/types";
 
 export const TopicColor = ({ topic }: { topic: string }) => {
   if (topic === "BUSINESS") {

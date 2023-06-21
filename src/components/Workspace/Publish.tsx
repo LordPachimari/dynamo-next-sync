@@ -1,7 +1,7 @@
 import React, { Dispatch, SetStateAction, useState } from "react";
 import { z } from "zod";
 
-import { ContentZod, Post, Quest, QuestZod, Solution } from "~/types/types";
+import { YJSContentZod, Post, Quest, QuestZod, Solution } from "~/types/types";
 import { Button } from "~/ui/Button";
 import {
   AlertDialog,

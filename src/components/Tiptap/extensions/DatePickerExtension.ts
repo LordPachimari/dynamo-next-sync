@@ -2,8 +2,8 @@ import { mergeAttributes, Node } from "@tiptap/core";
 import { EditorState, Plugin, Transaction } from "@tiptap/pm/state";
 import { ReplaceStep, Step, StepMap } from "@tiptap/pm/transform";
 import { ReactNodeViewRenderer } from "@tiptap/react";
-import RewardAndSlotsComponent from "./RewardAndSlotsComponent";
-import DatePickerComponent from "./DatePickerComponent";
+import RewardAndSlotsComponent from "../components/RewardAndSlotsComponent";
+import DatePickerComponent from "../components/DatePickerComponent";
 
 export default Node.create({
   name: "dateComponent",

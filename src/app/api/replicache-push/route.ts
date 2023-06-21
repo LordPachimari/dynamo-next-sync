@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { jsonSchema } from "~/utils/json";
 import {
-  Content,
-  ContentUpdatesZod,
+  YJSContent,
+  YJSContentUpdatesZod,
   QuestZod,
   WorkUpdatesZod,
   WorkZod,
@@ -22,6 +22,7 @@ import {
   setSpaceVersion,
 } from "~/repl/data";
 import { auth } from "@clerk/nextjs";
+import { YJSKey, editorKey } from "~/repl/mutators";
 
 // See notes in bug: https://github.com/rocicorp/replidraw/issues/47
 const mutationSchema = z.object({
@@ -219,24 +220,23 @@ const processMutation = async ({
     switch (mutation.name) {
       case "createWork":
         const { work } = z.object({ work: WorkZod }).parse(mutation.args);
-        const newContent: Content = {
+        const newContent: YJSContent = {
           inTrash: false,
-          lastUpdated: work.lastUpdated,
           published: false,
-          type: "CONTENT",
+          type: "YJSCONTENT",
         };
 
-        tx.put({ key: `EDITOR#${work.id}`, value: work });
-        tx.put({ key: `CONTENT#${work.id}`, value: newContent });
+        tx.put({ key: `${editorKey(work.id)}`, value: work });
+        tx.put({ key: `${YJSKey(work.id)}`, value: newContent });
         break;
 
       case "deleteWork":
         const params = idSchema.parse(mutation.args);
-        tx.del({ key: `EDITOR#${params.id}` });
+        tx.del({ key: `${params.id}` });
         break;
       case "deleteWorkPermanently":
         const permDeleteParams = idSchema.parse(mutation.args);
-        tx.permDel({ key: `EDITOR#${permDeleteParams.id}` });
+        tx.permDel({ key: `${permDeleteParams.id}` });
         break;
       case "duplicateWork":
         const { id, newId, createdAt, lastUpdated } = z
@@ -248,17 +248,17 @@ const processMutation = async ({
           })
           .parse(mutation.args);
         const result = await Promise.all([
-          getItem({ key: `EDITOR#${id}`, spaceId, userId }),
-          getItem({ key: `CONTENT#${id}`, spaceId, userId }),
+          getItem({ key: `${editorKey(id)}`, spaceId, userId }),
+          getItem({ key: `${YJSKey(id)}`, spaceId, userId }),
         ]);
         if (result) {
           tx.put({
-            key: `EDITOR#${newId}`,
+            key: `${editorKey(newId)}`,
             value: { ...result[0], id: newId, lastUpdated, createdAt },
           });
           tx.put({
-            key: `CONTENT#${newId}`,
-            value: { ...result[1], lastUpdated, createdAt },
+            key: `${YJSKey(newId)}`,
+            value: { ...result[1] },
           });
         }
         break;
@@ -266,19 +266,19 @@ const processMutation = async ({
         console.log("mutations args", mutation.args);
         const updateWorkParams = updateWorkArgsSchema.parse(mutation.args);
         tx.update({
-          key: `EDITOR#${updateWorkParams.id}`,
+          key: `${editorKey(updateWorkParams.id)}`,
           value: updateWorkParams.updates,
         });
         break;
       case "restoreWork":
         const idParams = idSchema.parse(mutation.args);
-        tx.restore({ key: `EDITOR#${idParams.id}` });
+        tx.restore({ key: `${editorKey(idParams.id)}` });
         break;
-      case "updateContent":
+      case "updateYJS":
         const content = z
-          .object({ id: z.string(), content: ContentUpdatesZod })
+          .object({ key: z.string(), update: z.object({ Ydoc: z.string() }) })
           .parse(mutation.args);
-        tx.update({ key: `CONTENT#${content.id}`, value: content.content });
+        tx.update({ key: `${YJSKey(content.key)}`, value: content.update });
         break;
 
       default:

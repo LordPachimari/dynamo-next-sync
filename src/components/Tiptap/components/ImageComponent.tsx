@@ -2,7 +2,7 @@ import { NodeViewWrapper } from "@tiptap/react";
 import Image from "next/image";
 import React, { useRef, useState } from "react";
 import ImageResizer from "./ImageResizer";
-import styles from "./tiptap.module.css";
+import styles from "../tiptap.module.css";
 
 type ImageLoaderProps = {
   src: string;

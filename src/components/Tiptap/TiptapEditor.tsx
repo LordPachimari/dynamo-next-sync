@@ -1,109 +1,80 @@
 import * as Toolbar from "@radix-ui/react-toolbar";
-import Placeholder from "@tiptap/extension-placeholder";
 import {
   BubbleMenu,
   EditorContent,
   FloatingMenu,
-  JSONContent,
   useEditor,
 } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import debounce from "lodash.debounce";
-import { Bold, Italic, Strikethrough } from "lucide-react";
-import * as lz from "lz-string";
+import { Bold, Image as ImageIcon, Italic, Strikethrough } from "lucide-react";
 import { ChangeEvent, memo, useCallback, useRef } from "react";
-import { cn } from "~/utils/cn";
-import FileExtension from "./FileExtension";
-import ImageExtension from "./ImageExtension";
+import * as Y from "yjs";
 import { Button } from "~/ui/Button";
-import { Image as ImageIcon } from "lucide-react";
-import { Replicache } from "replicache";
-import { M } from "~/repl/mutators";
-import TitleExtension from "./TitleExtension";
-import { UpdateQueue, WorkUpdates } from "~/types/types";
-import SelectExtension from "./SelectExtension";
-import SubtopicExtension from "./SubtopicExtension";
-import RewardExtension from "./RewardExtension";
-import DatePickerExtension from "./DatePickerExtension";
-
+import { cn } from "~/utils/cn";
+import { TiptapExtensions } from "./extensions";
+import Collaboration from "@tiptap/extension-collaboration";
+import { useSubscribe } from "replicache-react";
+import { WorkspaceStore } from "~/zustand/workspace";
+import { YJSKey, editorKey } from "~/repl/mutators";
+import * as base64 from "base64-js";
 const TiptapEditor = (props: {
   id: string;
   //  content: string | undefined
 }) => {
   let contentRestored: string | undefined;
-  // const { id, content, rep } = props;
   const { id } = props;
+  const rep = WorkspaceStore((state) => state.rep);
 
-  // if (content) {
-  //   const restored = lz.decompressFromBase64(content);
-  //   contentRestored = restored;
-  // }
+  const ydocRef = useRef(new Y.Doc());
+  const ydoc = ydocRef.current;
 
-  // const provider = new HocuspocusProvider({
-  //   url: "ws://0.0.0.0:80",
-  //   name: `${quest.id}`,
-  //   token: TEST_USER.id,
-  //   parameters: { creatorId: TEST_USER.id },
-  // });
+  const docStateFromReplicache = useSubscribe(
+    rep,
+    async (tx) => {
+      const v = await tx.get(YJSKey(id));
+      if (typeof v === "string") {
+        return v;
+      }
+      return null;
+    },
+    null,
+    [id]
+  );
+  if (docStateFromReplicache !== null) {
+    const update = base64.toByteArray(docStateFromReplicache);
+    Y.applyUpdateV2(ydoc, update);
+  }
 
-  // const ydoc = new Y.Doc();
-  // new IndexeddbPersistence(`${quest.id}`, ydoc);
-  // console.log("ydoc", ydoc);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateContent = useCallback(
-    debounce(
-      ({ content, textContent }: { content: string; textContent: string }) => {
-        //transactionQueue is immutable, but I'll allow myself to mutate the copy of it
-        const updateTime = new Date().toISOString();
-        const compressedContent = lz.compressToBase64(content);
-        const compressedTextContent = lz.compressToBase64(textContent);
+    debounce(async () => {
+      console.log("update");
+      const updateTime = new Date().toISOString();
 
-        // if (rep) {
-        //   await rep.mutate.updateContent({
-        //     id,
-        //     content: {
-        //       content: compressedContent,
-        //       textContent: compressedTextContent,
-        //       lastUpdated: updateTime,
-        //     },
-        //   });
-        // }
-      },
-      1000
-    ),
+      const update = Y.encodeStateAsUpdateV2(ydoc);
+      if (rep) {
+        await Promise.all([
+          await rep.mutate.updateYJS({
+            key: id,
+            update: { Ydoc: base64.fromByteArray(update) },
+          }),
+        ]);
+      }
+    }, 1000),
     []
   );
 
   const editor = useEditor(
     {
       extensions: [
-        StarterKit,
-        // Image,
-        // Image.configure({
-        //   // inline: true,
-        //   HTMLAttributes: {
-        //     class: styles.imageContainer,
-        //   },
-        // }),
-        ImageExtension,
-        FileExtension,
-        TitleExtension,
-        SelectExtension,
-        SubtopicExtension,
-        RewardExtension,
-        DatePickerExtension,
-        Placeholder.configure({
-          placeholder: "Write something …",
-        }),
-
-        // EventHandler,
-
+        ...TiptapExtensions,
         // Collaboration.configure({
         //   document: provider.document,
         // }),
-
-        // Collaboration.configure({
-        //   document: ydoc,
+        Collaboration.configure({
+          document: ydoc,
+        }),
+        // TiptapCursor.configure({
+        //   provider,
         // }),
       ],
 
@@ -124,17 +95,11 @@ const TiptapEditor = (props: {
         <date-component id=${id} ></date-component>
         <p></p>`,
 
-      onUpdate: ({ editor }) => {
-        console.log("update content");
-        const json = editor.getJSON();
-        const jsonString = JSON.stringify(json);
-        console.log(jsonString);
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      onUpdate: async ({ editor }) => {
         // updateQuest();
         // send the content to an API here
-        // await updateContent({
-        //   content: jsonString,
-        //   textContent: editor.getText(),
-        // });
+        await updateContent();
       },
     },
     [id]

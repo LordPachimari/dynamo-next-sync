@@ -10,7 +10,7 @@ const Entity = [
   "COMMENT",
   "POST",
   "GUILD",
-  "CONTENT",
+  "YJSCONTENT",
 ] as const;
 const SPACE_NAMES = [
   "PUBLISHED_QUESTS",
@@ -301,23 +301,21 @@ export const SolutionListComponentZod = SolutionZod.pick({
   type: true,
 });
 export type SolutionListComponent = z.infer<typeof SolutionListComponentZod>;
-export const ContentZod = z.object({
-  content: z.optional(z.string()),
+export const YJSContentZod = z.object({
+  Ydoc: z.optional(z.string()),
   textContent: z.optional(z.string()),
   inTrash: z.boolean(),
   type: z.enum(Entity),
   deleted: z.optional(z.boolean()),
-  lastUpdated: z.string(),
   published: z.boolean(),
 });
 
-export type Content = z.infer<typeof ContentZod>;
-export const ContentUpdatesZod = ContentZod.pick({
-  content: true,
+export type YJSContent = z.infer<typeof YJSContentZod>;
+export const YJSContentUpdatesZod = YJSContentZod.pick({
+  Ydoc: true,
   textContent: true,
-  lastUpdated: true,
 });
-export type ContentUpdates = z.infer<typeof ContentUpdatesZod>;
+export type ContentUpdates = z.infer<typeof YJSContentUpdatesZod>;
 export type WorkspaceList = {
   quests: QuestListComponent[];
   solutions: SolutionListComponent[];

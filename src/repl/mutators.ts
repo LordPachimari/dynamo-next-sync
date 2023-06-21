@@ -3,20 +3,10 @@ import type {
   ReadonlyJSONValue,
   WriteTransaction,
 } from "replicache";
-import { ulid } from "ulid";
 
 import {
-  Content,
-  ContentUpdates,
-  ContentUpdatesZod,
-  ContentZod,
   MergedWorkType,
-  Post,
-  PostZod,
   Quest,
-  QuestZod,
-  Solution,
-  SolutionZod,
   WorkType,
   WorkUpdates,
   WorkZod,
@@ -28,7 +18,7 @@ export const mutators = {
     console.log("mutators, putQuest");
     const parsedWork = WorkZod.parse(work);
 
-    await tx.put(`EDITOR#${work.id}`, parsedWork);
+    await tx.put(`${editorKey(work.id)}`, parsedWork);
   },
 
   duplicateWork: async (
@@ -42,26 +32,24 @@ export const mutators = {
   ) => {
     console.log("mutators, duplicateWork");
     const work = await getWork(tx, { id });
-    const content = (await tx.get(`CONTENT#${id}`)) as Content;
-    const copy = structuredClone(work) as WorkType;
+    const content = (await tx.get(`${YJSKey(id)}`)) as string;
+
     if (work && content) {
-      await tx.put(`EDITOR#${newId}`, {
-        ...copy,
+      await tx.put(`${editorKey(newId)}`, {
         id: newId,
         createdAt,
         lastUpdated,
       });
-      await tx.put(`CONTENT#${newId}`, {
-        ...content,
-        lastUpdated,
-      } as Content);
+      await tx.put(`${YJSKey(newId)}`, content);
     }
   },
   deleteWork: async (tx: WriteTransaction, { id }: { id: string }) => {
     console.log("mutators, deleteWork");
-    const work = (await tx.get(`EDITOR#${id}`)) as MergedWorkType | undefined;
+    const work = (await tx.get(`${editorKey(id)}`)) as
+      | MergedWorkType
+      | undefined;
     if (work) {
-      await tx.put(`EDITOR#${id}`, { ...work, inTrash: true });
+      await tx.put(`${editorKey(id)}`, { ...work, inTrash: true });
     }
   },
   deleteWorkPermanently: async (
@@ -69,13 +57,15 @@ export const mutators = {
     { id }: { id: string }
   ) => {
     console.log("mutators, perm delete");
-    await tx.del(`EDITOR#${id}`);
+    await tx.del(`${editorKey(id)}`);
   },
   restoreWork: async (tx: WriteTransaction, { id }: { id: string }) => {
     console.log("mutators, restore");
-    const work = (await tx.get(`EDITOR#${id}`)) as MergedWorkType | undefined;
+    const work = (await tx.get(`${editorKey(id)}`)) as
+      | MergedWorkType
+      | undefined;
     if (work) {
-      await tx.put(`EDITOR#${id}`, { ...work, inTrash: false });
+      await tx.put(`${editorKey(id)}`, { ...work, inTrash: false });
     }
   },
   updateWork: async (
@@ -95,24 +85,35 @@ export const mutators = {
       return;
     }
     const updated = { ...work, ...updates };
-    await putWork(tx, { id: `EDITOR#${id}`, work: updated });
+    await putWork(tx, { id: `${editorKey(id)}`, work: updated });
   },
-  updateContent: async (
+
+  async updateYJS(
+    tx: WriteTransaction,
+    { key, update }: { key: string; update: { Ydoc: string } }
+  ) {
+    await tx.put(YJSKey(key), update);
+  },
+  async updateYJSAwareness(
     tx: WriteTransaction,
     {
-      id,
-      content,
-    }: {
-      id: string;
-      content: ContentUpdates;
-    }
-  ) => {
-    const contentUpdates = ContentUpdatesZod.parse(content);
-    await tx.put(`CONTENT#${id}`, contentUpdates);
+      name,
+      yjsClientID,
+      update,
+    }: { name: string; yjsClientID: number; update: string }
+  ) {
+    await tx.put(awarenessKey(name, yjsClientID), update);
+  },
+
+  async removeYJSAwareness(
+    tx: WriteTransaction,
+    { name, yjsClientID }: { name: string; yjsClientID: number }
+  ) {
+    await tx.del(awarenessKey(name, yjsClientID));
   },
 };
 export const getWork = async (tx: ReadTransaction, { id }: { id: string }) => {
-  const work = await tx.get(`EDITOR#${id}`);
+  const work = await tx.get(`${editorKey(id)}`);
   if (!work) {
     return undefined;
   }
@@ -124,3 +125,18 @@ export const putWork = async (
 ) => {
   await tx.put(id, work);
 };
+
+function awarenessKey(key: string, yjsClientID: number): string {
+  return `${YJSKey(key)}/awareness/${yjsClientID}`;
+}
+
+export function editorKey(key: string): string {
+  return `EDITOR#${key}`;
+}
+
+export function awarenessKeyPrefix(key: string): string {
+  return `${YJSKey(key)}/awareness/`;
+}
+export function YJSKey(key: string): string {
+  return `yjs/${key}`;
+}

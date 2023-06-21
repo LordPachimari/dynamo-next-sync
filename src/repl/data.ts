@@ -21,6 +21,7 @@ import { JSONObject } from "replicache";
 import { dynamoClient } from "~/clients/dynamodb";
 import { env } from "~/env.mjs";
 import { LastMutationId, SpaceVersion } from "~/types/types";
+import { YJSKey } from "./mutators";
 export const getChangedItems = async ({
   spaceId,
   prevVersion,
@@ -324,6 +325,9 @@ export const delPermItems = async ({
         })
       | undefined;
   }[] = [];
+
+  const oneDayInSeconds = 24 * 60 * 60;
+  const expirationTime = Math.floor(Date.now() / 1000) + oneDayInSeconds;
   for (const key of keysToDel) {
     updateItems.push({
       Update: {
@@ -337,7 +341,7 @@ export const delPermItems = async ({
           "#version": "version",
           "#ttl": "ttl",
         },
-        ExpressionAttributeValues: { ":ttl": 3600, ":deleted": true },
+        ExpressionAttributeValues: { ":ttl": expirationTime, ":deleted": true },
         TableName: env.MAIN_TABLE_NAME,
       },
     });
@@ -347,7 +351,7 @@ export const delPermItems = async ({
           Key: {
             PK: spaceId,
 
-            SK: `CONTENT#${key.substring(7)}`,
+            SK: `${YJSKey(key.substring(7))}`,
           },
           UpdateExpression: "SET #ttl = :ttl, deleted = :deleted",
           ExpressionAttributeNames: {
@@ -515,18 +519,23 @@ export const setLastMutationId = async ({
   lastMutationId: number;
   clientGroupId: string;
 }) => {
+  const sevenDaysInSeconds = 7 * 24 * 60 * 60;
+  const expirationTime = Math.floor(Date.now() / 1000) + sevenDaysInSeconds;
   const updateParams: UpdateCommandInput = {
     TableName: env.MAIN_TABLE_NAME,
 
     Key: { PK: `CLIENT_GROUP#${clientGroupId}`, SK: `CLIENT#${clientId}` },
-    UpdateExpression: "SET #lastMutationId = :lastMutationId, #id = :id",
+    UpdateExpression:
+      "SET #lastMutationId = :lastMutationId, #id = :id, #ttl = :ttl",
     ExpressionAttributeNames: {
       "#lastMutationId": "lastMutationId",
       "#id": "id",
+      "#ttl": "ttl",
     },
     ExpressionAttributeValues: {
       ":lastMutationId": lastMutationId,
       ":id": clientId,
+      ":ttl": expirationTime,
     },
   };
   try {
@@ -557,6 +566,7 @@ export const setLastMutationIds = async ({
       } = {
         Update: {
           TableName: env.MAIN_TABLE_NAME,
+
           Key: {
             PK: `CLIENT_GROUP#${clientGroupId}`,
             SK: `CLIENT#${clientId}`,

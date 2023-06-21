@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Content,
+  YJSContent,
   MergedWorkType,
   Post,
   Quest,
@@ -55,33 +55,33 @@ const Editor = ({ id }: { id: string }) => {
     null,
     [id]
   ) as MergedWorkType;
-  const content = useSubscribe(
-    rep,
-    async (tx) => {
-      const c = (await tx.get(`CONTENT#${id}`)) || null;
+  // const content = useSubscribe(
+  //   rep,
+  //   async (tx) => {
+  //     const c = (await tx.get(`CONTENT#${id}`)) || null;
 
-      return c;
-    },
-    null,
-    [id]
-  ) as { content: string; text: string } | undefined;
+  //     return c;
+  //   },
+  //   null,
+  //   [id]
+  // ) as { content: string; text: string } | undefined;
 
   const router = useRouter();
 
   return (
     <div className="mb-20 mt-10 flex flex-col items-center justify-center">
       <div className="b w-5/6 max-w-2xl rounded-md bg-white p-5 drop-shadow-lg">
-        {work && work.published && content ? (
+        {/* {work && work.published && content ? (
           <NonEditableContent content={content.content} />
-        ) : work && !work.published ? (
-          <TiptapEditor id={id} />
-        ) : (
+        ) : work && !work.published ? ( */}
+        <TiptapEditor id={id} />
+        {/* ) : (
           <div className="h-[255px]">No work found</div>
-        )}
+        )} */}
       </div>
-      {work && !work.published && (
+      {/* {work && !work.published && (
         <Publish work={work} content={content ? content.content : undefined} />
-      )}
+      )} */}
 
       {work && work.published && (
         <div className="mt-3 flex gap-5">

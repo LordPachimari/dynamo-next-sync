@@ -6,8 +6,8 @@ import parse, {
 } from "html-react-parser";
 import Image, { ImageLoaderProps } from "next/image";
 import { useMemo } from "react";
-import FileExtension from "../Tiptap/FileExtension";
-import ImageExtension from "../Tiptap/ImageExtension";
+import FileExtension from "../Tiptap/extensions/FileExtension";
+import ImageExtension from "../Tiptap/extensions/ImageExtension";
 
 import { JSONContent } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";

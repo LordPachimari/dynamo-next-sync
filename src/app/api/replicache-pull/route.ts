@@ -7,7 +7,7 @@ import {
   getSpaceVersion,
 } from "~/repl/data";
 
-import { Content, Post, Quest, Solution } from "~/types/types";
+import { YJSContent, Post, Quest, Solution } from "~/types/types";
 import { WORKSPACE_LIST } from "~/utils/constants";
 
 import { auth } from "@clerk/nextjs";
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
         | Quest
         | Solution
         | Post
-        | Content
+        | YJSContent
       ) & { SK: string };
       if (QuestOrSolutionOrPost.deleted) {
         patch.push({

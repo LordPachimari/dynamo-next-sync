@@ -1,6 +1,6 @@
 import { NodeViewWrapper } from "@tiptap/react";
 import React from "react";
-import styles from "./tiptap.module.css";
+import styles from "../tiptap.module.css";
 type Node = {
   attrs: {
     link: string;

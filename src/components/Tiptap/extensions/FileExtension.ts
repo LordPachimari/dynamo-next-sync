@@ -1,7 +1,7 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 
-import FileComponent from "./FileComponent";
+import FileComponent from "../components/FileComponent";
 
 export default Node.create({
   name: "fileComponent",

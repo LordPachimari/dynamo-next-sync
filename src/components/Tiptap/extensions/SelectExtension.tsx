@@ -1,7 +1,7 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
-import Title from "./TitleComponent";
-import SelectComponent from "./SelectComponent";
+import Title from "../components/TitleComponent";
+import SelectComponent from "../components/SelectComponent";
 import { EditorState, Plugin, PluginKey, Transaction } from "@tiptap/pm/state";
 import { Schema } from "@tiptap/pm/model";
 import { ReplaceStep, Step, StepMap } from "@tiptap/pm/transform";

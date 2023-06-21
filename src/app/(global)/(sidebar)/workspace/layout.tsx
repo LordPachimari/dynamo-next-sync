@@ -42,6 +42,7 @@ export default function WorkspaceLayout({
       });
       setRep(r);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rep, userId]);
 
   const router = useRouter();

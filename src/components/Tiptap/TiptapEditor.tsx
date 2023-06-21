@@ -7,7 +7,15 @@ import {
 } from "@tiptap/react";
 import debounce from "lodash.debounce";
 import { Bold, Image as ImageIcon, Italic, Strikethrough } from "lucide-react";
-import { ChangeEvent, memo, useCallback, useRef } from "react";
+import {
+  ChangeEvent,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import * as Y from "yjs";
 import { Button } from "~/ui/Button";
 import { cn } from "~/utils/cn";
@@ -18,53 +26,41 @@ import { WorkspaceStore } from "~/zustand/workspace";
 import { YJSKey, editorKey } from "~/repl/mutators";
 import * as base64 from "base64-js";
 import { YJSContent } from "~/types/types";
-const TiptapEditor = (props: {
-  id: string;
-  //  content: string | undefined
-}) => {
-  let contentRestored: string | undefined;
-  const { id } = props;
+const TiptapEditor = (props: { id: string; Ydoc: string | null }) => {
+  const { id, Ydoc } = props;
   const rep = WorkspaceStore((state) => state.rep);
 
   const ydocRef = useRef(new Y.Doc());
   const ydoc = ydocRef.current;
 
-  const docStateFromReplicache = useSubscribe(
-    rep,
-    async (tx) => {
-      const content = (await tx.get(YJSKey(id))) as YJSContent;
-      console.log(content);
-      if (content.Ydoc) {
-        console.log("ydoc from subscribe", content.Ydoc);
-        return content.Ydoc;
-      }
-      return null;
-    },
-    null,
-    [id]
-  );
-  if (docStateFromReplicache !== null) {
-    const update = base64.toByteArray(docStateFromReplicache);
+  // const ydoc = useMemo(() => new Y.Doc(), [id]);
+
+  if (Ydoc !== null && ydoc) {
+    console.log("updating yjs");
+    const update = base64.toByteArray(Ydoc);
     Y.applyUpdateV2(ydoc, update);
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateContent = useCallback(
     debounce(async () => {
-      console.log("update");
       const updateTime = new Date().toISOString();
-
-      const update = Y.encodeStateAsUpdateV2(ydoc);
-      if (rep) {
-        await Promise.all([
+      console.log("update");
+      if (ydoc) {
+        const update = Y.encodeStateAsUpdateV2(ydoc);
+        if (rep) {
+          // await Promise.all([
           await rep.mutate.updateYJS({
             key: id,
             update: { Ydoc: base64.fromByteArray(update) },
-          }),
-        ]);
+          });
+          // ]);
+        }
       }
     }, 1000),
     []
   );
+  let skipUpdateOnLoad = true;
 
   const editor = useEditor(
     {
@@ -75,6 +71,7 @@ const TiptapEditor = (props: {
         // }),
         Collaboration.configure({
           document: ydoc,
+          field: "content",
         }),
         // TiptapCursor.configure({
         //   provider,
@@ -86,12 +83,7 @@ const TiptapEditor = (props: {
       //   content: JSON.parse(contentRestored) as JSONContent,
       // }),
 
-      // content:
-      // contentRestored
-      // ? (JSON.parse(contentRestored) as JSONContent)
-      // :
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      // `<title-component id=${id} ></title-component>
+      // content: `<title-component id=${id} ></title-component>
       // <select-component id=${id} ></select-component>
       // <subtopic-component id=${id} ></subtopic-component>
       // <reward-component id=${id} ></reward-component>
@@ -100,14 +92,30 @@ const TiptapEditor = (props: {
 
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       onUpdate: async ({ editor }) => {
-        // updateQuest();
+        // const json = editor.getJSON();
+        if (skipUpdateOnLoad) {
+          skipUpdateOnLoad = false;
+        } else {
+          await updateContent();
+        }
         // send the content to an API here
-        await updateContent();
       },
     },
-    [id, docStateFromReplicache]
+    [id]
   );
 
+  // useEffect(() => {
+  //   if (ydoc.getXmlFragment("content").length === 0 && editor) {
+  //     console.log("setting initial state");
+  //     editor.commands.setContent(`<title-component id=${id} ></title-component>
+  //    <select-component id=${id} ></select-component>
+  //    <subtopic-component id=${id} ></subtopic-component>
+  //     <reward-component id=${id} ></reward-component>
+  //   <date-component id=${id} ></date-component>
+  //     <p></p>`);
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [editor, id]);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const imageInputClick = () => {

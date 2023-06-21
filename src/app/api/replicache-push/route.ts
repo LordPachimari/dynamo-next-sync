@@ -232,11 +232,11 @@ const processMutation = async ({
 
       case "deleteWork":
         const params = idSchema.parse(mutation.args);
-        tx.del({ key: `${params.id}` });
+        tx.del({ key: `${editorKey(params.id)}` });
         break;
       case "deleteWorkPermanently":
         const permDeleteParams = idSchema.parse(mutation.args);
-        tx.permDel({ key: `${permDeleteParams.id}` });
+        tx.permDel({ key: `${editorKey(permDeleteParams.id)}` });
         break;
       case "duplicateWork":
         const { id, newId, createdAt, lastUpdated } = z

@@ -73,6 +73,7 @@ export default function List({
       console.log("list", list);
       return list;
     },
+    null,
     []
   );
   // useEffect(() => {

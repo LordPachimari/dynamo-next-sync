@@ -20,10 +20,12 @@ export default function Title(props: {
   updateAttributes: (props: { title: string | "inherit" }) => void;
 }) {
   const rep = WorkspaceStore((state) => state.rep);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleTitleChange = useCallback(
     debounce(async (title: string) => {
       console.log("title changed", title);
       props.updateAttributes({ title });
+      console.log("props", props.node.attrs.id);
       if (rep && props.node.attrs.id) {
         await rep.mutate.updateWork({
           id: props.node.attrs.id,

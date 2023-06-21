@@ -37,7 +37,9 @@ export const Title = ({
 }: {
   title: string | undefined;
   placeholder: string;
-  handleTitleChange: (e: FormEvent<HTMLTextAreaElement>) => Promise<void>;
+  handleTitleChange: (
+    e: FormEvent<HTMLTextAreaElement>
+  ) => Promise<void> | undefined;
   error: AttributeError;
 }) => {
   const [titleState, setTitleState] = useState("");
@@ -64,7 +66,7 @@ export const TopicSelect = ({
   topic,
 }: {
   topic?: TopicsType;
-  handleTopicChange: (value: string) => Promise<void>;
+  handleTopicChange: (topic: TopicsType) => Promise<void>;
 }) => {
   const [topicState, setTopicState] = useState<TopicsType | undefined>(
     undefined
@@ -75,7 +77,7 @@ export const TopicSelect = ({
   return (
     <MySelect
       onValueChange={async (value) => {
-        await handleTopicChange(value);
+        await handleTopicChange(value as TopicsType);
         setTopicState(value as TopicsType);
       }}
       value={topicState}

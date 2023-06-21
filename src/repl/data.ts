@@ -358,7 +358,10 @@ export const delPermItems = async ({
             "#version": "version",
             "#ttl": "ttl",
           },
-          ExpressionAttributeValues: { ":ttl": 3600, ":deleted": true },
+          ExpressionAttributeValues: {
+            ":ttl": expirationTime,
+            ":deleted": true,
+          },
           TableName: env.MAIN_TABLE_NAME,
         },
       });

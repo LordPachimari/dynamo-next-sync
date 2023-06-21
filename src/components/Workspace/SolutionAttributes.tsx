@@ -1,45 +1,15 @@
 import { FormEvent, useRef } from "react";
 
-import { Solution, UpdateQueue, WorkUpdate } from "~/types/types";
+import { Solution, UpdateQueue, WorkUpdates } from "~/types/types";
 import { WorkspaceStore } from "../../zustand/workspace";
 import { Title } from "./Attributes";
 
-const SolutionAttributes = ({
-  solution,
-  updateAttributesHandler,
-}: {
-  solution: Solution;
-  updateAttributesHandler: ({
-    updateQueue,
-    lastUpdate,
-  }: {
-    updateQueue: UpdateQueue;
-    lastUpdate: WorkUpdate;
-  }) => Promise<void> | undefined;
-}) => {
+const SolutionAttributes = ({ solution }: { solution: Solution }) => {
   const { id } = solution;
 
-  const updateSolutionListAttribute = WorkspaceStore(
-    (state) => state.updateListState
-  );
   const updateQueue = WorkspaceStore((state) => state.updateQueue);
   const titlePlaceholderText = "Write title here";
   const titleRef = useRef<HTMLDivElement>(null);
-  const handleTitleChange = async (e: FormEvent<HTMLTextAreaElement>) => {
-    updateSolutionListAttribute({
-      type: "SOLUTION",
-      id,
-      attribute: "title",
-      value: e.currentTarget.textContent as string,
-    });
-
-    await updateAttributesHandler({
-      updateQueue,
-      lastUpdate: {
-        title: e.currentTarget.textContent as string,
-      },
-    });
-  };
 
   //   const handleTitleFocus = () => {
   //     if (titleRef.current?.firstChild?.nodeType === 1) {
@@ -64,13 +34,7 @@ const SolutionAttributes = ({
   if (!solution) {
     return <div>No data</div>;
   }
-  return (
-    <Title
-      handleTitleChange={handleTitleChange}
-      placeholder="Untitled"
-      title={solution.title}
-    />
-  );
+  return <></>;
 };
 
 export default SolutionAttributes;

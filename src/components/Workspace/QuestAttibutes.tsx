@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent } from "react";
+import { ChangeEvent, FormEvent, useCallback } from "react";
 import { Quest, TopicsType, UpdateQueue, WorkUpdates } from "../../types/types";
 
 import { WorkspaceStore } from "../../zustand/workspace";
@@ -12,38 +12,33 @@ import {
   TopicSelect,
 } from "./Attributes";
 import { MultiValue, SingleValue } from "react-select";
+import debounce from "lodash.debounce";
 
-const QuestAttributes = ({
-  quest,
-  updateAttributesHandler,
-}: {
-  quest: Quest;
-  updateAttributesHandler: ({
-    updateQueue,
-    lastUpdate,
-  }: {
-    updateQueue: UpdateQueue;
-    lastUpdate: WorkUpdates;
-  }) => Promise<void> | undefined;
-}) => {
+const QuestAttributes = ({ quest }: { quest: Quest }) => {
   const updateQueue = WorkspaceStore((state) => state.updateQueue);
   const addUpdate = WorkspaceStore((state) => state.addUpdate);
   const attributeErrors = WorkspaceStore((state) => state.attributeErrors);
+  const rep = WorkspaceStore((state) => state.rep);
 
-  const handleTopicChange = async (value: string) => {
-    addUpdate({
-      id: quest.id,
-      value: {
-        topic: value as TopicsType,
-      },
-    });
-
-    await updateAttributesHandler({
-      updateQueue,
-      lastUpdate: {
-        topic: value as TopicsType,
-      },
-    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleTitleChange = useCallback(
+    debounce(async (e: FormEvent<HTMLTextAreaElement>) => {
+      if (rep) {
+        await rep.mutate.updateWork({
+          id: quest.id,
+          updates: { title: e.currentTarget.value },
+        });
+      }
+    }, 1000),
+    []
+  );
+  const handleTopicChange = async (topic: TopicsType) => {
+    if (rep) {
+      await rep.mutate.updateWork({
+        id: quest.id,
+        updates: { topic },
+      });
+    }
   };
 
   const handleSubtopicChange = async ({
@@ -52,66 +47,46 @@ const QuestAttributes = ({
     subtopics: MultiValue<OptionType>;
   }) => {
     const strings = subtopics.map((val) => val.value);
-    console.log("strings,", strings);
-    addUpdate({
-      id: quest.id,
-      value: {
-        subtopic: strings,
-      },
-    });
-    await updateAttributesHandler({
-      updateQueue,
-      lastUpdate: {
-        subtopic: strings,
-      },
-    });
+    if (rep) {
+      await rep.mutate.updateWork({
+        id: quest.id,
+        updates: { subtopic: strings },
+      });
+    }
   };
   const handleRewardChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    addUpdate({
-      value: { reward: e.currentTarget.valueAsNumber || 0 },
-      id: quest.id,
-    });
-    await updateAttributesHandler({
-      updateQueue,
-      lastUpdate: {
-        reward: e.currentTarget.valueAsNumber || 0,
-      },
-    });
+    const reward = e.currentTarget.valueAsNumber || 0;
+    if (rep) {
+      await rep.mutate.updateWork({
+        id: quest.id,
+        updates: { reward },
+      });
+    }
   };
   const handleSlotsChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    addUpdate({
-      id: quest.id,
-      value: {
-        slots: e.currentTarget.valueAsNumber || 0,
-      },
-    });
-    await updateAttributesHandler({
-      updateQueue,
-      lastUpdate: {
-        slots: e.currentTarget.valueAsNumber || 0,
-      },
-    });
-  };
-  const handleDateChange = async (event: Date | undefined) => {
-    if (event) {
-      addUpdate({
+    const slots = e.currentTarget.valueAsNumber || 0;
+    if (rep) {
+      await rep.mutate.updateWork({
         id: quest.id,
-        value: {
-          deadline: event.toISOString(),
-        },
+        updates: { slots },
       });
-      await updateAttributesHandler({
-        lastUpdate: {
-          deadline: event.toISOString(),
-        },
-        updateQueue,
-      });
+    }
+  };
+
+  const handleDateChange = async (date: Date | undefined) => {
+    if (date) {
+      if (rep) {
+        await rep.mutate.updateWork({
+          id: quest.id,
+          updates: { deadline: date.toISOString() },
+        });
+      }
     }
   };
 
   return (
     <div className="flex flex-col gap-2">
-      {/* <Title
+      <Title
         placeholder="Untitled"
         handleTitleChange={handleTitleChange}
         title={quest.title}
@@ -127,7 +102,7 @@ const QuestAttributes = ({
         <Slots handleSlotsChange={handleSlotsChange} slots={quest.slots} />
       </div>
 
-      <DatePicker handleDateChange={handleDateChange} date={quest.deadline} /> */}
+      <DatePicker handleDateChange={handleDateChange} date={quest.deadline} />
     </div>
   );
 };

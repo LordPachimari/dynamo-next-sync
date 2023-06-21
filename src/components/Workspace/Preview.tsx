@@ -12,23 +12,23 @@ export const Preview = ({
   work: WorkType;
   content: string;
 }) => {
-  if (type === "QUEST" && quest) {
-    return (
-      <>
-        <NonEditableQuestAttributes quest={quest} />
+  // if (type === "QUEST" && quest) {
+  //   return (
+  //     <>
+  //       <NonEditableQuestAttributes quest={quest} />
 
-        {content && <NonEditableContent content={content} />}
-      </>
-    );
-  }
-  if (type === "SOLUTION" && solution) {
-    return (
-      <>
-        <NonEditableSolutionAttributes solution={solution} />
-        {content && <NonEditableContent content={content} />}
-      </>
-    );
-  }
+  //       {content && <NonEditableContent content={content} />}
+  //     </>
+  //   );
+  // }
+  // if (type === "SOLUTION" && solution) {
+  //   return (
+  //     <>
+  //       <NonEditableSolutionAttributes solution={solution} />
+  //       {content && <NonEditableContent content={content} />}
+  //     </>
+  //   );
+  // }
   return <>hello</>;
 };
 export default Preview;

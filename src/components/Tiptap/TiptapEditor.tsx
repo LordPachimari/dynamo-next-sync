@@ -9,6 +9,7 @@ import debounce from "lodash.debounce";
 import { Bold, Image as ImageIcon, Italic, Strikethrough } from "lucide-react";
 import {
   ChangeEvent,
+  MutableRefObject,
   memo,
   useCallback,
   useEffect,
@@ -26,12 +27,24 @@ import { WorkspaceStore } from "~/zustand/workspace";
 import { YJSKey, editorKey } from "~/repl/mutators";
 import * as base64 from "base64-js";
 import { YJSContent } from "~/types/types";
-const TiptapEditor = (props: { id: string; Ydoc: string | null }) => {
-  const { id, Ydoc } = props;
+const TiptapEditor = (props: { id: string; ydoc: Y.Doc }) => {
+  const { id, ydoc } = props;
   const rep = WorkspaceStore((state) => state.rep);
-
-  const ydocRef = useRef(new Y.Doc());
-  const ydoc = ydocRef.current;
+  const [firstRender, setFirstRender] = useState(true);
+  const Ydoc = useSubscribe(
+    rep,
+    async (tx) => {
+      const content = (await tx.get(YJSKey(id))) as YJSContent;
+      console.log(content);
+      if (content.Ydoc) {
+        console.log("ydoc from subscribe", content.Ydoc);
+        return content.Ydoc;
+      }
+      return null;
+    },
+    null,
+    [id]
+  );
 
   // const ydoc = useMemo(() => new Y.Doc(), [id]);
 
@@ -45,10 +58,11 @@ const TiptapEditor = (props: { id: string; Ydoc: string | null }) => {
   const updateContent = useCallback(
     debounce(async () => {
       const updateTime = new Date().toISOString();
-      console.log("update");
+      console.log("update", ydoc, rep);
       if (ydoc) {
         const update = Y.encodeStateAsUpdateV2(ydoc);
         if (rep) {
+          console.log("mutating");
           // await Promise.all([
           await rep.mutate.updateYJS({
             key: id,
@@ -60,62 +74,34 @@ const TiptapEditor = (props: { id: string; Ydoc: string | null }) => {
     }, 1000),
     []
   );
-  let skipUpdateOnLoad = true;
 
   const editor = useEditor(
     {
       extensions: [
         ...TiptapExtensions,
-        // Collaboration.configure({
-        //   document: provider.document,
-        // }),
+
         Collaboration.configure({
           document: ydoc,
           field: "content",
         }),
-        // TiptapCursor.configure({
-        //   provider,
-        // }),
       ],
-
-      // content: JSON.parse(quest.content),
-      // ...(contentRestored && {
-      //   content: JSON.parse(contentRestored) as JSONContent,
-      // }),
-
-      // content: `<title-component id=${id} ></title-component>
-      // <select-component id=${id} ></select-component>
-      // <subtopic-component id=${id} ></subtopic-component>
-      // <reward-component id=${id} ></reward-component>
-      // <date-component id=${id} ></date-component>
-      // <p></p>`,
-
+      onCreate: () => {
+        console.log("create");
+      },
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      onUpdate: async ({ editor }) => {
-        // const json = editor.getJSON();
-        if (skipUpdateOnLoad) {
-          skipUpdateOnLoad = false;
+      onUpdate: async ({ editor, transaction }) => {
+        if (firstRender) {
+          console.log("first render");
+          setFirstRender(false);
         } else {
-          await updateContent();
+          // await updateContent();
+          console.log("ur ugly");
         }
-        // send the content to an API here
       },
     },
-    [id]
+    [ydoc, firstRender]
   );
 
-  // useEffect(() => {
-  //   if (ydoc.getXmlFragment("content").length === 0 && editor) {
-  //     console.log("setting initial state");
-  //     editor.commands.setContent(`<title-component id=${id} ></title-component>
-  //    <select-component id=${id} ></select-component>
-  //    <subtopic-component id=${id} ></subtopic-component>
-  //     <reward-component id=${id} ></reward-component>
-  //   <date-component id=${id} ></date-component>
-  //     <p></p>`);
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [editor, id]);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const imageInputClick = () => {

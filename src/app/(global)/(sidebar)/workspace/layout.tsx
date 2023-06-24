@@ -13,6 +13,14 @@ import { WORKSPACE_LIST } from "~/utils/constants";
 import Actions from "./Actions";
 import List from "./List";
 import { WorkspaceStore } from "~/zustand/workspace";
+import dynamic from "next/dynamic";
+// const Editor = dynamic(
+//   () => import("../../../../components/Workspace/Editor"),
+//   {
+//     loading: () => <p>Loading...</p>,
+//     ssr: false,
+//   }
+// );
 
 export default function WorkspaceLayout({
   children, // will be a page or nested layout

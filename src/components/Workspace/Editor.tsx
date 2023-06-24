@@ -1,31 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { MergedWorkType } from "~/types/types";
 import {
-  YJSContent,
-  MergedWorkType,
-  Post,
-  Quest,
-  Solution,
-  UpdateQueue,
-  WorkUpdates,
-} from "~/types/types";
-import debounce from "lodash.debounce";
-import {
-  NonEditableContent,
   NonEditableQuestAttributes,
   NonEditableSolutionAttributes,
 } from "./NonEditableAttributes";
 
 import dynamic from "next/dynamic";
-
-const TiptapEditor = dynamic(() => import("../Tiptap/TiptapEditor"), {
-  loading: () => <p>Loading...</p>,
-  ssr: false,
-});
-import Publish from "./Publish";
-import { Button } from "../../ui/Button";
+import { useSubscribe } from "replicache-react";
+import { WorkspaceStore } from "~/zustand/workspace";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,17 +22,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../../ui/AlertDialog";
+import { Button } from "../../ui/Button";
 import QuestAttributes from "./QuestAttibutes";
 import SolutionAttributes from "./SolutionAttributes";
-import { Replicache } from "replicache";
-import { M, YJSKey, mutators } from "~/repl/mutators";
-import { env } from "~/env.mjs";
-import { useSubscribe } from "replicache-react";
-import { WorkspaceStore } from "~/zustand/workspace";
+
+const TiptapEditor = dynamic(() => import("../Tiptap/TiptapEditor"), {
+  loading: () => <p>Loading...</p>,
+  ssr: false,
+});
+
+import * as Y from "yjs";
 // });
 
 const Editor = ({ id }: { id: string }) => {
   const rep = WorkspaceStore((state) => state.rep);
+
+  const [ydoc, setYdoc] = useState<Y.Doc>();
   const work = useSubscribe(
     rep,
     async (tx) => {
@@ -70,20 +60,9 @@ const Editor = ({ id }: { id: string }) => {
   //   [id]
   // ) as { content: string; text: string } | undefined;
 
-  const docStateFromReplicache = useSubscribe(
-    rep,
-    async (tx) => {
-      const content = (await tx.get(YJSKey(id))) as YJSContent;
-      console.log(content);
-      if (content.Ydoc) {
-        console.log("ydoc from subscribe", content.Ydoc);
-        return content.Ydoc;
-      }
-      return null;
-    },
-    null,
-    [id]
-  );
+  useEffect(() => {
+    setYdoc(new Y.Doc());
+  }, [id]);
 
   const router = useRouter();
 
@@ -106,8 +85,8 @@ const Editor = ({ id }: { id: string }) => {
           //  content
           // <NonEditableContent content={content.content} />
           <></>
-        ) : work && !work.published ? (
-          <TiptapEditor id={id} Ydoc={docStateFromReplicache} />
+        ) : work && !work.published && ydoc ? (
+          <TiptapEditor id={id} ydoc={ydoc} />
         ) : (
           <div className="h-[255px]">No work found</div>
         )}

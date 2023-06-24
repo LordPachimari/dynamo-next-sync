@@ -103,11 +103,11 @@ export const TiptapExtensions = [
   // }),
   ImageExtension,
   FileExtension,
-  TitleExtension,
-  SelectExtension,
-  SubtopicExtension,
-  RewardExtension,
-  DatePickerExtension,
+  // TitleExtension,
+  // SelectExtension,
+  // SubtopicExtension,
+  // RewardExtension,
+  // DatePickerExtension,
 
   SlashCommand,
 ];

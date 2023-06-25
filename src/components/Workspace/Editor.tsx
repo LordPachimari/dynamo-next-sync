@@ -49,19 +49,12 @@ const Editor = ({ id }: { id: string }) => {
     null,
     [id]
   ) as MergedWorkType;
-  // const content = useSubscribe(
-  //   rep,
-  //   async (tx) => {
-  //     const c = (await tx.get(`CONTENT#${id}`)) || null;
-
-  //     return c;
-  //   },
-  //   null,
-  //   [id]
-  // ) as { content: string; text: string } | undefined;
+  const ydocRef = useRef(new Y.Doc());
 
   useEffect(() => {
-    setYdoc(new Y.Doc());
+    ydocRef.current = new Y.Doc();
+
+    setYdoc(ydocRef.current);
   }, [id]);
 
   const router = useRouter();

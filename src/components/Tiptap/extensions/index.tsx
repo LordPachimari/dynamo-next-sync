@@ -1,18 +1,19 @@
-import StarterKit from "@tiptap/starter-kit";
-import HorizontalRule from "@tiptap/extension-horizontal-rule";
-import TiptapLink from "@tiptap/extension-link";
-import TiptapImage from "@tiptap/extension-image";
-import Placeholder from "@tiptap/extension-placeholder";
 import { InputRule } from "@tiptap/core";
+import HorizontalRule from "@tiptap/extension-horizontal-rule";
+import TiptapImage from "@tiptap/extension-image";
+import TiptapLink from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
+import StarterKit from "@tiptap/starter-kit";
 
-import SlashCommand from "./SlashComandExtension";
-import ImageExtension from "./ImageExtension";
+import TiptapUnderline from "@tiptap/extension-underline";
 import FileExtension from "./FileExtension";
-import TitleExtension from "./TitleExtension";
-import SelectExtension from "./SelectExtension";
-import SubtopicExtension from "./SubtopicExtension";
-import RewardExtension from "./RewardExtension";
-import DatePickerExtension from "./DatePickerExtension";
+import ImageExtension from "./ImageExtension";
+import SlashCommand from "./SlashComandExtension";
+import TextStyle from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-color";
+import TaskItem from "@tiptap/extension-task-item";
+import TaskList from "@tiptap/extension-task-list";
+import ImageUploaderExtension from "./ImageUploaderExtension";
 
 export const TiptapExtensions = [
   StarterKit.configure({
@@ -48,6 +49,12 @@ export const TiptapExtensions = [
           "rounded-md bg-stone-200 px-1.5 py-1 font-mono font-medium text-black",
       },
     },
+    horizontalRule: false,
+    dropcursor: {
+      color: "#DBEAFE",
+      width: 4,
+    },
+    gapcursor: false,
   }),
   // patch to fix horizontal rule bug: https://github.com/ueberdosis/tiptap/pull/3859#issuecomment-1536799740
   HorizontalRule.extend({
@@ -82,7 +89,10 @@ export const TiptapExtensions = [
     },
   }),
   TiptapImage.configure({
-    inline: true,
+    allowBase64: true,
+    HTMLAttributes: {
+      class: "rounded-lg border border-stone-200",
+    },
   }),
   Placeholder.configure({
     placeholder: ({ node }) => {
@@ -103,6 +113,8 @@ export const TiptapExtensions = [
   // }),
   ImageExtension,
   FileExtension,
+  ImageUploaderExtension,
+
   // TitleExtension,
   // SelectExtension,
   // SubtopicExtension,
@@ -110,4 +122,17 @@ export const TiptapExtensions = [
   // DatePickerExtension,
 
   SlashCommand,
+  TiptapUnderline,
+  TextStyle,
+  Color,
+  TaskList.configure({
+    HTMLAttributes: {
+      class: "not-prose pl-2",
+    },
+  }),
+  TaskItem.configure({
+    HTMLAttributes: {
+      class: "flex items-start mb-4",
+    },
+  }),
 ];

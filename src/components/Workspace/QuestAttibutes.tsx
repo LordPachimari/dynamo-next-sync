@@ -92,7 +92,9 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
         title={quest.title}
         error={attributeErrors.title}
       />
+
       <TopicSelect handleTopicChange={handleTopicChange} topic={quest.topic} />
+
       <Subtopic
         handleSubtopicChange={handleSubtopicChange}
         subtopic={quest.subtopic}

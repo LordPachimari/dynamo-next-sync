@@ -14,6 +14,8 @@ type Node = {
     width: number;
     height: number;
     src: string;
+    alt: string;
+    title: string;
   };
 };
 export default function ImageComponent(props: {
@@ -50,8 +52,11 @@ export default function ImageComponent(props: {
   };
   const isFocused = isResizing || props.selected;
   return (
-    <NodeViewWrapper className={styles.imageParentContainer}>
-      <div className={styles.imageContainer} contentEditable="false">
+    <NodeViewWrapper className="flex w-full justify-center">
+      <div
+        className="relative my-3 flex w-full cursor-pointer justify-center"
+        contentEditable="false"
+      >
         <span className={styles.editorImage}>
           <div draggable="true" data-drag-handle>
             <Image
@@ -62,8 +67,9 @@ export default function ImageComponent(props: {
               width={props.node.attrs.width}
               height={props.node.attrs.height}
               priority
-              alt="image"
+              alt={props.node.attrs.alt}
               sizes="(max-width: 768px) 90vw, (min-width: 1024px) 400px"
+              title={props.node.attrs.title}
               // fill={true}
             />
           </div>

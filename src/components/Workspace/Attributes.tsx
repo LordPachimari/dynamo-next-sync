@@ -169,7 +169,7 @@ export const Subtopic = ({
         closeMenuOnSelect={false}
         styles={customStyles}
         classNames={{
-          control: (state) => (state.isFocused ? "#f97316" : "border-grey-300"),
+          control: (state) => (state.isFocused ? "#f97316" : "border-grey-100"),
         }}
         onChange={async (val) => {
           await handleSubtopicChange({

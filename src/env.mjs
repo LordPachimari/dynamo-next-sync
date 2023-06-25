@@ -11,7 +11,8 @@ export const env = createEnv({
     MAIN_TABLE_NAME: z.string(),
     REGION:z.string(),
     DYNAMO_ACCESS_KEY:z.string(),
-    DYNAMO_SECRET_KEY:z.string()
+    DYNAMO_SECRET_KEY:z.string(),
+    UPLOADTHING_SECRET:z.string()
   },
   /**
    * Specify your client-side environment variables schema here.
@@ -33,7 +34,8 @@ export const env = createEnv({
     NEXT_PUBLIC_REPLICACHE_KEY: process.env.NEXT_PUBLIC_REPLICACHE_KEY,
     MAIN_TABLE_NAME: process.env.MAIN_TABLE_NAME,
     DYNAMO_ACCESS_KEY:process.env.DYNAMO_ACCESS_KEY,
-    DYNAMO_SECRET_KEY:process.env.DYNAMO_SECRET_KEY
+    DYNAMO_SECRET_KEY:process.env.DYNAMO_SECRET_KEY,
+     UPLOADTHING_SECRET:process.env.UPLOADTHING_SECRET
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   skipValidation: !!process.env.CI || !!process.env.SKIP_ENV_VALIDATION,

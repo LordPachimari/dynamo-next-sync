@@ -53,17 +53,11 @@ export default function List({
   //   solutions: SolutionListComponent[];
   //   posts: PostListComponent[];
   // }>({ posts: [], quests: [], solutions: [] });
-  let quests: QuestListComponent[] = [];
-  let solutions: SolutionListComponent[] = [];
-  let posts: PostListComponent[] = [];
+  const quests: QuestListComponent[] = [];
+  const solutions: SolutionListComponent[] = [];
+  const posts: PostListComponent[] = [];
   const router = useRouter();
   const { id: routerId } = useParams();
-
-  const WorkZod = z.union([
-    QuestListComponentZod,
-    SolutionListComponentZod,
-    PostListComponentZod,
-  ]);
 
   const works = useSubscribe(
     rep,
@@ -76,28 +70,19 @@ export default function List({
     null,
     []
   );
-  // useEffect(() => {
+
   if (works) {
-    const _quests: QuestListComponent[] = [];
-    const _solutions: SolutionListComponent[] = [];
-    const _posts: PostListComponent[] = [];
     for (const [key, value] of works) {
       const work = value as Post | Solution | Quest;
       if (work.type === "QUEST" && !work.inTrash) {
-        _quests.push(work);
+        quests.push(work);
       } else if (work.type === "SOLUTION" && !work.inTrash) {
-        _solutions.push(work);
+        solutions.push(work);
       } else if (work.type === "POST" && !work.inTrash) {
-        _posts.push(work as Post);
+        posts.push(work as Post);
       }
     }
-    quests = _quests;
-    solutions = _solutions;
-    posts = _posts;
   }
-  //     setListComponents({ quests, solutions, posts });
-  //   }
-  // }, [works]);
 
   const handleCreateQuest = async () => {
     if (rep) {

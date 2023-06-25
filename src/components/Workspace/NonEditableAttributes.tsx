@@ -21,6 +21,7 @@ import {
 import { Badge } from "~/ui/Badge";
 import { cn } from "~/utils/cn";
 import * as lz from "lz-string";
+import { Gem, Users2 } from "lucide-react";
 export const HtmlParseOptions: HTMLReactParserOptions = {
   replace: (_domNode) => {
     const domNode = _domNode as Element;
@@ -95,18 +96,7 @@ const Subtopic = ({ subtopic }: { subtopic: string[] | undefined }) => {
 const Reward = ({ reward }: { reward: number | undefined }) => {
   return (
     <div className="flex gap-2" id="reward">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width="24"
-        height="24"
-      >
-        <path fill="none" d="M0 0h24v24H0z" />
-        <path
-          d="M4.873 3h14.254a1 1 0 0 1 .809.412l3.823 5.256a.5.5 0 0 1-.037.633L12.367 21.602a.5.5 0 0 1-.706.028c-.007-.006-3.8-4.115-11.383-12.329a.5.5 0 0 1-.037-.633l3.823-5.256A1 1 0 0 1 4.873 3zm.51 2l-2.8 3.85L12 19.05 21.417 8.85 18.617 5H5.383z"
-          fill="var(--purple)"
-        />
-      </svg>
+      <Gem className="text-purple-500" />
       <p className="font-bold text-purple-500">{reward}</p>
     </div>
   );
@@ -114,18 +104,7 @@ const Reward = ({ reward }: { reward: number | undefined }) => {
 const Slots = ({ slots }: { slots: number | undefined }) => {
   return (
     <div className="flex gap-2" id="slots">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width="24"
-        height="24"
-      >
-        <path fill="none" d="M0 0h24v24H0z" />
-        <path
-          d="M2 22a8 8 0 1 1 16 0h-2a6 6 0 1 0-12 0H2zm8-9c-3.315 0-6-2.685-6-6s2.685-6 6-6 6 2.685 6 6-2.685 6-6 6zm0-2c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm8.284 3.703A8.002 8.002 0 0 1 23 22h-2a6.001 6.001 0 0 0-3.537-5.473l.82-1.824zm-.688-11.29A5.5 5.5 0 0 1 21 8.5a5.499 5.499 0 0 1-5 5.478v-2.013a3.5 3.5 0 0 0 1.041-6.609l.555-1.943z"
-          fill="var(--gray)"
-        />
-      </svg>
+      <Users2 className="text-gray-500" />
       <p className="font-bold text-gray-500">{slots}</p>
     </div>
   );

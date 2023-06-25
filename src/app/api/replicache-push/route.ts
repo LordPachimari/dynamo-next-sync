@@ -10,7 +10,7 @@ import {
   WorkZod,
 } from "~/types/types";
 
-import { QUEST_PREFIX, WORKSPACE_LIST } from "~/utils/constants";
+import { WORKSPACE_LIST } from "~/utils/constants";
 import { ReplicacheTransaction } from "~/repl/transaction";
 import {
   getItem,

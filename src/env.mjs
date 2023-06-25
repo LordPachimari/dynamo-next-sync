@@ -12,7 +12,9 @@ export const env = createEnv({
     REGION:z.string(),
     DYNAMO_ACCESS_KEY:z.string(),
     DYNAMO_SECRET_KEY:z.string(),
-    UPLOADTHING_SECRET:z.string()
+    UPLOADTHING_SECRET:z.string(),
+    PUSHER_APP_ID:z.string(),
+    PUSHER_SECRET:z.string()
   },
   /**
    * Specify your client-side environment variables schema here.
@@ -22,6 +24,8 @@ export const env = createEnv({
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
     NEXT_PUBLIC_REPLICACHE_KEY: z.string(),
+    NEXT_PUBLIC_PUSHER_KEY:z.string(),
+    NEXT_PUBLIC_PUSHER_CLUSTER:z.string()
   },
   /**
    * Destructure all variables from `process.env` to make sure they aren't tree-shaken away.
@@ -35,7 +39,11 @@ export const env = createEnv({
     MAIN_TABLE_NAME: process.env.MAIN_TABLE_NAME,
     DYNAMO_ACCESS_KEY:process.env.DYNAMO_ACCESS_KEY,
     DYNAMO_SECRET_KEY:process.env.DYNAMO_SECRET_KEY,
-     UPLOADTHING_SECRET:process.env.UPLOADTHING_SECRET
+     UPLOADTHING_SECRET:process.env.UPLOADTHING_SECRET,
+     NEXT_PUBLIC_PUSHER_CLUSTER:process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+     NEXT_PUBLIC_PUSHER_KEY:process.env.NEXT_PUBLIC_PUSHER_KEY,
+     PUSHER_APP_ID:process.env.PUSHER_APP_ID,
+     PUSHER_SECRET:process.env.PUSHER_SECRET
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   skipValidation: !!process.env.CI || !!process.env.SKIP_ENV_VALIDATION,

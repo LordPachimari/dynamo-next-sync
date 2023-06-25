@@ -15,18 +15,16 @@ import { MultiValue, SingleValue } from "react-select";
 import debounce from "lodash.debounce";
 
 const QuestAttributes = ({ quest }: { quest: Quest }) => {
-  const updateQueue = WorkspaceStore((state) => state.updateQueue);
-  const addUpdate = WorkspaceStore((state) => state.addUpdate);
   const attributeErrors = WorkspaceStore((state) => state.attributeErrors);
   const rep = WorkspaceStore((state) => state.rep);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleTitleChange = useCallback(
-    debounce(async (e: FormEvent<HTMLTextAreaElement>) => {
+    debounce(async (title: string) => {
       if (rep) {
         await rep.mutate.updateWork({
           id: quest.id,
-          updates: { title: e.currentTarget.value },
+          updates: { title },
         });
       }
     }, 1000),

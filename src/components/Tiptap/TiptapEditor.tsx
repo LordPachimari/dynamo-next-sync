@@ -87,7 +87,7 @@ const TiptapEditor = (props: {
       if (ydoc) {
         const update = Y.encodeStateAsUpdateV2(ydoc);
         if (rep) {
-          console.log("mutating");
+          console.log("mutating", base64.fromByteArray(update));
           // await Promise.all([
           await rep.mutate.updateYJS({
             id,
@@ -97,7 +97,7 @@ const TiptapEditor = (props: {
         }
       }
     }, 1000),
-    [ydoc, id]
+    [ydoc]
   );
 
   const editor = useEditor(

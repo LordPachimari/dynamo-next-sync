@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-
+import Pusher from "pusher-js";
 import { useAuth } from "@clerk/nextjs";
 import { useParams, useRouter } from "next/navigation";
 import { Replicache } from "replicache";
@@ -48,8 +48,20 @@ export default function WorkspaceLayout({
         mutators,
         pullInterval: null,
       });
+      if (env.NEXT_PUBLIC_PUSHER_KEY && env.NEXT_PUBLIC_PUSHER_CLUSTER) {
+        Pusher.logToConsole = true;
+        const pusher = new Pusher(env.NEXT_PUBLIC_PUSHER_KEY, {
+          cluster: env.NEXT_PUBLIC_PUSHER_CLUSTER,
+        });
+
+        const channel = pusher.subscribe("workspace");
+        channel.bind("poke", () => {
+          r.pull();
+        });
+      }
       setRep(r);
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rep, userId]);
 

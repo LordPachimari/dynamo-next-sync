@@ -23,6 +23,8 @@ import {
 } from "~/repl/data";
 import { auth } from "@clerk/nextjs";
 import { YJSKey, editorKey } from "~/repl/mutators";
+import Pusher from "pusher";
+import { env } from "~/env.mjs";
 
 // See notes in bug: https://github.com/rocicorp/replidraw/issues/47
 const mutationSchema = z.object({
@@ -93,6 +95,7 @@ export async function POST(req: Request, res: Response) {
 
     console.log("prevVersion: ", prevVersion);
     console.log("lastMutationIDs:", lastMutationIds);
+    console.log("clientId", clientIDs);
 
     const tx = new ReplicacheTransaction(adjustedSpaceId, nextVersion, userId);
 
@@ -132,7 +135,7 @@ export async function POST(req: Request, res: Response) {
       // }
     }
     if (updated) {
-      return await Promise.all([
+      await Promise.all([
         setLastMutationIds({
           clientGroupId: push.clientGroupID,
           lmids: lastMutationIds,
@@ -146,12 +149,34 @@ export async function POST(req: Request, res: Response) {
         }),
         tx.flush(),
       ]);
+    } else {
+      console.log("Nothing to update");
     }
-    console.log("Nothing to update");
-    return;
   };
   try {
     await processMutations();
+    if (
+      env.PUSHER_APP_ID &&
+      env.PUSHER_SECRET &&
+      env.NEXT_PUBLIC_PUSHER_KEY &&
+      env.NEXT_PUBLIC_PUSHER_CLUSTER
+    ) {
+      console.log("start poking");
+      const startPoke = Date.now();
+
+      const pusher = new Pusher({
+        appId: env.PUSHER_APP_ID,
+        key: env.NEXT_PUBLIC_PUSHER_KEY,
+        secret: env.PUSHER_SECRET,
+        cluster: env.NEXT_PUBLIC_PUSHER_CLUSTER,
+        useTLS: true,
+      });
+
+      await pusher.trigger("workspace", "poke", {});
+      console.log("Poke took", Date.now() - startPoke);
+    } else {
+      console.log("Not poking because Pusher is not configured");
+    }
   } catch (error) {
     console.log(error);
     throw new Error("push error");
@@ -159,27 +184,6 @@ export async function POST(req: Request, res: Response) {
 
   console.log("Processed all mutations in", Date.now() - t0);
 
-  // if (
-  //   process.env.NEXT_PUBLIC_PUSHER_APP_ID &&
-  //   process.env.NEXT_PUBLIC_PUSHER_KEY &&
-  //   process.env.NEXT_PUBLIC_PUSHER_SECRET &&
-  //   process.env.NEXT_PUBLIC_PUSHER_CLUSTER
-  // ) {
-  //   const startPoke = Date.now();
-
-  //   const pusher = new Pusher({
-  //     appId: process.env.NEXT_PUBLIC_PUSHER_APP_ID,
-  //     key: process.env.NEXT_PUBLIC_PUSHER_KEY,
-  //     secret: process.env.NEXT_PUBLIC_PUSHER_SECRET,
-  //     cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-  //     useTLS: true,
-  //   });
-
-  //   await pusher.trigger("default", "poke", {});
-  //   console.log("Poke took", Date.now() - startPoke);
-  // } else {
-  //   console.log("Not poking because Pusher is not configured");
-  // }
   return NextResponse.json({});
 }
 

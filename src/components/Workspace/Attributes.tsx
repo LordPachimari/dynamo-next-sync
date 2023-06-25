@@ -37,9 +37,7 @@ export const Title = ({
 }: {
   title: string | undefined;
   placeholder: string;
-  handleTitleChange: (
-    e: FormEvent<HTMLTextAreaElement>
-  ) => Promise<void> | undefined;
+  handleTitleChange: (title: string) => Promise<void> | undefined;
   error: AttributeError;
 }) => {
   const [titleState, setTitleState] = useState("");
@@ -54,7 +52,7 @@ export const Title = ({
         defaultValue={titleState}
         placeholder={placeholder}
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        onInput={handleTitleChange}
+        onInput={(e) => handleTitleChange(e.currentTarget.value)}
         className="w-full resize-none appearance-none overflow-hidden bg-transparent text-4xl font-bold focus:outline-none"
         // {...register("title")}
       />

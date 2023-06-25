@@ -501,7 +501,6 @@ export const getLastMutationIdsSince = async ({
     const result = await dynamoClient.send(new QueryCommand(queryParams));
     if (result.Items) {
       const lastMutationIDArray = result.Items as LastMutationId[];
-      lastMutationIDArray.pop();
       return Object.fromEntries(
         lastMutationIDArray.map((l) => [l.id, l.lastMutationId] as const)
       );

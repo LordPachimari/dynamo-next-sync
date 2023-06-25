@@ -46,10 +46,8 @@ export async function POST(req: NextRequest, res: NextResponse) {
     //if the space is workspace list or is a work - quest/solution/post -- make it private by adding userId.
     spaceId === WORKSPACE_LIST ? `${spaceId}#${userId}` : spaceId;
 
-  console.log("hello?", json);
   const pull = pullRequestSchema.parse(json);
   console.log("spaceId", adjustedSpaceId);
-  console.log("clientGroupId", pull.clientGroupID);
 
   const patch: PatchOperation[] = [];
   const startTransact = Date.now();
@@ -93,22 +91,19 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
   if (spaceId === WORKSPACE_LIST) {
     for (const item of items) {
-      const QuestOrSolutionOrPost = item as (
-        | Quest
-        | Solution
-        | Post
-        | YJSContent
-      ) & { SK: string };
-      if (QuestOrSolutionOrPost.deleted) {
+      const WorkspaceItem = item as (Quest | Solution | Post | YJSContent) & {
+        SK: string;
+      };
+      if (WorkspaceItem.deleted) {
         patch.push({
           op: "del",
-          key: QuestOrSolutionOrPost.SK,
+          key: WorkspaceItem.SK,
         });
       } else {
         patch.push({
           op: "put",
-          key: QuestOrSolutionOrPost.SK,
-          value: QuestOrSolutionOrPost,
+          key: WorkspaceItem.SK,
+          value: WorkspaceItem,
         });
       }
     }

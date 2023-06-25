@@ -9,7 +9,9 @@ import debounce from "lodash.debounce";
 import { Bold, Image as ImageIcon, Italic, Strikethrough } from "lucide-react";
 import {
   ChangeEvent,
+  Dispatch,
   MutableRefObject,
+  SetStateAction,
   memo,
   useCallback,
   useEffect,
@@ -32,17 +34,19 @@ import { EditorBubbleMenu } from "./components/EditorBubleMenu";
 import { useUploadThing } from "~/utils/useUploadThing";
 import { toast } from "sonner";
 import { generatePermittedFileTypes } from "./utils/imageUpload";
-const TiptapEditor = (props: { id: string; ydoc: Y.Doc }) => {
-  const { id, ydoc } = props;
+const TiptapEditor = (props: {
+  id: string;
+  ydoc: Y.Doc;
+  setRenderCount: Dispatch<SetStateAction<number>>;
+  renderCount: number;
+}) => {
+  const { id, ydoc, setRenderCount, renderCount } = props;
   const rep = WorkspaceStore((state) => state.rep);
-  const [firstRender, setFirstRender] = useState(true);
-  const [event, setEvent] = useState<ClipboardEvent | DragEvent>();
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const { startUpload, isUploading, permittedFileInfo } = useUploadThing({
     endpoint: "imageUploader",
     onClientUploadComplete: (res) => {
-      console.log("hello?", res, event);
       if (imageInputRef.current) {
         imageInputRef.current.value = "";
       }
@@ -57,7 +61,7 @@ const TiptapEditor = (props: { id: string; ydoc: Y.Doc }) => {
     async (tx) => {
       const content = (await tx.get(YJSKey(id))) as YJSContent;
       console.log(content);
-      if (content.Ydoc) {
+      if (content && content.Ydoc) {
         console.log("ydoc from subscribe", content.Ydoc);
         if (ydoc) {
           console.log("updating yjs");
@@ -69,15 +73,16 @@ const TiptapEditor = (props: { id: string; ydoc: Y.Doc }) => {
       return null;
     },
     null,
-    [id]
+    [ydoc]
   );
+
+  console.log("render count", renderCount);
 
   // const ydoc = useMemo(() => new Y.Doc(), [id]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateContent = useCallback(
     debounce(async () => {
-      const updateTime = new Date().toISOString();
       console.log("update", ydoc, rep);
       if (ydoc) {
         const update = Y.encodeStateAsUpdateV2(ydoc);
@@ -85,14 +90,14 @@ const TiptapEditor = (props: { id: string; ydoc: Y.Doc }) => {
           console.log("mutating");
           // await Promise.all([
           await rep.mutate.updateYJS({
-            key: id,
+            id,
             update: { Ydoc: base64.fromByteArray(update) },
           });
           // ]);
         }
       }
     }, 1000),
-    []
+    [ydoc, id]
   );
 
   const editor = useEditor(
@@ -113,8 +118,10 @@ const TiptapEditor = (props: { id: string; ydoc: Y.Doc }) => {
           },
         },
         handlePaste: (view, event) => {
+          if (renderCount < 3) {
+            void updateContent();
+          }
           if (event.clipboardData && event.clipboardData.files) {
-            setEvent(event);
             event.preventDefault();
             //   return handleImageUpload(file, view, event);
             if (event.clipboardData.files?.length) {
@@ -144,7 +151,9 @@ const TiptapEditor = (props: { id: string; ydoc: Y.Doc }) => {
           }
         },
         handleDrop: (view, event, _slice, moved) => {
-          setEvent(event);
+          if (renderCount < 3) {
+            void updateContent();
+          }
           if (!moved && event.dataTransfer && event.dataTransfer.files) {
             event.preventDefault();
             if (event.dataTransfer.files?.length) {
@@ -189,16 +198,17 @@ const TiptapEditor = (props: { id: string; ydoc: Y.Doc }) => {
           field: "content",
         }),
       ],
-      onCreate: () => {
-        console.log("create");
-      },
+
+      autofocus: "end",
+      // onCreate: () => {
+      //   console.log("create");
+      // },
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       onUpdate: async ({ editor, transaction }) => {
-        if (firstRender) {
-          console.log("first render");
-          setFirstRender(false);
+        if (renderCount < 3) {
+          setRenderCount((old) => old + 1);
         } else {
-          // await updateContent();
+          await updateContent();
           console.log("ur ugly");
         }
       },

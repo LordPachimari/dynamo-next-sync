@@ -23,6 +23,8 @@ export default function ImageUploader(props: {
     endpoint: "imageUploader",
     onClientUploadComplete: (res) => {
       console.log("hello?", res);
+
+      toast.success("Image successfully uploaded");
       if (imageInputRef.current) {
         imageInputRef.current.value = "";
       }
@@ -44,12 +46,8 @@ export default function ImageUploader(props: {
             .run();
         }
 
-        toast.success("Image successfully uploaded");
         props.deleteNode(props.node);
       }
-    },
-    onUploadError: (error: Error) => {
-      toast.error("Failed to upload");
     },
   });
   console.log("permitted info", permittedFileInfo);

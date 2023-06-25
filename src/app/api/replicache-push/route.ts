@@ -226,8 +226,8 @@ const processMutation = async ({
           type: "YJSCONTENT",
         };
 
-        tx.put({ key: `${editorKey(work.id)}`, value: work });
-        tx.put({ key: `${YJSKey(work.id)}`, value: newContent });
+        tx.put({ key: editorKey(work.id), value: work });
+        tx.put({ key: YJSKey(work.id), value: newContent });
         break;
 
       case "deleteWork":
@@ -276,9 +276,9 @@ const processMutation = async ({
         break;
       case "updateYJS":
         const content = z
-          .object({ key: z.string(), update: z.object({ Ydoc: z.string() }) })
+          .object({ id: z.string(), update: z.object({ Ydoc: z.string() }) })
           .parse(mutation.args);
-        tx.update({ key: `${YJSKey(content.key)}`, value: content.update });
+        tx.update({ key: YJSKey(content.id), value: content.update });
         break;
 
       default:

@@ -46,8 +46,6 @@ export const getChangedItems = async ({
   try {
     const result = await dynamoClient.send(new QueryCommand(queryParams));
     if (result.Items) {
-      result.Items.pop();
-
       return result.Items;
     }
     return [];
@@ -259,6 +257,7 @@ export const restoreItems = async ({
   userId,
 }: {
   spaceId: string;
+
   keysToDel: string[];
   version: number;
   userId: string;

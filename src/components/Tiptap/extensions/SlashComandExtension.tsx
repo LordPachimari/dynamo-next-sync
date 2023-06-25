@@ -212,20 +212,6 @@ const getSuggestionItems = ({ query }: { query: string }) => {
           .deleteRange(range)
           .insertContent(`<image-uploader></image-uploader>`)
           .run();
-        // editor.view.state.tr.replaceSelectionWith(
-        //   editor.view.state.schema.nodes.imageUploader!.create()
-        // );
-        // upload image
-        // const input = document.createElement("input");
-        // input.type = "file";
-        // input.accept = "image/*";
-        // input.onchange = async (event) => {
-        //   if (input.files?.length) {
-        //     const file = input.files[0];
-        //     return handleImageUpload(file, editor.view, event);
-        //   }
-        // };
-        // input.click();
       },
     },
   ].filter((item) => {

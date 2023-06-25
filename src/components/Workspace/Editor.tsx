@@ -38,6 +38,8 @@ const Editor = ({ id }: { id: string }) => {
   const rep = WorkspaceStore((state) => state.rep);
 
   const [ydoc, setYdoc] = useState<Y.Doc>();
+  const [renderCount, setRenderCount] = useState(0);
+
   const work = useSubscribe(
     rep,
     async (tx) => {
@@ -55,6 +57,7 @@ const Editor = ({ id }: { id: string }) => {
     ydocRef.current = new Y.Doc();
 
     setYdoc(ydocRef.current);
+    setRenderCount(0);
   }, [id]);
 
   const router = useRouter();
@@ -79,7 +82,12 @@ const Editor = ({ id }: { id: string }) => {
           // <NonEditableContent content={content.content} />
           <></>
         ) : work && !work.published && ydoc ? (
-          <TiptapEditor id={id} ydoc={ydoc} />
+          <TiptapEditor
+            id={id}
+            ydoc={ydoc}
+            setRenderCount={setRenderCount}
+            renderCount={renderCount}
+          />
         ) : (
           <div className="h-[255px]">No work found</div>
         )}

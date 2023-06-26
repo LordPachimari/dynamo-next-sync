@@ -2,11 +2,11 @@ import { type ReactNode } from "react";
 
 import "../styles/globals.css";
 import "../styles/prosemirror.css";
-import { Noto_Sans } from "next/font/google";
+import { Noto_Sans, Cabin } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import Toaster from "../ui/Toaster";
 
-const NotoSans = Noto_Sans({
+const CabinFont = Cabin({
   subsets: ["latin"],
   weight: ["400"],
 });
@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={NotoSans.className}>
+        <body className={CabinFont.className}>
           <main>{children}</main>
           <Toaster richColors position="bottom-center" />
         </body>

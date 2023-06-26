@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { jsonSchema } from "~/utils/json";
 import {
-  YJSContent,
-  YJSContentUpdatesZod,
+  Content,
+  ContentUpdatesZod,
   QuestZod,
   WorkUpdatesZod,
   WorkZod,
@@ -224,10 +224,10 @@ const processMutation = async ({
     switch (mutation.name) {
       case "createWork":
         const { work } = z.object({ work: WorkZod }).parse(mutation.args);
-        const newContent: YJSContent = {
+        const newContent: Content = {
           inTrash: false,
           published: false,
-          type: "YJSCONTENT",
+          type: "CONTENT",
         };
 
         tx.put({ key: editorKey(work.id), value: work });

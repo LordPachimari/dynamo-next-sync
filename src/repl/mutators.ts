@@ -10,7 +10,7 @@ import {
   WorkType,
   WorkUpdates,
   WorkZod,
-  YJSContent,
+  Content,
 } from "~/types/types";
 
 export type M = typeof mutators;
@@ -18,10 +18,10 @@ export const mutators = {
   createWork: async (tx: WriteTransaction, { work }: { work: WorkType }) => {
     console.log("mutators, putQuest");
     const parsedWork = WorkZod.parse(work);
-    const newContent: YJSContent = {
+    const newContent: Content = {
       inTrash: false,
       published: false,
-      type: "YJSCONTENT",
+      type: "CONTENT",
     };
 
     await Promise.all([
@@ -97,7 +97,7 @@ export const mutators = {
     tx: WriteTransaction,
     { id, update }: { id: string; update: { Ydoc: string } }
   ) {
-    const prevYJS = (await getYJS(tx, { id })) as YJSContent;
+    const prevYJS = (await getYJS(tx, { id })) as Content;
 
     const updated = { ...prevYJS, ...update };
     await tx.put(YJSKey(id), updated);

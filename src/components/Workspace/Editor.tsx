@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { MergedWorkType } from "~/types/types";
+import { Content, MergedWorkType } from "~/types/types";
 import {
   NonEditableQuestAttributes,
   NonEditableSolutionAttributes,
-} from "./NonEditableAttributes";
+} from "./NonEditable";
 
 import dynamic from "next/dynamic";
 import { useSubscribe } from "replicache-react";
@@ -25,17 +25,20 @@ import {
 import { Button } from "../../ui/Button";
 import QuestAttributes from "./QuestAttibutes";
 import SolutionAttributes from "./SolutionAttributes";
-
+import * as base64 from "base64-js";
 const TiptapEditor = dynamic(() => import("../Tiptap/TiptapEditor"), {
   loading: () => <p>Loading...</p>,
   ssr: false,
 });
 
 import * as Y from "yjs";
+import { YJSKey, editorKey } from "~/repl/mutators";
+import Publish from "./Publish";
 // });
 
 const Editor = ({ id }: { id: string }) => {
   const rep = WorkspaceStore((state) => state.rep);
+  const resetAttributeErrors = WorkspaceStore((state) => state.resetErrors);
 
   const [ydoc, setYdoc] = useState<Y.Doc>();
   const [renderCount, setRenderCount] = useState(0);
@@ -43,7 +46,7 @@ const Editor = ({ id }: { id: string }) => {
   const work = useSubscribe(
     rep,
     async (tx) => {
-      const editor = (await tx.get(`EDITOR#${id}`)) || null;
+      const editor = (await tx.get(editorKey(id))) || null;
 
       return editor;
     },
@@ -51,6 +54,7 @@ const Editor = ({ id }: { id: string }) => {
     null,
     [id]
   ) as MergedWorkType;
+
   const ydocRef = useRef(new Y.Doc());
 
   useEffect(() => {
@@ -58,6 +62,8 @@ const Editor = ({ id }: { id: string }) => {
 
     setYdoc(ydocRef.current);
     setRenderCount(0);
+    resetAttributeErrors();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const router = useRouter();
@@ -92,9 +98,7 @@ const Editor = ({ id }: { id: string }) => {
           <div className="h-[255px]">No work found</div>
         )}
       </div>
-      {/* {work && !work.published && (
-        <Publish work={work} content={content ? content.content : undefined} />
-      )} */}
+      {work && !work.published && ydoc && <Publish work={work} ydoc={ydoc} />}
 
       {work && work.published && (
         <div className="mt-3 flex gap-5">

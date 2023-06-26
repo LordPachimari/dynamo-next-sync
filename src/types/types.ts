@@ -10,7 +10,7 @@ const Entity = [
   "COMMENT",
   "POST",
   "GUILD",
-  "YJSCONTENT",
+  "CONTENT",
 ] as const;
 const SPACE_NAMES = [
   "PUBLISHED_QUESTS",
@@ -161,8 +161,6 @@ export const QuestZod = QuestPartialZod.required({
 export type Quest = z.infer<typeof QuestZod>;
 
 export const PublishedQuestZod = QuestRequiredZod.extend({
-  creatorProfile: z.optional(z.string()),
-  creatorUsername: z.string(),
   winnerId: z.optional(z.string()),
   status: z.enum(QuestStatus),
   solverCount: z.number(),
@@ -301,21 +299,22 @@ export const SolutionListComponentZod = SolutionZod.pick({
   type: true,
 });
 export type SolutionListComponent = z.infer<typeof SolutionListComponentZod>;
-export const YJSContentZod = z.object({
+export const ContentZod = z.object({
   Ydoc: z.optional(z.string()),
-  textContent: z.optional(z.string()),
+  text: z.optional(z.string()),
   inTrash: z.boolean(),
   type: z.enum(Entity),
   deleted: z.optional(z.boolean()),
   published: z.boolean(),
+  
 });
 
-export type YJSContent = z.infer<typeof YJSContentZod>;
-export const YJSContentUpdatesZod = YJSContentZod.pick({
+export type Content = z.infer<typeof ContentZod>;
+export const ContentUpdatesZod = ContentZod.pick({
   Ydoc: true,
-  textContent: true,
+  text: true,
 });
-export type ContentUpdates = z.infer<typeof YJSContentUpdatesZod>;
+export type ContentUpdates = z.infer<typeof ContentUpdatesZod>;
 export type WorkspaceList = {
   quests: QuestListComponent[];
   solutions: SolutionListComponent[];

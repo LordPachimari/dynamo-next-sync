@@ -16,11 +16,15 @@ import debounce from "lodash.debounce";
 
 const QuestAttributes = ({ quest }: { quest: Quest }) => {
   const attributeErrors = WorkspaceStore((state) => state.attributeErrors);
+  const setAttributeErrors = WorkspaceStore(
+    (state) => state.setAttributeErrors
+  );
   const rep = WorkspaceStore((state) => state.rep);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleTitleChange = useCallback(
     debounce(async (title: string) => {
+      setAttributeErrors({ title: { error: false } });
       if (rep) {
         await rep.mutate.updateWork({
           id: quest.id,
@@ -31,6 +35,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
     []
   );
   const handleTopicChange = async (topic: TopicsType) => {
+    setAttributeErrors({ topic: { error: false } });
     if (rep) {
       await rep.mutate.updateWork({
         id: quest.id,
@@ -44,6 +49,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
   }: {
     subtopics: MultiValue<OptionType>;
   }) => {
+    setAttributeErrors({ subtopic: { error: false } });
     const strings = subtopics.map((val) => val.value);
     if (rep) {
       await rep.mutate.updateWork({
@@ -53,6 +59,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
     }
   };
   const handleRewardChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    setAttributeErrors({ reward: { error: false } });
     const reward = e.currentTarget.valueAsNumber || 0;
     if (rep) {
       await rep.mutate.updateWork({
@@ -62,6 +69,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
     }
   };
   const handleSlotsChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    setAttributeErrors({ slots: { error: false } });
     const slots = e.currentTarget.valueAsNumber || 0;
     if (rep) {
       await rep.mutate.updateWork({
@@ -72,6 +80,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
   };
 
   const handleDateChange = async (date: Date | undefined) => {
+    setAttributeErrors({ deadline: { error: false } });
     if (date) {
       if (rep) {
         await rep.mutate.updateWork({
@@ -83,7 +92,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col">
       <Title
         placeholder="Untitled"
         handleTitleChange={handleTitleChange}
@@ -91,18 +100,35 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
         error={attributeErrors.title}
       />
 
-      <TopicSelect handleTopicChange={handleTopicChange} topic={quest.topic} />
+      <TopicSelect
+        handleTopicChange={handleTopicChange}
+        topic={quest.topic}
+        error={attributeErrors.topic}
+      />
 
       <Subtopic
         handleSubtopicChange={handleSubtopicChange}
         subtopic={quest.subtopic}
+        error={attributeErrors.subtopic}
       />
-      <div className="flex items-center gap-2">
-        <Reward handleRewardChange={handleRewardChange} reward={quest.reward} />
-        <Slots handleSlotsChange={handleSlotsChange} slots={quest.slots} />
+      <div className="flex flex-wrap items-center gap-1">
+        <Reward
+          handleRewardChange={handleRewardChange}
+          reward={quest.reward}
+          error={attributeErrors.reward}
+        />
+        <Slots
+          handleSlotsChange={handleSlotsChange}
+          slots={quest.slots}
+          error={attributeErrors.slots}
+        />
       </div>
 
-      <DatePicker handleDateChange={handleDateChange} date={quest.deadline} />
+      <DatePicker
+        handleDateChange={handleDateChange}
+        date={quest.deadline}
+        error={attributeErrors.deadline}
+      />
     </div>
   );
 };

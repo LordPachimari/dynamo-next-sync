@@ -50,6 +50,7 @@ interface WorkspaceState {
   clearQueue: () => void;
   attributeErrors: AttributeErrors;
   setAttributeErrors: (attributesErrors: UpdateAttributeErrors) => void;
+  resetErrors: () => void;
 }
 
 export const WorkspaceStore = create<WorkspaceState>((set, get) => ({
@@ -71,6 +72,18 @@ export const WorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     set({ attributeErrors: newErrors });
   },
+  resetErrors: () =>
+    set({
+      attributeErrors: {
+        title: { error: false },
+        content: { error: false },
+        slots: { error: false },
+        topic: { error: false },
+        subtopic: { error: false },
+        reward: { error: false },
+        deadline: { error: false },
+      },
+    }),
   workspaceList: { quests: [], solutions: [], posts: [] },
   updateQueue: new Map(),
 

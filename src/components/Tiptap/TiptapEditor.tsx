@@ -28,7 +28,7 @@ import { useSubscribe } from "replicache-react";
 import { WorkspaceStore } from "~/zustand/workspace";
 import { YJSKey, editorKey } from "~/repl/mutators";
 import * as base64 from "base64-js";
-import { YJSContent } from "~/types/types";
+import { Content } from "~/types/types";
 import { TiptapEditorProps } from "./props";
 import { EditorBubbleMenu } from "./components/EditorBubleMenu";
 import { useUploadThing } from "~/utils/useUploadThing";
@@ -42,24 +42,10 @@ const TiptapEditor = (props: {
 }) => {
   const { id, ydoc, setRenderCount, renderCount } = props;
   const rep = WorkspaceStore((state) => state.rep);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-
-  const { startUpload, isUploading, permittedFileInfo } = useUploadThing({
-    endpoint: "imageUploader",
-    onClientUploadComplete: (res) => {
-      if (imageInputRef.current) {
-        imageInputRef.current.value = "";
-      }
-    },
-    onUploadError: (error: Error) => {
-      toast.error("Failed to upload");
-    },
-  });
-
   const Ydoc = useSubscribe(
     rep,
     async (tx) => {
-      const content = (await tx.get(YJSKey(id))) as YJSContent;
+      const content = (await tx.get(YJSKey(id))) as Content;
       console.log(content);
       if (content && content.Ydoc) {
         console.log("ydoc from subscribe", content.Ydoc);
@@ -75,6 +61,19 @@ const TiptapEditor = (props: {
     null,
     [ydoc]
   );
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const { startUpload, isUploading, permittedFileInfo } = useUploadThing({
+    endpoint: "imageUploader",
+    onClientUploadComplete: (res) => {
+      if (imageInputRef.current) {
+        imageInputRef.current.value = "";
+      }
+    },
+    onUploadError: (error: Error) => {
+      toast.error("Failed to upload");
+    },
+  });
 
   console.log("render count", renderCount);
 

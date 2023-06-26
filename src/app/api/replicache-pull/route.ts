@@ -7,7 +7,7 @@ import {
   getSpaceVersion,
 } from "~/repl/data";
 
-import { YJSContent, Post, Quest, Solution } from "~/types/types";
+import { Content, Post, Quest, Solution } from "~/types/types";
 import { WORKSPACE_LIST } from "~/utils/constants";
 
 import { auth } from "@clerk/nextjs";
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
   if (spaceId === WORKSPACE_LIST) {
     for (const item of items) {
-      const WorkspaceItem = item as (Quest | Solution | Post | YJSContent) & {
+      const WorkspaceItem = item as (Quest | Solution | Post | Content) & {
         SK: string;
       };
       if (WorkspaceItem.deleted) {

@@ -11,6 +11,12 @@ const config = {
     appDir: true,
     esmExternals: "loose",
   },
+  images: {
+formats: [ 'image/avif', 'image/webp'],
+remotePatterns: [{protocol:'https',
+hostname:"uploadthing.com",
+port:'',
+pathname :"/f/*",}]},
 
   /**
    * If you have `experimental: { appDir: true }` set, then you must comment the below `i18n` config

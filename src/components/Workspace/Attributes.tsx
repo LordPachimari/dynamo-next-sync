@@ -23,12 +23,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/ui/Select";
-import Select, { MultiValue, StylesConfig } from "react-select";
+import Select, {
+  MultiValue,
+  OptionProps,
+  StylesConfig,
+  components,
+} from "react-select";
 import makeAnimated from "react-select/animated";
 import { cn } from "~/utils/cn";
 import SingleValue from "react-select/dist/declarations/src/components/SingleValue";
 import { produce } from "immer";
 import { AttributeError } from "~/zustand/workspace";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 export const Title = ({
   title,
   placeholder,
@@ -41,11 +47,15 @@ export const Title = ({
   error: AttributeError;
 }) => {
   const [titleState, setTitleState] = useState("");
+  const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
   useEffect(() => {
     setTitleState(title || "");
   }, [title]);
   return (
-    <div className="prose prose-stone dark:prose-invert mx-auto w-[800px]">
+    <div
+      className="prose prose-stone dark:prose-invert mx-auto w-full border-red-100 "
+      ref={parent}
+    >
       <TextareaAutosize
         autoFocus
         id="title"
@@ -53,19 +63,32 @@ export const Title = ({
         placeholder={placeholder}
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         onInput={(e) => handleTitleChange(e.currentTarget.value)}
-        className="w-full resize-none appearance-none overflow-hidden bg-transparent text-4xl font-bold focus:outline-none"
+        className={cn(
+          "w-full resize-none appearance-none overflow-hidden rounded-md bg-transparent text-4xl font-bold focus:outline-none",
+          { "border-[1px]": error.error, "border-red-500": error.error }
+        )}
         // {...register("title")}
       />
+      {error.error && (
+        <div className="absolute left-[-140px] top-10 mt-[-35px] rounded border border-red-500 bg-white px-3 py-2 text-xs text-red-500 shadow">
+          <div className="absolute bottom-[-10px] left-4 h-10 w-0 bg-red-500"></div>
+          {error.message}
+        </div>
+      )}
     </div>
   );
 };
 export const TopicSelect = ({
   handleTopicChange,
   topic,
+  error,
 }: {
   topic?: TopicsType;
   handleTopicChange: (topic: TopicsType) => Promise<void>;
+
+  error: AttributeError;
 }) => {
+  const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
   const [topicState, setTopicState] = useState<TopicsType | undefined>(
     undefined
   );
@@ -73,24 +96,38 @@ export const TopicSelect = ({
     setTopicState(topic);
   }, [topic]);
   return (
-    <MySelect
-      onValueChange={async (value) => {
-        await handleTopicChange(value as TopicsType);
-        setTopicState(value as TopicsType);
-      }}
-      value={topicState}
+    <div
+      ref={parent}
+      className={cn("my-1 w-fit ", {
+        "border-[1px]": error.error,
+        "border-red-500": error.error,
+      })}
     >
-      <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Select topic" />
-      </SelectTrigger>
-      <SelectContent>
-        {Topics.map((t, i) => (
-          <SelectItem value={t} key={i}>
-            {t}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </MySelect>
+      <MySelect
+        onValueChange={async (value) => {
+          await handleTopicChange(value as TopicsType);
+          setTopicState(value as TopicsType);
+        }}
+        value={topicState}
+      >
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Select topic" />
+        </SelectTrigger>
+        <SelectContent>
+          {Topics.map((t, i) => (
+            <SelectItem value={t} key={i}>
+              {t}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </MySelect>
+      {error.error && (
+        <div className="top-21 absolute left-[-140px] mt-[-35px] rounded border border-red-500 bg-white px-3 py-2 text-xs text-red-500 shadow">
+          <div className="absolute bottom-[-10px] left-4 h-10 w-0 bg-red-500"></div>
+          {error.message}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -113,6 +150,7 @@ const animatedComponents = makeAnimated();
 export interface OptionType {
   value: string;
   label: string;
+  badge?: string;
 }
 
 const customStyles: StylesConfig<OptionType, false> = {
@@ -135,14 +173,18 @@ const customStyles: StylesConfig<OptionType, false> = {
 export const Subtopic = ({
   subtopic,
   handleSubtopicChange,
+  error,
 }: {
   subtopic: string[] | undefined;
+
+  error: AttributeError;
   handleSubtopicChange: ({
     subtopics,
   }: {
     subtopics: MultiValue<OptionType>;
   }) => Promise<void>;
 }) => {
+  const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
   const [subtopicState, setSubtopicState] = useState<MultiValue<OptionType>>();
   useEffect(() => {
     const multiVal = subtopic
@@ -156,7 +198,13 @@ export const Subtopic = ({
   }));
 
   return (
-    <div>
+    <div
+      ref={parent}
+      className={cn("my-1 w-fit", {
+        "border-[1px]": error.error,
+        "border-red-500": error.error,
+      })}
+    >
       {" "}
       <Select
         options={options}
@@ -176,25 +224,37 @@ export const Subtopic = ({
             setSubtopicState((old) => val as MultiValue<OptionType>);
         }}
       />
+      {error.error && (
+        <div className="top-25 absolute left-[-140px] mt-[-35px] rounded border border-red-500 bg-white px-3 py-2 text-xs text-red-500 shadow">
+          <div className="absolute bottom-[-10px] left-4 h-10 w-0 bg-red-500"></div>
+          {error.message}
+        </div>
+      )}
     </div>
   );
 };
 export const Reward = ({
   reward,
   handleRewardChange,
+  error,
 }: {
   reward: number | undefined;
+  error: AttributeError;
   handleRewardChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
 }) => {
+  const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
   const [stateReward, setStateReward] = useState<number | "">("");
   useEffect(() => {
     setStateReward(reward || 0);
   }, [reward]);
   return (
-    <div className="flex items-center gap-2  ">
+    <div className="my-1 flex items-center gap-2 " ref={parent}>
       <Gem className="text-purple-500" />
       <Input
-        className="w-40 p-2 "
+        className={cn("w-40 p-2 ", {
+          "border-[1px]": error.error,
+          "border-red-500": error.error,
+        })}
         placeholder="Enter amount"
         value={stateReward}
         type="number"
@@ -207,25 +267,38 @@ export const Reward = ({
         }}
         min={1}
       />
+      {error.error && (
+        <div className="top-50 absolute left-[-140px]  rounded border border-red-500 bg-white px-3 py-2 text-xs text-red-500 shadow">
+          <div className="absolute bottom-[-10px] left-4 h-10 w-0 bg-red-500"></div>
+          {error.message}
+        </div>
+      )}
     </div>
   );
 };
 export const Slots = ({
   handleSlotsChange,
   slots,
+  error,
 }: {
   handleSlotsChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
   slots: number | undefined;
+
+  error: AttributeError;
 }) => {
+  const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
   const [stateSlots, setStateSlots] = useState<number | "">("");
   useEffect(() => {
     setStateSlots(slots || 0);
   }, [slots]);
   return (
-    <div className="flex items-center gap-2">
+    <div className="my-1 flex items-center gap-2" ref={parent}>
       <Users2 className="text-gray-500" />
       <Input
-        className="w-40 p-2 "
+        className={cn("w-40 p-2 ", {
+          "border-[1px]": error.error,
+          "border-red-500": error.error,
+        })}
         placeholder="Enter amount"
         value={stateSlots}
         type="number"
@@ -238,6 +311,12 @@ export const Slots = ({
         }}
         min={1}
       />
+      {error.error && (
+        <div className="top-50 absolute right-[-100px]  rounded border border-red-500 bg-white px-3 py-2 text-xs text-red-500 shadow">
+          <div className="absolute bottom-[-10px] left-4 h-10 w-0 bg-red-500"></div>
+          {error.message}
+        </div>
+      )}
     </div>
   );
 };
@@ -245,11 +324,15 @@ export const DatePicker = ({
   date,
 
   handleDateChange,
+  error,
 }: {
   handleDateChange: (e: Date | undefined) => Promise<void>;
 
   date: string | undefined;
+
+  error: AttributeError;
 }) => {
+  const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
   const [dateState, setDateState] = useState<Date>();
   useEffect(() => {
     if (date) {
@@ -261,19 +344,28 @@ export const DatePicker = ({
   }, [date]);
 
   return (
-    <div className="centerDivVertically">
-      <p className="font-semibold">Deadline</p>
+    <div
+      ref={parent}
+      className={cn("centerDivVertically my-1 w-fit", {
+        "border-[1px]": error.error,
+        "border-red-500": error.error,
+      })}
+    >
       <Popover>
         <PopoverTrigger asChild>
           <Button
             variant={"outline"}
             className={cn(
-              "w-[280px] justify-start text-left font-normal",
+              "w-full justify-start text-left font-normal md:w-[280px]",
               !dateState && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {dateState ? format(dateState, "PPP") : <span>Pick a date</span>}
+            {dateState ? (
+              format(dateState, "PPP")
+            ) : (
+              <span>Select deadline</span>
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0">
@@ -287,6 +379,12 @@ export const DatePicker = ({
           />
         </PopoverContent>
       </Popover>
+      {error.error && (
+        <div className="top-49 absolute left-[-140px] mt-[-35px] rounded border border-red-500 bg-white px-3 py-2 text-xs text-red-500 shadow">
+          <div className="absolute bottom-[-10px] left-4 h-10 w-0 bg-red-500"></div>
+          {error.message}
+        </div>
+      )}
     </div>
   );
 };

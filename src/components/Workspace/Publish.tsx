@@ -1,7 +1,7 @@
 import React, { Dispatch, SetStateAction, useState } from "react";
 import { z } from "zod";
 
-import { YJSContentZod, Post, Quest, QuestZod, Solution } from "~/types/types";
+import { ContentZod, Post, Quest, QuestZod, Solution } from "~/types/types";
 import { Button } from "~/ui/Button";
 import {
   AlertDialog,
@@ -25,12 +25,13 @@ import {
 import Preview from "./Preview";
 import { UpdateAttributeErrorsZod, WorkspaceStore } from "~/zustand/workspace";
 
+import * as Y from "yjs";
 const Publish = ({
   work,
-  content,
+  ydoc,
 }: {
   work: Quest & Solution & Post;
-  content: string | undefined;
+  ydoc: Y.Doc;
 }) => {
   const [isValid, setIsValid] = useState(false);
   const setAttributeErrors = WorkspaceStore(
@@ -42,7 +43,6 @@ const Publish = ({
     title: z.string().min(1, { message: "Missing title" }),
     subtopic: z.array(z.string()).min(1, { message: "Missing subtopic" }),
     topic: z.string(),
-    content: z.string(),
     reward: z
       .number()
       .min(1, { message: "Number of diamonds must be greater than 1" }),
@@ -63,7 +63,6 @@ const Publish = ({
   const SolutionAttributesZod = z.object({
     id: z.string(),
     title: z.string(),
-    content: z.string(),
     questId: z.string(),
     questCreatorId: z.string(),
   });
@@ -109,13 +108,7 @@ const Publish = ({
     }
   };
 
-  const handlePublish = ({
-    solutionId,
-    questId,
-  }: {
-    solutionId?: string;
-    questId?: string;
-  }) => {
+  const handlePublish = () => {
     return;
   };
 
@@ -138,11 +131,16 @@ const Publish = ({
             <AlertDialogTitle>Confirm publish</AlertDialogTitle>
             {work.type === "QUEST" ? (
               <AlertDialogDescription>
-                You will pay {(work as Quest)?.reward || 0}
-                diamonds for publishing the quest.
+                <p className="flex">
+                  <p>You will pay</p>
+                  <p className="px-1 font-semibold text-violet-500">{`${
+                    (work as Quest)?.reward || 0
+                  } diamonds`}</p>
+                  <p> for publishing the quest.</p>
+                </p>
                 <p className="font-bold">
-                  Note: Once publisher viewed the solution, quest can not be
-                  unpublished or deleted.
+                  Note: Once you viewed the solution posted to this quest, the
+                  quest can not be unpublished or deleted.
                 </p>
               </AlertDialogDescription>
             ) : (
@@ -150,7 +148,9 @@ const Publish = ({
             )}
           </AlertDialogHeader>
           <AlertDialogFooter className="flex items-end">
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setIsValid((old) => !old)}>
+              Cancel
+            </AlertDialogCancel>
             <Dialog>
               <DialogTrigger>
                 <Button className="mt-3 w-full bg-amber-400 hover:bg-amber-500">
@@ -161,9 +161,7 @@ const Publish = ({
                 <DialogHeader>
                   <DialogTitle>Preview</DialogTitle>
                   <DialogDescription>
-                    {content && work && (
-                      <Preview work={work} content={content} />
-                    )}
+                    <Preview work={work} ydoc={ydoc} />
                   </DialogDescription>
                 </DialogHeader>
               </DialogContent>

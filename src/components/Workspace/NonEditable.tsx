@@ -9,6 +9,7 @@ import { useMemo } from "react";
 import FileExtension from "../Tiptap/extensions/FileExtension";
 import ImageExtension from "../Tiptap/extensions/ImageExtension";
 
+import { format } from "date-fns";
 import { JSONContent } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import {
@@ -20,7 +21,6 @@ import {
 } from "~/types/types";
 import { Badge } from "~/ui/Badge";
 import { cn } from "~/utils/cn";
-import * as lz from "lz-string";
 import { Gem, Users2 } from "lucide-react";
 export const HtmlParseOptions: HTMLReactParserOptions = {
   replace: (_domNode) => {
@@ -39,7 +39,7 @@ export const HtmlParseOptions: HTMLReactParserOptions = {
             height={Math.round(parseInt(props.height!))}
             src={props.src!}
             loader={imageLoader}
-            alt="image"
+            alt={props.alt!}
             sizes="(max-width: 768px) 90vw, (min-width: 1024px) 400px"
           />
         </div>
@@ -85,7 +85,7 @@ const Subtopic = ({ subtopic }: { subtopic: string[] | undefined }) => {
     <div className="flex gap-2" id="subtopic">
       {subtopic &&
         subtopic.map((s, i) => (
-          <Badge key={i} className="w-fit bg-blue-300">
+          <Badge key={i} className="w-fit bg-blue-400 hover:bg-blue-500">
             {s}
           </Badge>
         ))}
@@ -112,10 +112,9 @@ const Slots = ({ slots }: { slots: number | undefined }) => {
 const DateComponent = ({ questDate }: { questDate: string }) => {
   return (
     <div className="flex gap-3">
-      <p>DUE</p>
-      {/* <Badge className="bg-blue-300">{FromNow({ date: questDate })}</Badge> */}
-      <Badge className="bg-blue-300">
-        {/* {dayjs(questDate).format("MMM D, YYYY")} */}
+      <p className="font-bold">DUE</p>
+      <Badge className="bg-blue-400 hover:bg-blue-500">
+        {format(new Date(questDate), "PPP")}
       </Badge>
     </div>
   );
@@ -128,7 +127,7 @@ export const NonEditableQuestAttributes = ({
 }) => {
   const publishedQuest = quest as PublishedQuest;
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       {quest.published ? (
         <div className="flex justify-between">
           <h1 title={quest.title} />
@@ -181,17 +180,26 @@ export const NonEditableSolutionAttributes = ({
     </>
   );
 };
-export const NonEditableContent = ({ content }: { content: string }) => {
-  const restoredContent = lz.decompressFromBase64(content);
-  const contentJSON = JSON.parse(restoredContent) as JSONContent;
+export const NonEditableContent = ({
+  content,
+}: {
+  content: string | JSONContent;
+}) => {
+  let contentJSON: JSONContent | null = null;
+  if (typeof content === "string") {
+    contentJSON = JSON.parse(content) as JSONContent;
+  } else {
+    contentJSON = content;
+  }
   const output = useMemo(() => {
-    return generateHTML(contentJSON, [
+    return generateHTML(contentJSON!, [
       StarterKit,
-
       ImageExtension,
       FileExtension,
     ]);
   }, [contentJSON]);
+  console.log("output", output);
+  console.log("json content", contentJSON);
 
   return <>{parse(output, HtmlParseOptions)}</>;
 };

@@ -25,7 +25,7 @@ export const mutators = {
     };
 
     await Promise.all([
-      tx.put(editorKey(work.id), parsedWork),
+      tx.put(workKey(work.id), parsedWork),
       tx.put(YJSKey(work.id), newContent),
     ]);
   },
@@ -44,7 +44,7 @@ export const mutators = {
     const content = (await tx.get(YJSKey(id))) as string;
 
     if (work && content) {
-      await tx.put(editorKey(newId), {
+      await tx.put(workKey(newId), {
         id: newId,
         createdAt,
         lastUpdated,
@@ -54,9 +54,9 @@ export const mutators = {
   },
   deleteWork: async (tx: WriteTransaction, { id }: { id: string }) => {
     console.log("mutators, deleteWork");
-    const work = (await tx.get(editorKey(id))) as MergedWorkType | undefined;
+    const work = (await tx.get(workKey(id))) as MergedWorkType | undefined;
     if (work) {
-      await tx.put(editorKey(id), { ...work, inTrash: true });
+      await tx.put(workKey(id), { ...work, inTrash: true });
     }
   },
   deleteWorkPermanently: async (
@@ -64,13 +64,13 @@ export const mutators = {
     { id }: { id: string }
   ) => {
     console.log("mutators, perm delete");
-    await tx.del(editorKey(id));
+    await tx.del(workKey(id));
   },
   restoreWork: async (tx: WriteTransaction, { id }: { id: string }) => {
     console.log("mutators, restore");
-    const work = (await tx.get(editorKey(id))) as MergedWorkType | undefined;
+    const work = (await tx.get(workKey(id))) as MergedWorkType | undefined;
     if (work) {
-      await tx.put(editorKey(id), { ...work, inTrash: false });
+      await tx.put(workKey(id), { ...work, inTrash: false });
     }
   },
   updateWork: async (
@@ -128,7 +128,7 @@ export const getYJS = async (tx: ReadTransaction, { id }: { id: string }) => {
   return yjs;
 };
 export const getWork = async (tx: ReadTransaction, { id }: { id: string }) => {
-  const work = await tx.get(editorKey(id));
+  const work = await tx.get(workKey(id));
   if (!work) {
     return undefined;
   }
@@ -138,15 +138,15 @@ export const putWork = async (
   tx: WriteTransaction,
   { work, id }: { work: ReadonlyJSONValue; id: string }
 ) => {
-  await tx.put(editorKey(id), work);
+  await tx.put(workKey(id), work);
 };
 
 function awarenessKey(key: string, yjsClientID: number): string {
   return `${YJSKey(key)}/awareness/${yjsClientID}`;
 }
 
-export function editorKey(key: string): string {
-  return `EDITOR#${key}`;
+export function workKey(key: string): string {
+  return `WORK#${key}`;
 }
 
 export function awarenessKeyPrefix(key: string): string {

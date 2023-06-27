@@ -520,8 +520,8 @@ export const setLastMutationId = async ({
   lastMutationId: number;
   clientGroupId: string;
 }) => {
-  const sevenDaysInSeconds = 7 * 24 * 60 * 60;
-  const expirationTime = Math.floor(Date.now() / 1000) + sevenDaysInSeconds;
+  const oneDayInSeconds = 24 * 60 * 60;
+  const expirationTime = Math.floor(Date.now() / 1000) + oneDayInSeconds;
   const updateParams: UpdateCommandInput = {
     TableName: env.MAIN_TABLE_NAME,
 

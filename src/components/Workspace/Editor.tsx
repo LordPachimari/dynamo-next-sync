@@ -32,9 +32,8 @@ const TiptapEditor = dynamic(() => import("../Tiptap/TiptapEditor"), {
 });
 
 import * as Y from "yjs";
-import { YJSKey, editorKey } from "~/repl/mutators";
+import { YJSKey, workKey } from "~/repl/mutators";
 import Publish from "./Publish";
-// });
 
 const Editor = ({ id }: { id: string }) => {
   const rep = WorkspaceStore((state) => state.rep);
@@ -46,7 +45,7 @@ const Editor = ({ id }: { id: string }) => {
   const work = useSubscribe(
     rep,
     async (tx) => {
-      const editor = (await tx.get(editorKey(id))) || null;
+      const editor = (await tx.get(workKey(id))) || null;
 
       return editor;
     },

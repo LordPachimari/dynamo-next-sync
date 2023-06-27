@@ -166,6 +166,11 @@ export const PublishedQuestZod = QuestRequiredZod.extend({
   solverCount: z.number(),
   text: z.string(),
   _event_time: z.optional(z.string()),
+  publisherId: z.optional(z.string()),
+  username: z.optional(z.string()),
+  profile: z.optional(z.string()),
+  level: z.optional(z.string()),
+  verified: z.optional(z.boolean()),
 }).omit({
   inTrash: true,
   createdAt: true,
@@ -306,7 +311,6 @@ export const ContentZod = z.object({
   type: z.enum(Entity),
   deleted: z.optional(z.boolean()),
   published: z.boolean(),
-  
 });
 
 export type Content = z.infer<typeof ContentZod>;

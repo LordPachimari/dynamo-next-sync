@@ -22,7 +22,7 @@ import {
   setSpaceVersion,
 } from "~/repl/data";
 import { auth } from "@clerk/nextjs";
-import { YJSKey, editorKey } from "~/repl/mutators";
+import { YJSKey, workKey } from "~/repl/mutators";
 import Pusher from "pusher";
 import { env } from "~/env.mjs";
 
@@ -230,17 +230,17 @@ const processMutation = async ({
           type: "CONTENT",
         };
 
-        tx.put({ key: editorKey(work.id), value: work });
+        tx.put({ key: workKey(work.id), value: work });
         tx.put({ key: YJSKey(work.id), value: newContent });
         break;
 
       case "deleteWork":
         const params = idSchema.parse(mutation.args);
-        tx.del({ key: `${editorKey(params.id)}` });
+        tx.del({ key: workKey(params.id) });
         break;
       case "deleteWorkPermanently":
         const permDeleteParams = idSchema.parse(mutation.args);
-        tx.permDel({ key: `${editorKey(permDeleteParams.id)}` });
+        tx.permDel({ key: workKey(permDeleteParams.id) });
         break;
       case "duplicateWork":
         const { id, newId, createdAt, lastUpdated } = z
@@ -252,16 +252,16 @@ const processMutation = async ({
           })
           .parse(mutation.args);
         const result = await Promise.all([
-          getItem({ key: `${editorKey(id)}`, spaceId, userId }),
-          getItem({ key: `${YJSKey(id)}`, spaceId, userId }),
+          getItem({ key: workKey(id), spaceId, userId }),
+          getItem({ key: YJSKey(id), spaceId, userId }),
         ]);
         if (result) {
           tx.put({
-            key: `${editorKey(newId)}`,
+            key: workKey(newId),
             value: { ...result[0], id: newId, lastUpdated, createdAt },
           });
           tx.put({
-            key: `${YJSKey(newId)}`,
+            key: YJSKey(newId),
             value: { ...result[1] },
           });
         }
@@ -270,13 +270,13 @@ const processMutation = async ({
         console.log("mutations args", mutation.args);
         const updateWorkParams = updateWorkArgsSchema.parse(mutation.args);
         tx.update({
-          key: `${editorKey(updateWorkParams.id)}`,
+          key: workKey(updateWorkParams.id),
           value: updateWorkParams.updates,
         });
         break;
       case "restoreWork":
         const idParams = idSchema.parse(mutation.args);
-        tx.restore({ key: `${editorKey(idParams.id)}` });
+        tx.restore({ key: workKey(idParams.id) });
         break;
       case "updateYJS":
         const content = z
@@ -284,6 +284,9 @@ const processMutation = async ({
           .parse(mutation.args);
         tx.update({ key: YJSKey(content.id), value: content.update });
         break;
+      case "publishWork":
+        const idParam = idSchema.parse(mutation.args);
+        tx.update({ key: workKey(idParam.id), value: { published: true } });
 
       default:
         throw new Error(`Unknown mutation: ${mutation.name}`);

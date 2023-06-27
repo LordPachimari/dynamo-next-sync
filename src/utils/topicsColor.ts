@@ -18,16 +18,3 @@ export const TopicColor = ({ topic }: { topic: string }) => {
   }
   return "white";
 };
-export const TopicColorScheme = (topic: TopicsType) => {
-  if (topic === "MARKETING") {
-    return "red";
-  } else if (topic === "BUSINESS") {
-    return "green";
-  } else if (topic === "SCIENCE") {
-    return "blue";
-  } else if (topic === "PROGRAMMING") {
-    return "purple";
-  } else if (topic === "VIDEOGRAPHY") {
-    return "teal";
-  }
-};

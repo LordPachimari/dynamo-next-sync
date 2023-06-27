@@ -26,7 +26,7 @@ import { TiptapExtensions } from "./extensions";
 import Collaboration from "@tiptap/extension-collaboration";
 import { useSubscribe } from "replicache-react";
 import { WorkspaceStore } from "~/zustand/workspace";
-import { YJSKey, editorKey } from "~/repl/mutators";
+import { YJSKey, workKey } from "~/repl/mutators";
 import * as base64 from "base64-js";
 import { Content } from "~/types/types";
 import { TiptapEditorProps } from "./props";

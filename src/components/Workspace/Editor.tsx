@@ -46,6 +46,7 @@ const Editor = ({ id }: { id: string }) => {
     rep,
     async (tx) => {
       const editor = (await tx.get(workKey(id))) || null;
+      console.log("editor", editor);
 
       return editor;
     },

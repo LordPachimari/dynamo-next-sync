@@ -2,34 +2,38 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { z } from "zod";
 import {
-  getChangedItems,
+  getLastMutationIdsCVR,
   getLastMutationIdsSince,
-  getSpaceVersion,
+  getPatch,
+  getPrevCVR,
+  setCVR,
+  setLastMutationIdsCVR,
 } from "~/repl/data";
-
-import { Content, Post, Quest, Solution } from "~/types/types";
-import { WORKSPACE_LIST } from "~/utils/constants";
 
 import { auth } from "@clerk/nextjs";
 import { ClientID, PatchOperation } from "replicache";
+import { WORKSPACE } from "~/utils/constants";
 
 export type PullResponse = {
-  cookie: number;
+  cookie: string;
   lastMutationIDChanges: Record<ClientID, number>;
   patch: PatchOperation[];
 };
-
+const cookieSchema = z.object({
+  keyCVR: z.string(),
+  keyLastMutationIdsCVR: z.optional(z.string()),
+});
 const pullRequestSchema = z.object({
   pullVersion: z.literal(1),
   profileID: z.string(),
   clientGroupID: z.string(),
-  cookie: z.union([z.number(), z.null()]),
+  cookie: z.union([z.string(), z.null()]),
   schemaVersion: z.string(),
 });
 type PullRequestSchemaType = {
   clientGroupID: string;
 
-  cookie: number;
+  cookie: string | null;
 };
 export async function POST(req: NextRequest, res: NextResponse) {
   console.log("----------------------------------------------------");
@@ -43,79 +47,82 @@ export async function POST(req: NextRequest, res: NextResponse) {
   const { searchParams } = new URL(req.url);
   const spaceId = z.string().parse(searchParams.get("spaceId"));
   const adjustedSpaceId =
-    //if the space is workspace list or is a work - quest/solution/post -- make it private by adding userId.
-    spaceId === WORKSPACE_LIST ? `${spaceId}#${userId}` : spaceId;
-
-  const pull = pullRequestSchema.parse(json);
+    //if the space is workspace list  -- make it private by adding userId.
+    spaceId === WORKSPACE ? `${spaceId}#${userId}` : spaceId;
   console.log("spaceId", adjustedSpaceId);
+  const pull = pullRequestSchema.parse(json);
+  const requestCookie = pull.cookie
+    ? cookieSchema.parse(JSON.parse(pull.cookie))
+    : undefined;
 
-  const patch: PatchOperation[] = [];
+  console.log("cooookie ", requestCookie);
+
   const startTransact = Date.now();
   const processPull = async () => {
     // let items: any[] = [];
-    const versionPromise = getSpaceVersion({
+
+    const [prevCVR, prevLastMutationIdsCVR] = await Promise.all([
+      getPrevCVR({
+        key: requestCookie ? requestCookie.keyCVR : undefined,
+        spaceId: adjustedSpaceId,
+      }),
+      getLastMutationIdsCVR({
+        spaceId: adjustedSpaceId,
+        key: requestCookie ? requestCookie.keyLastMutationIdsCVR : undefined,
+      }),
+    ]);
+
+    const patchPromise = getPatch({
+      prevCVR,
       spaceId: adjustedSpaceId,
       userId,
     });
-    const fromVersion = pull.cookie ? pull.cookie : 0;
-    if (fromVersion === 0) {
-      patch.push({
-        op: "clear",
-      });
-    }
-
-    console.log("cooookie version", fromVersion);
 
     const lastMutationIDsPromise = getLastMutationIdsSince({
       clientGroupId: pull.clientGroupID,
-      prevVersion: fromVersion,
-    });
-    const itemsPromise = getChangedItems({
-      prevVersion: fromVersion,
-      spaceId: adjustedSpaceId,
+      prevLastMutationIdsCVR,
     });
 
-    return Promise.all([itemsPromise, lastMutationIDsPromise, versionPromise]);
+    return Promise.all([patchPromise, lastMutationIDsPromise]);
   };
+
+  const [
+    { cvr: nextCVR, patch },
+    { lastMutationIDChanges, nextLastMutationIdsCVR },
+  ] = await processPull();
 
   console.log("transact took", Date.now() - startTransact);
 
-  const [items, lastMutationIDChanges, version] = await processPull();
-  const startBuildingPatch = Date.now();
-
-  console.log("lastMutationIDs: ", lastMutationIDChanges);
-  console.log("response version for cookie: ", version);
-  console.log("items", items);
-
-  //workspace items
-
-  if (spaceId === WORKSPACE_LIST) {
-    for (const item of items) {
-      const WorkspaceItem = item as (Quest | Solution | Post | Content) & {
-        SK: string;
-      };
-      if (WorkspaceItem.deleted) {
-        patch.push({
-          op: "del",
-          key: WorkspaceItem.SK,
-        });
-      } else {
-        patch.push({
-          op: "put",
-          key: WorkspaceItem.SK,
-          value: WorkspaceItem,
-        });
-      }
-    }
-  }
+  console.log("lastMutationIDsChanges: ", lastMutationIDChanges);
 
   const resp: PullResponse = {
     lastMutationIDChanges,
-    cookie: version,
+    cookie: JSON.stringify({
+      keyCVR: nextCVR.id,
+      keyLastMutationIdsCVR: nextLastMutationIdsCVR
+        ? nextLastMutationIdsCVR.id
+        : null,
+    }),
     patch,
   };
   console.log("patch", resp);
-  console.log("Building patch took", Date.now() - startBuildingPatch);
+  try {
+    if (nextLastMutationIdsCVR) {
+      await Promise.allSettled([
+        setCVR({ CVR: nextCVR, key: nextCVR.id, spaceId: adjustedSpaceId }),
+        setLastMutationIdsCVR({
+          spaceId: adjustedSpaceId,
+          CVR: nextLastMutationIdsCVR,
+          key: nextLastMutationIdsCVR.id,
+        }),
+      ]);
+    } else {
+      await setCVR({ CVR: nextCVR, key: nextCVR.id, spaceId: adjustedSpaceId });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+  console.log("total time", Date.now() - startTransact);
 
   console.log("----------------------------------------------------");
 

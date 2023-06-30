@@ -1,30 +1,16 @@
 import { NextResponse } from "next/server";
 
 import { z } from "zod";
+import { QuestZod } from "~/types/types";
 import { jsonSchema } from "~/utils/json";
-import {
-  Content,
-  ContentUpdatesZod,
-  QuestZod,
-  WorkUpdatesZod,
-  WorkZod,
-} from "~/types/types";
 
-import { WORKSPACE_LIST } from "~/utils/constants";
-import { ReplicacheTransaction } from "~/repl/transaction";
-import {
-  getItem,
-  getLastMutationIds,
-  getLastMutationIdsSince,
-  getSpaceVersion,
-  setLastMutationId,
-  setLastMutationIds,
-  setSpaceVersion,
-} from "~/repl/data";
 import { auth } from "@clerk/nextjs";
-import { YJSKey, workKey } from "~/repl/mutators";
 import Pusher from "pusher";
 import { env } from "~/env.mjs";
+import { getLastMutationIds, setLastMutationIds } from "~/repl/data";
+import { WorkspaceMutations } from "~/repl/server/mutations/workspace";
+import { ReplicacheTransaction } from "~/repl/transaction";
+import { WORKSPACE } from "~/utils/constants";
 
 // See notes in bug: https://github.com/rocicorp/replidraw/issues/47
 const mutationSchema = z.object({
@@ -33,16 +19,12 @@ const mutationSchema = z.object({
   args: jsonSchema,
   clientID: z.string(),
 });
-const idSchema = z.object({
+export const idSchema = z.object({
   id: z.string(),
 });
 const createQuestArgsSchema = z.object({ quest: QuestZod });
-const updateWorkArgsSchema = z.object({
-  id: z.string(),
-  updates: WorkUpdatesZod,
-});
 
-type Mutation = z.infer<typeof mutationSchema>;
+export type Mutation = z.infer<typeof mutationSchema>;
 
 const pushRequestSchema = z.object({
   pushVersion: z.literal(1),
@@ -68,7 +50,7 @@ export async function POST(req: Request, res: Response) {
   const adjustedSpaceId =
     //if the space is workspace list or
     //if the space is a work - quest/solution/post in workspace make it private by adding userId.
-    spaceId === WORKSPACE_LIST ? `${spaceId}#${userId}` : spaceId;
+    spaceId === WORKSPACE ? `${spaceId}#${userId}` : spaceId;
 
   console.log("json", json);
   const push = pushRequestSchema.parse(json);
@@ -79,25 +61,18 @@ export async function POST(req: Request, res: Response) {
   const t0 = Date.now();
 
   const processMutations = async () => {
-    const prevVersion = await getSpaceVersion({
-      spaceId: adjustedSpaceId,
-
-      userId,
-    });
-
-    const nextVersion = prevVersion + 1;
     const clientIDs = [...new Set(push.mutations.map((m) => m.clientID))];
+
     const lastMutationIds = await getLastMutationIds({
       clientGroupID: push.clientGroupID,
       clientIDs,
     });
     let updated = false;
 
-    console.log("prevVersion: ", prevVersion);
     console.log("lastMutationIDs:", lastMutationIds);
     console.log("clientId", clientIDs);
 
-    const tx = new ReplicacheTransaction(adjustedSpaceId, nextVersion, userId);
+    const tx = new ReplicacheTransaction(adjustedSpaceId, userId);
 
     for (let i = 0; i < push.mutations.length; i++) {
       const mutation = push.mutations[i] as Mutation;
@@ -109,7 +84,7 @@ export async function POST(req: Request, res: Response) {
         lastMutationId,
         mutation,
         userId,
-        spaceId,
+        spaceId: adjustedSpaceId,
       });
       lastMutationIds[mutation.clientID] = nextMutationId;
       if (nextMutationId > lastMutationId) {
@@ -139,14 +114,8 @@ export async function POST(req: Request, res: Response) {
         setLastMutationIds({
           clientGroupId: push.clientGroupID,
           lmids: lastMutationIds,
-          version: nextVersion,
         }),
 
-        setSpaceVersion({
-          spaceId: adjustedSpaceId,
-          version: nextVersion,
-          userId,
-        }),
         tx.flush(),
       ]);
     } else {
@@ -221,77 +190,7 @@ const processMutation = async ({
     const t1 = Date.now();
     // For each possible mutation, run the server-side logic to apply the
     // mutation.
-    switch (mutation.name) {
-      case "createWork":
-        const { work } = z.object({ work: WorkZod }).parse(mutation.args);
-        const newContent: Content = {
-          inTrash: false,
-          published: false,
-          type: "CONTENT",
-        };
-
-        tx.put({ key: workKey(work.id), value: work });
-        tx.put({ key: YJSKey(work.id), value: newContent });
-        break;
-
-      case "deleteWork":
-        const params = idSchema.parse(mutation.args);
-        tx.del({ key: workKey(params.id) });
-        break;
-      case "deleteWorkPermanently":
-        const permDeleteParams = idSchema.parse(mutation.args);
-        tx.permDel({ key: workKey(permDeleteParams.id) });
-        break;
-      case "duplicateWork":
-        const { id, newId, createdAt, lastUpdated } = z
-          .object({
-            id: z.string(),
-            newId: z.string(),
-            lastUpdated: z.string(),
-            createdAt: z.string(),
-          })
-          .parse(mutation.args);
-        const result = await Promise.all([
-          getItem({ key: workKey(id), spaceId, userId }),
-          getItem({ key: YJSKey(id), spaceId, userId }),
-        ]);
-        if (result) {
-          tx.put({
-            key: workKey(newId),
-            value: { ...result[0], id: newId, lastUpdated, createdAt },
-          });
-          tx.put({
-            key: YJSKey(newId),
-            value: { ...result[1] },
-          });
-        }
-        break;
-      case "updateWork":
-        console.log("mutations args", mutation.args);
-        const updateWorkParams = updateWorkArgsSchema.parse(mutation.args);
-        tx.update({
-          key: workKey(updateWorkParams.id),
-          value: updateWorkParams.updates,
-        });
-        break;
-      case "restoreWork":
-        const idParams = idSchema.parse(mutation.args);
-        tx.restore({ key: workKey(idParams.id) });
-        break;
-      case "updateYJS":
-        const content = z
-          .object({ id: z.string(), update: z.object({ Ydoc: z.string() }) })
-          .parse(mutation.args);
-        tx.update({ key: YJSKey(content.id), value: content.update });
-        break;
-      case "publishWork":
-        const idParam = idSchema.parse(mutation.args);
-        tx.update({ key: workKey(idParam.id), value: { published: true } });
-
-      default:
-        throw new Error(`Unknown mutation: ${mutation.name}`);
-    }
-
+    await WorkspaceMutations({ tx, mutation, spaceId });
     console.log("Processed mutation in", Date.now() - t1);
 
     console.log("----------------------------------------------------");

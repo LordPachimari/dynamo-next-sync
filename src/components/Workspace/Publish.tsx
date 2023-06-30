@@ -1,6 +1,6 @@
-import React, { Dispatch, SetStateAction, useState } from "react";
+import React, { Dispatch, SetStateAction, useRef, useState } from "react";
 import { z } from "zod";
-
+import { UndoManager } from "@rocicorp/undo";
 import { ContentZod, Post, Quest, QuestZod, Solution } from "~/types/types";
 import { Button } from "~/ui/Button";
 import {
@@ -34,9 +34,11 @@ const Publish = ({
   ydoc: Y.Doc;
 }) => {
   const [isValid, setIsValid] = useState(false);
+  const rep = WorkspaceStore((state) => state.rep);
   const setAttributeErrors = WorkspaceStore(
     (state) => state.setAttributeErrors
   );
+  const undoManagerRef = useRef(new UndoManager());
 
   const QuestAttributesZod = z.object({
     id: z.string(),
@@ -108,8 +110,13 @@ const Publish = ({
     }
   };
 
-  const handlePublish = () => {
-    return;
+  const handlePublish = async () => {
+    if (rep) {
+      await undoManagerRef.current.add({
+        execute: () => rep.mutate.publishWork({ id: work.id }),
+        undo: () => rep.mutate.unpublishWork({ id: work.id }),
+      });
+    }
   };
 
   return (

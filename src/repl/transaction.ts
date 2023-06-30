@@ -36,7 +36,6 @@ interface CustomWriteTransaction {
 
 export class ReplicacheTransaction implements CustomWriteTransaction {
   private readonly _spaceID: string;
-  private readonly _version: number;
   private readonly _cache: Map<
     string,
     {
@@ -51,9 +50,8 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
   > = new Map();
   private readonly _userId: string;
 
-  constructor(spaceID: string, version: number, userId: string) {
+  constructor(spaceID: string, userId: string) {
     this._spaceID = spaceID;
-    this._version = version;
     this._userId = userId;
   }
 
@@ -114,7 +112,6 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
         keysToDel,
         spaceId: this._spaceID,
         userId: this._userId,
-        version: this._version,
       }),
       delPermItems({
         keysToDel: keysToPermDelete,
@@ -124,21 +121,15 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
       restoreItems({
         keysToDel: keysToRestore,
         spaceId: this._spaceID,
-        userId: this._userId,
-        version: this._version,
       }),
 
       putItems({
         items: itemsToPut,
         spaceId: this._spaceID,
-        userId: this._userId,
-        version: this._version,
       }),
       updateItems({
         items: itemsToUpdate,
         spaceId: this._spaceID,
-        userId: this._userId,
-        version: this._version,
       }),
     ]);
     this._cache.clear();

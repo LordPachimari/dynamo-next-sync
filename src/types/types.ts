@@ -131,7 +131,7 @@ const QuestPartialZod = z
     topic: z.enum(Topics),
     subtopic: z.array(z.string()),
     reward: z.number(),
-
+    version: z.number(),
     slots: z.number(),
     creatorId: z.string(),
     createdAt: z.string(),
@@ -142,7 +142,7 @@ const QuestPartialZod = z
     lastUpdated: z.string(),
     allowUnpublish: z.optional(z.boolean()),
     type: z.enum(Entity),
-    deleted: z.boolean(),
+    collaborators: z.optional(z.array(z.string())),
   })
   .partial();
 
@@ -155,21 +155,17 @@ export const QuestZod = QuestPartialZod.required({
   inTrash: true,
   lastUpdated: true,
   type: true,
-  spaceId: true,
   version: true,
 });
 export type Quest = z.infer<typeof QuestZod>;
 
 export const PublishedQuestZod = QuestRequiredZod.extend({
+  publisherProfile: z.optional(z.string()),
+  publisherUsername: z.string(),
   winnerId: z.optional(z.string()),
   status: z.enum(QuestStatus),
   solverCount: z.number(),
   text: z.string(),
-  _event_time: z.optional(z.string()),
-  publisherId: z.optional(z.string()),
-  username: z.optional(z.string()),
-  profile: z.optional(z.string()),
-  level: z.optional(z.string()),
   verified: z.optional(z.boolean()),
 }).omit({
   inTrash: true,
@@ -252,6 +248,7 @@ export type UpdateInventory = z.infer<typeof UpdateInventoryZod>;
 const SolutionPartialZod = z
   .object({
     id: z.string(),
+
     creatorId: z.string(),
     topic: z.enum(Topics),
     contributors: z.array(z.string()),
@@ -265,7 +262,9 @@ const SolutionPartialZod = z
     viewed: z.boolean(),
     questCreatorId: z.string(),
     type: z.enum(Entity),
-    deleted: z.boolean(),
+    version: z.number(),
+
+    collaborators: z.optional(z.array(z.string())),
   })
   .partial();
 export const SolutionZod = SolutionPartialZod.required({
@@ -276,6 +275,7 @@ export const SolutionZod = SolutionPartialZod.required({
   lastUpdated: true,
   createdAt: true,
   type: true,
+  version: true,
 });
 export type Solution = z.infer<typeof SolutionZod>;
 export const PublishedSolutionZod = SolutionPartialZod.omit({
@@ -309,8 +309,9 @@ export const ContentZod = z.object({
   text: z.optional(z.string()),
   inTrash: z.boolean(),
   type: z.enum(Entity),
-  deleted: z.optional(z.boolean()),
   published: z.boolean(),
+  version: z.number(),
+  collaborators:z.optional(z.string())
 });
 
 export type Content = z.infer<typeof ContentZod>;
@@ -357,6 +358,7 @@ export type Message = {
 
 export const PostZodPartial = z
   .object({
+    SK: z.string(),
     id: z.string(),
     title: z.string(),
     topic: z.enum(Topics),
@@ -365,8 +367,10 @@ export const PostZodPartial = z
     type: z.enum(Entity),
     inTrash: z.boolean(),
     lastUpdated: z.string(),
-    deleted: z.boolean(),
     published: z.boolean(),
+    version: z.number(),
+
+    collaborators: z.optional(z.array(z.string())),
   })
   .partial();
 export const PostZod = PostZodPartial.required({
@@ -374,6 +378,7 @@ export const PostZod = PostZodPartial.required({
   type: true,
   inTrash: true,
   lastUpdated: true,
+  version: true,
 });
 export type Post = z.infer<typeof PostZod>;
 export const PostListComponentZod = PostZod.pick({
@@ -428,8 +433,9 @@ export type SpaceVersion = {
 };
 
 export type LastMutationId = {
-  id: string;
+  SK: string;
   lastMutationId: number;
+  version: number;
 };
 export const WorkZod = z.union([QuestZod, SolutionZod, PostZod]);
 export type WorkType = z.infer<typeof WorkZod>;
@@ -451,3 +457,21 @@ export const WorkUpdatesZod = QuestZod.pick({
 export type WorkUpdates = z.infer<typeof WorkUpdatesZod>;
 export const UpdateQueueZod = z.map(z.string(), WorkUpdatesZod);
 export type UpdateQueue = z.infer<typeof UpdateQueueZod>;
+
+const mutationNames = [
+  "createWork",
+  "updateWork",
+  "deleteWork",
+  "deleteWorkPermanently",
+  "duplicateWork",
+  "restoreWork",
+  "updateYJS",
+  "publishWork",
+  "unpublishWork",
+] as const;
+export const MutationNamesZod = z.enum(mutationNames);
+export type MutaitonNamesType = z.infer<typeof MutationNamesZod>;
+export type ClientViewRecord = {
+  id: string;
+  keys: Record<string, number>;
+};

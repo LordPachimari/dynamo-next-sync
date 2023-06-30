@@ -69,7 +69,7 @@ export default function List({
   const works = useSubscribe(
     rep,
     async (tx) => {
-      const list = await tx.scan({ prefix: "EDITOR#" }).entries().toArray();
+      const list = await tx.scan({ prefix: "WORK#" }).entries().toArray();
 
       console.log("list", list);
       return list;
@@ -90,6 +90,7 @@ export default function List({
       }
     }
   }
+  console.log("quests", quests);
 
   const handleCreateQuest = async () => {
     if (rep) {
@@ -104,6 +105,7 @@ export default function List({
         lastUpdated: createdAt,
         published: false,
         type: "QUEST",
+        version: 1,
       };
       // await rep.mutate.createQuest({ quest: newQuest });
       await undoManagerRef.current.add({
@@ -181,7 +183,7 @@ export default function List({
           Trash
         </span>
       </ListSettings>
-      <ScrollArea className="h-5/6 w-full">
+      <ScrollArea className="h-fit w-full">
         <ul ref={parent}>
           {quests.map((work) => {
             return (

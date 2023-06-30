@@ -1,1 +1,1 @@
-export const WORKSPACE_LIST = "WORKSPACE_LIST";
+export const WORKSPACE = "WORKSPACE";

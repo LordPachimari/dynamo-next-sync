@@ -9,12 +9,16 @@ export const env = createEnv({
   server: {
     CLERK_SECRET_KEY: z.string(),
     MAIN_TABLE_NAME: z.string(),
-    REGION:z.string(),
-    DYNAMO_ACCESS_KEY:z.string(),
-    DYNAMO_SECRET_KEY:z.string(),
-    UPLOADTHING_SECRET:z.string(),
-    PUSHER_APP_ID:z.string(),
-    PUSHER_SECRET:z.string()
+    CVR_TABLE_NAME:z.string(),
+    EPHEMERAL_TABLE_NAME: z.string(),
+    REGION: z.string(),
+    DYNAMO_ACCESS_KEY: z.string(),
+    DYNAMO_SECRET_KEY: z.string(),
+    UPLOADTHING_SECRET: z.string(),
+    PUSHER_APP_ID: z.string(),
+    PUSHER_SECRET: z.string(),
+    ROCKSET_API_KEY: z.string(),
+
   },
   /**
    * Specify your client-side environment variables schema here.
@@ -24,26 +28,29 @@ export const env = createEnv({
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
     NEXT_PUBLIC_REPLICACHE_KEY: z.string(),
-    NEXT_PUBLIC_PUSHER_KEY:z.string(),
-    NEXT_PUBLIC_PUSHER_CLUSTER:z.string()
+    NEXT_PUBLIC_PUSHER_KEY: z.string(),
+    NEXT_PUBLIC_PUSHER_CLUSTER: z.string(),
   },
   /**
    * Destructure all variables from `process.env` to make sure they aren't tree-shaken away.
    */
   runtimeEnv: {
-    REGION:process.env.REGION,
+    REGION: process.env.REGION,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
     NEXT_PUBLIC_REPLICACHE_KEY: process.env.NEXT_PUBLIC_REPLICACHE_KEY,
     MAIN_TABLE_NAME: process.env.MAIN_TABLE_NAME,
-    DYNAMO_ACCESS_KEY:process.env.DYNAMO_ACCESS_KEY,
-    DYNAMO_SECRET_KEY:process.env.DYNAMO_SECRET_KEY,
-     UPLOADTHING_SECRET:process.env.UPLOADTHING_SECRET,
-     NEXT_PUBLIC_PUSHER_CLUSTER:process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-     NEXT_PUBLIC_PUSHER_KEY:process.env.NEXT_PUBLIC_PUSHER_KEY,
-     PUSHER_APP_ID:process.env.PUSHER_APP_ID,
-     PUSHER_SECRET:process.env.PUSHER_SECRET
+    CVR_TABLE_NAME:process.env.CVR_TABLE_NAME,
+    EPHEMERAL_TABLE_NAME: process.env.EPHEMERAL_TABLE_NAME,
+    DYNAMO_ACCESS_KEY: process.env.DYNAMO_ACCESS_KEY,
+    DYNAMO_SECRET_KEY: process.env.DYNAMO_SECRET_KEY,
+    UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
+    NEXT_PUBLIC_PUSHER_CLUSTER: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+    NEXT_PUBLIC_PUSHER_KEY: process.env.NEXT_PUBLIC_PUSHER_KEY,
+    PUSHER_APP_ID: process.env.PUSHER_APP_ID,
+    PUSHER_SECRET: process.env.PUSHER_SECRET,
+    ROCKSET_API_KEY: process.env.ROCKSET_API_KEY,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   skipValidation: !!process.env.CI || !!process.env.SKIP_ENV_VALIDATION,

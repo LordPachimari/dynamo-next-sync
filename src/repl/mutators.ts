@@ -22,6 +22,7 @@ export const mutators = {
       inTrash: false,
       published: false,
       type: "CONTENT",
+      version: 1,
     };
 
     await Promise.all([
@@ -52,9 +53,23 @@ export const mutators = {
       await tx.put(YJSKey(newId), content);
     }
   },
+  publishWork: async (tx: WriteTransaction, { id }: { id: string }) => {
+    console.log("mutators, publishWork");
+    const work = (await getWork(tx, { id })) as MergedWorkType | undefined;
+    if (work) {
+      await tx.put(workKey(id), { ...work, published: true });
+    }
+  },
+  unpublishWork: async (tx: WriteTransaction, { id }: { id: string }) => {
+    console.log("mutators, publishWork");
+    const work = (await getWork(tx, { id })) as MergedWorkType | undefined;
+    if (work) {
+      await tx.put(workKey(id), { ...work, published: false });
+    }
+  },
   deleteWork: async (tx: WriteTransaction, { id }: { id: string }) => {
     console.log("mutators, deleteWork");
-    const work = (await tx.get(workKey(id))) as MergedWorkType | undefined;
+    const work = (await getWork(tx, { id })) as MergedWorkType | undefined;
     if (work) {
       await tx.put(workKey(id), { ...work, inTrash: true });
     }
@@ -153,5 +168,5 @@ export function awarenessKeyPrefix(key: string): string {
   return `${YJSKey(key)}/awareness/`;
 }
 export function YJSKey(key: string): string {
-  return `yjs/${key}`;
+  return `YJS#${key}`;
 }

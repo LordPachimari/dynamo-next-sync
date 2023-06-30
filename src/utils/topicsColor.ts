@@ -8,7 +8,7 @@ export const TopicColor = ({ topic }: { topic: string }) => {
     return "purple.200";
   }
   if (topic === "MARKETING") {
-    return "red.200";
+    return "bg-red-500";
   }
   if (topic === "SCIENCE") {
     return "greenyellow";

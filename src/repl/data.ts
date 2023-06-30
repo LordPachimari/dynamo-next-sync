@@ -9,6 +9,8 @@ import {
   BatchGetCommandInput,
   GetCommand,
   GetCommandInput,
+  PutCommand,
+  PutCommandInput,
   QueryCommand,
   QueryCommandInput,
   TransactWriteCommand,
@@ -16,56 +18,356 @@ import {
   UpdateCommand,
   UpdateCommandInput,
 } from "@aws-sdk/lib-dynamodb";
-import { JSONValue } from "replicache";
+import { JSONValue, PatchOperation } from "replicache";
 import { JSONObject } from "replicache";
 import { dynamoClient } from "~/clients/dynamodb";
 import { env } from "~/env.mjs";
-import { LastMutationId, SpaceVersion } from "~/types/types";
+import {
+  ClientViewRecord,
+  Content,
+  LastMutationId,
+  MergedWorkType,
+  Post,
+  Quest,
+  Solution,
+  SpaceVersion,
+} from "~/types/types";
 import { YJSKey } from "./mutators";
-export const getChangedItems = async ({
+import { rocksetClient } from "~/clients/rockset";
+import { ulid } from "ulid";
+import { WORKSPACE } from "~/utils/constants";
+export const makeCVR = ({
+  items,
+}: {
+  items: { SK: string; version: number }[];
+}) => {
+  const cvr: ClientViewRecord = {
+    id: ulid(),
+    keys: {},
+  };
+  for (const i of items) {
+    cvr.keys[i.SK] = i.version;
+  }
+  return cvr;
+};
+export const getPatch = async ({
   spaceId,
-  prevVersion,
+  prevCVR,
+  userId,
 }: {
   spaceId: string;
-  prevVersion: number;
+  prevCVR: ClientViewRecord | undefined;
+  userId: string;
 }) => {
-  const queryParams: QueryCommandInput = {
-    TableName: env.MAIN_TABLE_NAME,
-    KeyConditionExpression: "#PK = :PK",
-
-    FilterExpression: "#version > :version",
-    ExpressionAttributeNames: {
-      "#PK": "PK",
-      "#version": "version",
-    },
-    ExpressionAttributeValues: {
-      ":PK": spaceId,
-      ":version": prevVersion,
-    },
-  };
+  if (!prevCVR) {
+    return await getResetPatch({ spaceId, userId });
+  }
+  const items = spaceId.startsWith(WORKSPACE)
+    ? await getWorkspaceCVR({ spaceId, userId })
+    : [];
   try {
-    const result = await dynamoClient.send(new QueryCommand(queryParams));
-    if (result.Items) {
-      return result.Items;
+    const nextCVR = makeCVR({
+      items,
+    });
+
+    const putKeys: { PK: string; SK: string }[] = [];
+    const delKeys = [];
+    for (const { PK, SK, version } of items) {
+      const prevVersion = prevCVR.keys[SK];
+      if (prevVersion === undefined || prevVersion < version) {
+        putKeys.push({ PK, SK });
+      }
     }
-    return [];
+
+    for (const key of Object.keys(prevCVR.keys)) {
+      if (nextCVR.keys[key] === undefined) {
+        delKeys.push(key);
+      }
+    }
+    const fullItems = await getFullItems({
+      keys: putKeys,
+    });
+    // console.log("prev CVR ", JSON.stringify(prevCVR));
+    // console.log("new CVR", JSON.stringify(nextCVR));
+    // console.log("put keys", JSON.stringify(fullItems));
+    // console.log("full items from dynamodb", JSON.stringify(fullItems));
+    const patch: PatchOperation[] = [];
+    for (const key of delKeys) {
+      patch.push({
+        op: "del",
+        key,
+      });
+    }
+    for (const i of fullItems) {
+      const item = i as { SK: string };
+      patch.push({
+        op: "put",
+        key: item.SK,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        value: item,
+      });
+    }
+
+    return { patch, cvr: nextCVR };
   } catch (error) {
     console.log(error);
     throw new Error("failed to get changed entries");
   }
 };
-export const getItem = async ({
+const getWorkspaceCVR = async ({
   spaceId,
-  key,
   userId,
 }: {
   spaceId: string;
-  key: string;
   userId: string;
+}) => {
+  try {
+    const params: QueryCommandInput = {
+      TableName: env.MAIN_TABLE_NAME,
+      IndexName: env.CVR_TABLE_NAME,
+      KeyConditionExpression: "PK = :PK",
+      ExpressionAttributeValues: { ":PK": spaceId },
+    };
+    const workspaceCVRPromise = dynamoClient.send(new QueryCommand(params));
+
+    const collaborativeCVRPromise =
+      rocksetClient.queryLambdas.executeQueryLambda(
+        "commons",
+        "WorkspaceCollaborativeItems",
+        "06c57497728b7d5f",
+        {
+          parameters: [
+            {
+              name: "userId",
+              type: "string",
+              value: userId,
+            },
+          ],
+        }
+      );
+    const [workspaceCVR, collaborativeCVR] = await Promise.all([
+      workspaceCVRPromise,
+      collaborativeCVRPromise,
+    ]);
+
+    if (workspaceCVR.Items && workspaceCVR.Items.length > 0) {
+      if (collaborativeCVR.results) {
+        return [
+          ...workspaceCVR.Items,
+          ...(collaborativeCVR.results as {
+            PK: string;
+            SK: string;
+            version: number;
+          }[]),
+        ] as { PK: string; SK: string; version: number }[];
+      }
+      return workspaceCVR.Items as {
+        PK: string;
+        SK: string;
+        version: number;
+      }[];
+    }
+    return [];
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to get workspace CVR");
+  }
+};
+const getCVR = async ({ spaceId }: { spaceId: string }) => {
+  try {
+    const params: QueryCommandInput = {
+      TableName: env.MAIN_TABLE_NAME,
+      IndexName: env.CVR_TABLE_NAME,
+      KeyConditionExpression: "PK = :PK",
+      ExpressionAttributeValues: { ":PK": spaceId },
+    };
+    const result = await dynamoClient.send(new QueryCommand(params));
+    if (result.Items && result.Items.length > 0) {
+      return result.Items as { SK: string; version: number }[];
+    }
+
+    return [];
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to get space items");
+  }
+};
+const getResetPatch = async ({
+  spaceId,
+  userId,
+}: {
+  spaceId: string;
+  userId: string;
+}) => {
+  const items = spaceId.startsWith(WORKSPACE)
+    ? await getWorkspaceItems({ spaceId, userId })
+    : [];
+  const cvr = makeCVR({ items });
+  const patch: PatchOperation[] = [
+    {
+      op: "clear",
+    },
+  ];
+
+  for (const item of items) {
+    patch.push({
+      op: "put",
+      key: item.SK,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      value: item,
+    });
+  }
+
+  return {
+    patch,
+    cvr,
+  };
+};
+
+const recursiveQuery = async (params: QueryCommandInput) => {
+  let items: Record<string, any>[] = [];
+  let lastEvaluatedKey;
+
+  do {
+    const data = await dynamoClient.send(new QueryCommand(params));
+    if (data.Items && data.Items.length > 0) {
+      items = [...items, ...data.Items];
+      lastEvaluatedKey = data.LastEvaluatedKey;
+      params.ExclusiveStartKey = lastEvaluatedKey;
+    }
+  } while (lastEvaluatedKey);
+
+  return items;
+};
+const getWorkspaceItems = async ({
+  spaceId,
+  userId,
+}: {
+  spaceId: string;
+  userId: string;
+}) => {
+  try {
+    const params: QueryCommandInput = {
+      TableName: env.MAIN_TABLE_NAME,
+      KeyConditionExpression: "PK = :PK",
+      ExpressionAttributeValues: { ":PK": spaceId },
+    };
+    const workspaceItemsPromise = recursiveQuery(params);
+
+    const collaborativeItemsIdsPromise =
+      rocksetClient.queryLambdas.executeQueryLambda(
+        "commons",
+        "WorkspaceCollaborativeItems",
+        "06c57497728b7d5f",
+        {
+          parameters: [
+            {
+              name: "userId",
+              type: "string",
+              value: userId,
+            },
+          ],
+        }
+      );
+    const [workspaceItems, collaborativeItemsIds] = await Promise.all([
+      workspaceItemsPromise,
+      collaborativeItemsIdsPromise,
+    ]);
+    if (workspaceItems && workspaceItems.length > 0) {
+      if (
+        collaborativeItemsIds.results &&
+        collaborativeItemsIds.results.length > 0
+      ) {
+        const keys: { PK: string; SK: string }[] = [];
+        for (const { PK, SK } of collaborativeItemsIds.results as {
+          PK: string;
+          SK: string;
+        }[]) {
+          keys.push({ PK, SK });
+        }
+        const collborativeItems = await getFullItems({ keys });
+        return [...workspaceItems, ...collborativeItems] as (MergedWorkType & {
+          SK: string;
+        })[];
+      }
+      return workspaceItems as (MergedWorkType & { SK: string })[];
+    }
+    return [];
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to get workspace items");
+  }
+};
+
+export const getFullItems = async ({
+  keys,
+}: {
+  keys: { PK: string; SK: string }[];
+}) => {
+  try {
+    const tableName = env.MAIN_TABLE_NAME;
+
+    // Divide keys into chunks of 100 (BatchGetCommand limit)
+    const chunkSize = 100;
+    const promises = []; // Array to hold all promises
+
+    for (let i = 0; i < keys.length; i += chunkSize) {
+      const keysChunk = keys.slice(i, i + chunkSize); // Get chunk of keys
+      const Keys: Record<string, any>[] = [];
+
+      for (const { PK, SK } of keysChunk) {
+        Keys.push({ PK, SK });
+      }
+
+      const RequestItems: Record<
+        string,
+        Omit<KeysAndAttributes, "Keys"> & {
+          Keys: Record<string, any>[] | undefined;
+        }
+      > = {};
+
+      RequestItems[tableName] = {
+        Keys,
+      };
+
+      const params: BatchGetCommandInput = {
+        RequestItems,
+      };
+
+      promises.push(dynamoClient.send(new BatchGetCommand(params)));
+    }
+
+    // Wait for all promises to resolve
+    const responses = await Promise.all(promises);
+
+    const allResults: Record<string, any>[] = []; // Array to accumulate all results
+
+    for (const response of responses) {
+      if (response.Responses) {
+        const result = response.Responses[tableName];
+        if (result) {
+          allResults.push(...result); // Add the results of this call to the allResults array
+        }
+      }
+    }
+
+    return allResults; // Return all results
+  } catch (error) {
+    console.error(error);
+    throw new Error("Failed to get workspace items");
+  }
+};
+
+export const getItem = async ({
+  spaceId,
+  key,
+}: {
+  spaceId: string;
+  key: string;
 }) => {
   const getParams: GetCommandInput = {
     Key: {
-      PK: spaceId === "WORKSPACE_LIST" ? `${spaceId}#${userId}` : `${spaceId}`,
+      PK: spaceId,
       SK: key,
     },
     TableName: env.MAIN_TABLE_NAME,
@@ -83,14 +385,10 @@ export const getItem = async ({
 };
 export const putItems = async ({
   spaceId,
-  version,
-  userId,
   items,
 }: {
   spaceId: string;
   items: { key: string; value: JSONObject }[];
-  version: number;
-  userId: string;
 }) => {
   if (items.length === 0) {
     return;
@@ -113,7 +411,6 @@ export const putItems = async ({
           PK: spaceId,
 
           SK: item.key,
-          version,
         },
       },
     });
@@ -131,14 +428,10 @@ export const putItems = async ({
 };
 export const updateItems = async ({
   spaceId,
-  version,
-  userId,
   items,
 }: {
   spaceId: string;
   items: { key: string; value: JSONObject }[];
-  version: number;
-  userId: string;
 }) => {
   if (items.length === 0) {
     return;
@@ -156,7 +449,7 @@ export const updateItems = async ({
     });
     const UpdateExpression = `set ${attributes.join(
       ", "
-    )}, #version = :version`;
+    )}, #version = #version + :inc`;
     const ExpressionAttributeValues: Record<string, JSONValue | undefined> = {};
     Object.entries(value).forEach(([attr, val]) => {
       ExpressionAttributeValues[`:${attr}`] = val;
@@ -179,7 +472,7 @@ export const updateItems = async ({
         UpdateExpression,
         ExpressionAttributeValues: {
           ":published": false,
-          ":version": version,
+          ":inc": 1,
           ...ExpressionAttributeValues,
         },
       },
@@ -199,12 +492,10 @@ export const updateItems = async ({
 export const delItems = async ({
   spaceId,
   keysToDel,
-  version,
   userId,
 }: {
   spaceId: string;
   keysToDel: string[];
-  version: number;
   userId: string;
 }) => {
   if (keysToDel.length === 0) {
@@ -228,13 +519,13 @@ export const delItems = async ({
 
           SK: key,
         },
-        UpdateExpression: "SET #inTrash = :value, #version = :version",
+        UpdateExpression: "SET #inTrash = :value, #version = #version + :inc",
         ConditionExpression: "inTrash <> :value",
         ExpressionAttributeNames: {
           "#inTrash": "inTrash",
           "#version": "version",
         },
-        ExpressionAttributeValues: { ":value": true, ":version": version },
+        ExpressionAttributeValues: { ":value": true, ":inc": 1 },
         TableName: env.MAIN_TABLE_NAME,
       },
     });
@@ -253,14 +544,10 @@ export const delItems = async ({
 export const restoreItems = async ({
   spaceId,
   keysToDel,
-  version,
-  userId,
 }: {
   spaceId: string;
 
   keysToDel: string[];
-  version: number;
-  userId: string;
 }) => {
   if (keysToDel.length === 0) {
     return;
@@ -283,13 +570,13 @@ export const restoreItems = async ({
 
           SK: key,
         },
-        UpdateExpression: "SET #inTrash = :value, #version = :version",
+        UpdateExpression: "SET #inTrash = :value, #version = #version + :inc",
         ConditionExpression: "inTrash <> :value",
         ExpressionAttributeNames: {
           "#inTrash": "inTrash",
           "#version": "version",
         },
-        ExpressionAttributeValues: { ":value": false, ":version": version },
+        ExpressionAttributeValues: { ":value": false, ":inc": 1 },
         TableName: env.MAIN_TABLE_NAME,
       },
     });
@@ -376,65 +663,6 @@ export const delPermItems = async ({
     throw new Error("Transact delete items failed");
   }
 };
-export const getSpaceVersion = async ({
-  spaceId,
-  userId,
-}: {
-  userId: string;
-  spaceId: string;
-}) => {
-  const getParam: GetCommandInput = {
-    Key: { PK: spaceId, SK: "VERSION" },
-
-    TableName: env.MAIN_TABLE_NAME,
-    AttributesToGet: ["version"],
-  };
-  try {
-    console.log("spaceId-------------", spaceId);
-    const result = await dynamoClient.send(new GetCommand(getParam));
-    if (result.Item) {
-      const { version } = result.Item as SpaceVersion;
-      return version;
-    }
-    await setSpaceVersion({ spaceId, version: 0, userId });
-
-    return 0;
-  } catch (error) {
-    console.log(error);
-    throw new Error("Failed to get space version");
-  }
-};
-export const setSpaceVersion = async ({
-  spaceId,
-  version,
-  userId,
-}: {
-  spaceId: string | "WORKSPACE_LIST";
-  version: number;
-  userId: string;
-}) => {
-  const lastUpdated = new Date().toISOString();
-  const updateParams: UpdateCommandInput = {
-    TableName: env.MAIN_TABLE_NAME,
-    Key: { PK: spaceId, SK: "VERSION" },
-
-    UpdateExpression: "SET #version = :version, #lastUpdated = :lastUpdated",
-    ExpressionAttributeNames: {
-      "#version": "version",
-      "#lastUpdated": "lastUpdated",
-    },
-    ExpressionAttributeValues: {
-      ":version": version,
-      ":lastUpdated": lastUpdated,
-    },
-  };
-  try {
-    await dynamoClient.send(new UpdateCommand(updateParams));
-  } catch (error) {
-    console.log(error);
-    throw new Error("failed to set space version");
-  }
-};
 export const getLastMutationIds = async ({
   clientIDs,
   clientGroupID,
@@ -442,7 +670,7 @@ export const getLastMutationIds = async ({
   clientIDs: string[];
   clientGroupID: string;
 }) => {
-  const tableName = env.MAIN_TABLE_NAME;
+  const tableName = env.EPHEMERAL_TABLE_NAME;
   const RequestItems: Record<
     string,
     Omit<KeysAndAttributes, "Keys"> & {
@@ -451,7 +679,7 @@ export const getLastMutationIds = async ({
   > = {};
   const Keys = clientIDs.map((id) => ({
     PK: `CLIENT_GROUP#${clientGroupID}`,
-    SK: `CLIENT#${id}`,
+    SK: id,
   }));
 
   RequestItems[tableName] = {
@@ -466,7 +694,7 @@ export const getLastMutationIds = async ({
       const responses = result.Responses[tableName] as LastMutationId[];
       return Object.fromEntries(
         responses.map((val) => {
-          return [val.id, val.lastMutationId ?? 0] as const;
+          return [val.SK, val.lastMutationId ?? 0] as const;
         })
       );
     }
@@ -478,84 +706,70 @@ export const getLastMutationIds = async ({
 };
 export const getLastMutationIdsSince = async ({
   clientGroupId,
-  prevVersion,
+  prevLastMutationIdsCVR,
 }: {
   clientGroupId: string;
-  prevVersion: number;
+  prevLastMutationIdsCVR: ClientViewRecord | undefined;
 }) => {
   const queryParams: QueryCommandInput = {
-    TableName: env.MAIN_TABLE_NAME,
+    TableName: env.EPHEMERAL_TABLE_NAME,
     KeyConditionExpression: "#PK = :PK",
 
-    FilterExpression: "#version > :version",
     ExpressionAttributeNames: {
       "#PK": "PK",
-      "#version": "version",
     },
     ExpressionAttributeValues: {
       ":PK": `CLIENT_GROUP#${clientGroupId}`,
-      ":version": prevVersion,
     },
   };
   try {
     const result = await dynamoClient.send(new QueryCommand(queryParams));
     if (result.Items) {
-      const lastMutationIDArray = result.Items as LastMutationId[];
-      return Object.fromEntries(
-        lastMutationIDArray.map((l) => [l.id, l.lastMutationId] as const)
-      );
+      const items = result.Items as LastMutationId[];
+      // const items =Object.fromEntries(
+      //   lastMutationIDArray.map((l) => [l.id, l.lastMutationId] as const)
+      // );
+      const nextCVR = makeCVR({ items });
+      if (!prevLastMutationIdsCVR) {
+        return {
+          nextLastMutationIdsCVR: nextCVR,
+          lastMutationIDChanges: Object.fromEntries(
+            items.map((l) => [l.SK, l.lastMutationId] as const)
+          ),
+        };
+      }
+      const lastMutationIDChanges: {
+        [k: string]: number;
+      } = {};
+      for (const { SK, lastMutationId, version } of items) {
+        const prevVersion = prevLastMutationIdsCVR.keys[SK];
+        if (prevVersion && prevVersion < version) {
+          lastMutationIDChanges[SK] = lastMutationId;
+        }
+      }
+
+      return {
+        nextLastMutationIdsCVR: nextCVR,
+        lastMutationIDChanges,
+      };
     }
-    return {};
+    return { nextLastMutationIdsCVR: null, lastMutationIDChanges: {} };
   } catch (error) {
     console.log(error);
     throw new Error("Failed to get client IDS");
   }
 };
-export const setLastMutationId = async ({
-  clientId,
-  lastMutationId,
-  clientGroupId,
-}: {
-  clientId: string;
-  lastMutationId: number;
-  clientGroupId: string;
-}) => {
-  const oneDayInSeconds = 24 * 60 * 60;
-  const expirationTime = Math.floor(Date.now() / 1000) + oneDayInSeconds;
-  const updateParams: UpdateCommandInput = {
-    TableName: env.MAIN_TABLE_NAME,
-
-    Key: { PK: `CLIENT_GROUP#${clientGroupId}`, SK: `CLIENT#${clientId}` },
-    UpdateExpression:
-      "SET #lastMutationId = :lastMutationId, #id = :id, #ttl = :ttl",
-    ExpressionAttributeNames: {
-      "#lastMutationId": "lastMutationId",
-      "#id": "id",
-      "#ttl": "ttl",
-    },
-    ExpressionAttributeValues: {
-      ":lastMutationId": lastMutationId,
-      ":id": clientId,
-      ":ttl": expirationTime,
-    },
-  };
-  try {
-    await dynamoClient.send(new UpdateCommand(updateParams));
-  } catch (error) {
-    console.log(error);
-    throw new Error("failed to set last mutation");
-  }
-};
 export const setLastMutationIds = async ({
   clientGroupId,
-  version,
   lmids,
 }: {
   clientGroupId: string;
   lmids: Record<string, number>;
-  version: number;
 }) => {
   console.log("last mutation ids dynamo setLastMutationIds", lmids);
+
+  const oneDayInSeconds = 24 * 60 * 60;
+  const expirationTime = Math.floor(Date.now() / 1000) + oneDayInSeconds;
   const updateItems = [...Object.entries(lmids)].map(
     ([clientId, lastMutationId]) => {
       const updateItem: {
@@ -566,23 +780,26 @@ export const setLastMutationIds = async ({
             };
       } = {
         Update: {
-          TableName: env.MAIN_TABLE_NAME,
+          TableName: env.EPHEMERAL_TABLE_NAME,
 
           Key: {
             PK: `CLIENT_GROUP#${clientGroupId}`,
-            SK: `CLIENT#${clientId}`,
+            SK: clientId,
           },
           UpdateExpression:
-            "SET #id = :id, #lastMutationId = :lastMutationId, #version = :version",
+            "SET #id = :id, #lastMutationId = :lastMutationId, #ttl = :ttl, #version = if_not_exists(#version, :zero) + :inc",
           ExpressionAttributeNames: {
             "#id": "id",
             "#lastMutationId": "lastMutationId",
+            "#ttl": "ttl",
             "#version": "version",
           },
           ExpressionAttributeValues: {
             ":id": clientId,
             ":lastMutationId": lastMutationId,
-            ":version": version,
+            ":ttl": expirationTime,
+            ":inc": 1,
+            ":zero": 0,
           },
         },
       };
@@ -597,5 +814,119 @@ export const setLastMutationIds = async ({
   } catch (error) {
     console.log(error);
     throw new Error("Transact update lastMutationIds failed");
+  }
+};
+export const getPrevCVR = async ({
+  spaceId,
+  key,
+}: {
+  spaceId: string;
+  key: string | undefined;
+}) => {
+  if (!key) {
+    return undefined;
+  }
+  const getParams: GetCommandInput = {
+    Key: {
+      PK: spaceId,
+      SK: key,
+    },
+    TableName: env.EPHEMERAL_TABLE_NAME,
+  };
+  try {
+    const result = await dynamoClient.send(new GetCommand(getParams));
+    if (result.Item) {
+      return result.Item as ClientViewRecord;
+    }
+    return undefined;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to get item");
+  }
+};
+export const setCVR = async ({
+  key,
+  spaceId,
+  CVR,
+}: {
+  spaceId: string;
+  key: string;
+  CVR: ClientViewRecord;
+}) => {
+  const oneDayInSeconds = 24 * 60 * 60;
+  const expirationTime = Math.floor(Date.now() / 1000) + oneDayInSeconds;
+  const putParams: PutCommandInput = {
+    TableName: env.EPHEMERAL_TABLE_NAME,
+    Item: {
+      PK: spaceId,
+      SK: key,
+      ...CVR,
+      ttl: expirationTime,
+    },
+  };
+  try {
+    await dynamoClient.send(new PutCommand(putParams));
+  } catch (error) {
+    console.log(error);
+    throw new Error("failed to set CVR");
+  }
+};
+
+export const getLastMutationIdsCVR = async ({
+  spaceId,
+  key,
+}: {
+  spaceId: string;
+  key: string | undefined;
+}) => {
+  if (!key) {
+    return undefined;
+  }
+  const getParams: GetCommandInput = {
+    Key: {
+      PK: spaceId,
+      SK: key,
+    },
+    TableName: env.EPHEMERAL_TABLE_NAME,
+  };
+  try {
+    const result = await dynamoClient.send(new GetCommand(getParams));
+    if (result.Item) {
+      return result.Item as ClientViewRecord;
+    }
+    return undefined;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to get item");
+  }
+};
+export const setLastMutationIdsCVR = async ({
+  spaceId,
+  key,
+  CVR,
+}: {
+  spaceId: string;
+  key: string;
+  CVR: ClientViewRecord;
+}) => {
+  if (!key) {
+    return undefined;
+  }
+  const oneDayInSeconds = 24 * 60 * 60;
+  const expirationTime = Math.floor(Date.now() / 1000) + oneDayInSeconds;
+  const putParams: PutCommandInput = {
+    TableName: env.EPHEMERAL_TABLE_NAME,
+    Item: {
+      PK: spaceId,
+      SK: key,
+      ...CVR,
+      ttl: expirationTime,
+    },
+  };
+  try {
+    await dynamoClient.send(new PutCommand(putParams));
+  } catch (error) {
+    console.log(error);
+    throw new Error("failed to set LastmutationsId CVR");
   }
 };

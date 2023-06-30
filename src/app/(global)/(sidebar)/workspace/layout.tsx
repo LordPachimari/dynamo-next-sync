@@ -9,7 +9,7 @@ import Editor from "~/components/Workspace/Editor";
 import { env } from "~/env.mjs";
 import { M, mutators } from "~/repl/mutators";
 import { Button } from "~/ui/Button";
-import { WORKSPACE_LIST } from "~/utils/constants";
+import { WORKSPACE } from "~/utils/constants";
 import Actions from "./Actions";
 import List from "./List";
 import { WorkspaceStore } from "~/zustand/workspace";
@@ -43,8 +43,8 @@ export default function WorkspaceLayout({
       const r = new Replicache({
         name: userId,
         licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
-        pushURL: `/api/replicache-push?spaceId=${WORKSPACE_LIST}`,
-        pullURL: `/api/replicache-pull?spaceId=${WORKSPACE_LIST}`,
+        pushURL: `/api/replicache-push?spaceId=${WORKSPACE}`,
+        pullURL: `/api/replicache-pull?spaceId=${WORKSPACE}`,
         mutators,
         pullInterval: null,
       });

@@ -9,7 +9,8 @@ export const env = createEnv({
   server: {
     CLERK_SECRET_KEY: z.string(),
     MAIN_TABLE_NAME: z.string(),
-    CVR_TABLE_NAME:z.string(),
+    CVR_INDEX_NAME: z.string(),
+    PUBLISHED_CVR_INDEX_NAME: z.string(),
     EPHEMERAL_TABLE_NAME: z.string(),
     REGION: z.string(),
     DYNAMO_ACCESS_KEY: z.string(),
@@ -18,7 +19,6 @@ export const env = createEnv({
     PUSHER_APP_ID: z.string(),
     PUSHER_SECRET: z.string(),
     ROCKSET_API_KEY: z.string(),
-
   },
   /**
    * Specify your client-side environment variables schema here.
@@ -41,7 +41,8 @@ export const env = createEnv({
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
     NEXT_PUBLIC_REPLICACHE_KEY: process.env.NEXT_PUBLIC_REPLICACHE_KEY,
     MAIN_TABLE_NAME: process.env.MAIN_TABLE_NAME,
-    CVR_TABLE_NAME:process.env.CVR_TABLE_NAME,
+    CVR_INDEX_NAME: process.env.CVR_INDEX_NAME,
+    PUBLISHED_CVR_INDEX_NAME: process.env.PUBLISHED_CVR_INDEX_NAME,
     EPHEMERAL_TABLE_NAME: process.env.EPHEMERAL_TABLE_NAME,
     DYNAMO_ACCESS_KEY: process.env.DYNAMO_ACCESS_KEY,
     DYNAMO_SECRET_KEY: process.env.DYNAMO_SECRET_KEY,

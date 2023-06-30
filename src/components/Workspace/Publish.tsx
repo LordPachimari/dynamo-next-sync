@@ -1,7 +1,15 @@
 import React, { Dispatch, SetStateAction, useRef, useState } from "react";
 import { z } from "zod";
 import { UndoManager } from "@rocicorp/undo";
-import { ContentZod, Post, Quest, QuestZod, Solution } from "~/types/types";
+import {
+  ContentZod,
+  EntityType,
+  MergedWorkType,
+  Post,
+  Quest,
+  QuestZod,
+  Solution,
+} from "~/types/types";
 import { Button } from "~/ui/Button";
 import {
   AlertDialog,
@@ -26,13 +34,7 @@ import Preview from "./Preview";
 import { UpdateAttributeErrorsZod, WorkspaceStore } from "~/zustand/workspace";
 
 import * as Y from "yjs";
-const Publish = ({
-  work,
-  ydoc,
-}: {
-  work: Quest & Solution & Post;
-  ydoc: Y.Doc;
-}) => {
+const Publish = ({ work, ydoc }: { work: MergedWorkType; ydoc: Y.Doc }) => {
   const [isValid, setIsValid] = useState(false);
   const rep = WorkspaceStore((state) => state.rep);
   const setAttributeErrors = WorkspaceStore(
@@ -113,7 +115,11 @@ const Publish = ({
   const handlePublish = async () => {
     if (rep) {
       await undoManagerRef.current.add({
-        execute: () => rep.mutate.publishWork({ id: work.id }),
+        execute: () =>
+          rep.mutate.publishWork({
+            id: work.id,
+            type: work.type,
+          }),
         undo: () => rep.mutate.unpublishWork({ id: work.id }),
       });
     }

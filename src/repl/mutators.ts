@@ -11,6 +11,7 @@ import {
   WorkUpdates,
   WorkZod,
   Content,
+  EntityType,
 } from "~/types/types";
 
 export type M = typeof mutators;
@@ -53,7 +54,10 @@ export const mutators = {
       await tx.put(YJSKey(newId), content);
     }
   },
-  publishWork: async (tx: WriteTransaction, { id }: { id: string }) => {
+  publishWork: async (
+    tx: WriteTransaction,
+    { id, type }: { id: string; type: "QUEST" | "SOLUTION" | "POST" }
+  ) => {
     console.log("mutators, publishWork");
     const work = (await getWork(tx, { id })) as MergedWorkType | undefined;
     if (work) {

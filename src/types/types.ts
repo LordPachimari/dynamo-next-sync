@@ -3,7 +3,7 @@ import { StaticImageData } from "next/image";
 import { z } from "zod";
 
 export type ThemeType = "dark" | "light";
-const Entity = [
+export const Entity = [
   "USER",
   "QUEST",
   "SOLUTION",
@@ -140,9 +140,9 @@ const QuestPartialZod = z
     inTrash: z.boolean(),
     deadline: z.string(),
     lastUpdated: z.string(),
-    allowUnpublish: z.optional(z.boolean()),
+    allowUnpublish: z.boolean(),
     type: z.enum(Entity),
-    collaborators: z.optional(z.array(z.string())),
+    collaborators: z.array(z.string()),
   })
   .partial();
 
@@ -311,7 +311,7 @@ export const ContentZod = z.object({
   type: z.enum(Entity),
   published: z.boolean(),
   version: z.number(),
-  collaborators:z.optional(z.string())
+  collaborators: z.optional(z.string()),
 });
 
 export type Content = z.infer<typeof ContentZod>;

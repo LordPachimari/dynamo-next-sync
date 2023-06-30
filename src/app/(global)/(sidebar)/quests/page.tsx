@@ -12,24 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/ui/Select";
-const quest: PublishedQuest = {
-  id: "quest1",
-  creatorId: "user1",
-  deadline: "2023-05-25T05:33:09.961Z",
-  lastUpdated: "2023-05-25T05:33:09.961Z",
-  published: true,
-  publishedAt: "2023-05-25T05:33:09.961Z",
-  reward: 10,
-  slots: 10,
-  solverCount: 10,
-  status: "OPEN",
-  subtopic: ["shit"],
-  text: "hi",
-  title: "hello world",
-  topic: "MARKETING",
-  type: "QUEST",
-  username: "Pachimari",
-};
 export default function Home() {
   const [showChat, setShowChat] = useState(false);
   return (

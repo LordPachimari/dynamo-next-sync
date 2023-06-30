@@ -95,7 +95,7 @@ const Editor = ({ id }: { id: string }) => {
             renderCount={renderCount}
           />
         ) : (
-          <div className="h-[255px]">No work found</div>
+          <></>
         )}
       </div>
       {work && !work.published && ydoc && <Publish work={work} ydoc={ydoc} />}

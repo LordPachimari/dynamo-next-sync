@@ -3,7 +3,7 @@ import { Mutation, idSchema } from "~/app/api/replicache-push/route";
 import { getItem } from "~/repl/data";
 import { YJSKey, workKey } from "~/repl/mutators";
 import { ReplicacheTransaction } from "~/repl/transaction";
-import { Content, WorkUpdatesZod, WorkZod } from "~/types/types";
+import { Content, Entity, WorkUpdatesZod, WorkZod } from "~/types/types";
 const updateWorkArgsSchema = z.object({
   id: z.string(),
   updates: WorkUpdatesZod,
@@ -78,10 +78,24 @@ export const WorkspaceMutations = async ({
       .parse(mutation.args);
     tx.update({ key: YJSKey(content.id), value: content.update });
   } else if (mutation.name === "publishWork") {
-    const idParams = idSchema.parse(mutation.args);
-    tx.update({ key: workKey(idParams.id), value: { published: true } });
+    const params = z
+      .object({
+        id: z.string(),
+        type: z.enum(["POST", "SOLUTION", "QUEST"] as const),
+      })
+      .parse(mutation.args);
+    tx.update({
+      key: workKey(params.id),
+      value: {
+        published: true,
+        publishedKey: `PUBLISHED#${params.type}#${params.id}`,
+      },
+    });
   } else if (mutation.name === "unpublishWork") {
     const idParams = idSchema.parse(mutation.args);
-    tx.update({ key: workKey(idParams.id), value: { published: false } });
+    tx.update({
+      key: workKey(idParams.id),
+      value: { published: false, publishedKey: null },
+    });
   }
 };

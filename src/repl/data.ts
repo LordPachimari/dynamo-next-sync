@@ -114,6 +114,60 @@ export const getPatch = async ({
     throw new Error("failed to get changed entries");
   }
 };
+const getVersionsFromDynamoDb = async ({
+  keys,
+}: {
+  keys: { PK: string; SK: string }[];
+}) => {
+  const tableName = env.MAIN_TABLE_NAME;
+
+  // Divide keys into chunks of 100 (BatchGetCommand limit)
+  const chunkSize = 100;
+  const promises = []; // Array to hold all promises
+
+  for (let i = 0; i < keys.length; i += chunkSize) {
+    const keysChunk = keys.slice(i, i + chunkSize); // Get chunk of keys
+    const Keys: Record<string, any>[] = [];
+
+    for (const { PK, SK } of keysChunk) {
+      Keys.push({ PK, SK });
+    }
+
+    const RequestItems: Record<
+      string,
+      Omit<KeysAndAttributes, "Keys"> & {
+        Keys: Record<string, any>[] | undefined;
+      }
+    > = {};
+
+    RequestItems[tableName] = {
+      Keys,
+      ProjectionExpression: "PK, SK, version",
+    };
+
+    const params: BatchGetCommandInput = {
+      RequestItems,
+    };
+
+    promises.push(dynamoClient.send(new BatchGetCommand(params)));
+  }
+
+  // Wait for all promises to resolve
+  const responses = await Promise.all(promises);
+
+  const allResults: Record<string, any>[] = []; // Array to accumulate all results
+
+  for (const response of responses) {
+    if (response.Responses) {
+      const result = response.Responses[tableName];
+      if (result) {
+        allResults.push(...result); // Add the results of this call to the allResults array
+      }
+    }
+  }
+
+  return allResults; // Return all results
+};
 const getWorkspaceCVR = async ({
   spaceId,
   userId,
@@ -124,17 +178,17 @@ const getWorkspaceCVR = async ({
   try {
     const params: QueryCommandInput = {
       TableName: env.MAIN_TABLE_NAME,
-      IndexName: env.CVR_TABLE_NAME,
+      IndexName: env.CVR_INDEX_NAME,
       KeyConditionExpression: "PK = :PK",
       ExpressionAttributeValues: { ":PK": spaceId },
     };
     const workspaceCVRPromise = dynamoClient.send(new QueryCommand(params));
 
-    const collaborativeCVRPromise =
+    const collaborativeItemsPromise =
       rocksetClient.queryLambdas.executeQueryLambda(
         "commons",
         "WorkspaceCollaborativeItems",
-        "06c57497728b7d5f",
+        "a23c60f39f648c6e",
         {
           parameters: [
             {
@@ -145,21 +199,23 @@ const getWorkspaceCVR = async ({
           ],
         }
       );
-    const [workspaceCVR, collaborativeCVR] = await Promise.all([
+    const [workspaceCVR, collaborativeItems] = await Promise.all([
       workspaceCVRPromise,
-      collaborativeCVRPromise,
+      collaborativeItemsPromise,
     ]);
 
     if (workspaceCVR.Items && workspaceCVR.Items.length > 0) {
-      if (collaborativeCVR.results) {
-        return [
-          ...workspaceCVR.Items,
-          ...(collaborativeCVR.results as {
-            PK: string;
-            SK: string;
-            version: number;
-          }[]),
-        ] as { PK: string; SK: string; version: number }[];
+      if (collaborativeItems.results && collaborativeItems.results.length > 0) {
+        //versions in dynamo are fresh, while rockset syncs from dynamo with a delay, so always retrieve versions from dynamodb
+        const collaborativeCVR = await getVersionsFromDynamoDb({
+          keys: collaborativeItems.results as { PK: string; SK: string }[],
+        });
+
+        return [...workspaceCVR.Items, ...collaborativeCVR] as {
+          PK: string;
+          SK: string;
+          version: number;
+        }[];
       }
       return workspaceCVR.Items as {
         PK: string;
@@ -177,7 +233,7 @@ const getCVR = async ({ spaceId }: { spaceId: string }) => {
   try {
     const params: QueryCommandInput = {
       TableName: env.MAIN_TABLE_NAME,
-      IndexName: env.CVR_TABLE_NAME,
+      IndexName: env.CVR_INDEX_NAME,
       KeyConditionExpression: "PK = :PK",
       ExpressionAttributeValues: { ":PK": spaceId },
     };

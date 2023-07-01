@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Mutation, idSchema } from "~/app/api/replicache-push/route";
+import { Mutation } from "~/app/api/replicache-push/route";
 import { getItem } from "~/repl/data";
 import { contentKey, workKey } from "~/repl/mutators";
 import { ReplicacheTransaction } from "~/repl/transaction";

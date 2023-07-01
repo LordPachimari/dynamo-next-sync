@@ -34,6 +34,7 @@ import Preview from "./Preview";
 import { UpdateAttributeErrorsZod, WorkspaceStore } from "~/zustand/workspace";
 
 import * as Y from "yjs";
+import { toast } from "sonner";
 const Publish = ({ work, ydoc }: { work: MergedWorkType; ydoc: Y.Doc }) => {
   const [isValid, setIsValid] = useState(false);
   const rep = WorkspaceStore((state) => state.rep);
@@ -113,15 +114,23 @@ const Publish = ({ work, ydoc }: { work: MergedWorkType; ydoc: Y.Doc }) => {
   };
 
   const handlePublish = async () => {
+    const publishedAt = new Date().toISOString();
     if (rep) {
       await undoManagerRef.current.add({
         execute: () =>
           rep.mutate.publishWork({
             id: work.id,
             type: work.type,
+            publishedAt,
+            published: true,
+            publisherUsername: "Pachimari",
+            solverCount: 0,
+            status: "OPEN",
           }),
-        undo: () => rep.mutate.unpublishWork({ id: work.id }),
+
+        undo: () => rep.mutate.unpublishWork({ id: work.id, type: work.type }),
       });
+      toast.success("Successfully published");
     }
   };
 
@@ -180,7 +189,11 @@ const Publish = ({ work, ydoc }: { work: MergedWorkType; ydoc: Y.Doc }) => {
               </DialogContent>
             </Dialog>
 
-            <AlertDialogAction className="bg-emerald-500 hover:bg-emerald-600">
+            <AlertDialogAction
+              className="bg-emerald-500 hover:bg-emerald-600"
+              // eslint-disable-next-line @typescript-eslint/no-misused-promises
+              onClick={handlePublish}
+            >
               Continue
             </AlertDialogAction>
           </AlertDialogFooter>

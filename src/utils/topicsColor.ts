@@ -2,7 +2,7 @@ import { TopicsType } from "~/types/types";
 
 export const TopicColor = ({ topic }: { topic: string }) => {
   if (topic === "BUSINESS") {
-    return "green.200";
+    return "green.300";
   }
   if (topic === "PROGRAMMING") {
     return "purple.200";

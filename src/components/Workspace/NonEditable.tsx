@@ -69,7 +69,7 @@ const Topic = ({ topic }: { topic?: TopicsType | undefined }) => {
     <Badge
       className={cn("sm w-fit bg-white", {
         "bg-red-500": topic === "MARKETING",
-        "bg-green-300": topic === "BUSINESS",
+        "bg-green-400": topic === "BUSINESS",
         "bg-purple-500": topic === "PROGRAMMING",
         "bg-blue-500": topic === "VIDEOGRAPHY",
         "bg-green-500": topic === "SCIENCE",
@@ -112,7 +112,7 @@ const Slots = ({ slots }: { slots: number | undefined }) => {
 const DateComponent = ({ questDate }: { questDate: string }) => {
   return (
     <div className="flex gap-3">
-      <p className="font-bold">DUE</p>
+      <p className="font-bold">Due</p>
       <Badge className="bg-blue-400 hover:bg-blue-500">
         {format(new Date(questDate), "PPP")}
       </Badge>
@@ -130,10 +130,10 @@ export const NonEditableQuestAttributes = ({
     <div className="flex flex-col gap-2">
       {quest.published ? (
         <div className="flex justify-between">
-          <h1 title={quest.title} />
+          <Title title={quest.title} />
 
           <Badge
-            className={cn("bg-green-500", {
+            className={cn("flex h-8 w-16 justify-center bg-green-500", {
               "bg-red-500": publishedQuest.status === "CLOSED",
             })}
           >
@@ -144,8 +144,10 @@ export const NonEditableQuestAttributes = ({
         <Title title={quest.title} />
       )}
       {quest.deadline && <DateComponent questDate={quest.deadline} />}
-      <Topic topic={quest.topic} />
-      <Subtopic subtopic={quest.subtopic} />
+      <div className="flex gap-2">
+        <Topic topic={quest.topic} />
+        <Subtopic subtopic={quest.subtopic} />
+      </div>
       <div className="flex gap-2">
         <Reward reward={quest.reward} />
         <Slots slots={quest.slots} />

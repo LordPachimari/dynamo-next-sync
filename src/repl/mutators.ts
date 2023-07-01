@@ -12,23 +12,25 @@ import {
   WorkZod,
   Content,
   EntityType,
+  PublishWorkAttributesType,
 } from "~/types/types";
-
 export type M = typeof mutators;
+
 export const mutators = {
-  createWork: async (tx: WriteTransaction, { work }: { work: WorkType }) => {
+  createWork: async (
+    tx: WriteTransaction,
+    { work, type }: { work: MergedWorkType; type: WorkType }
+  ) => {
     console.log("mutators, putQuest");
     const parsedWork = WorkZod.parse(work);
     const newContent: Content = {
-      inTrash: false,
-      published: false,
       type: "CONTENT",
       version: 1,
     };
 
     await Promise.all([
-      tx.put(workKey(work.id), parsedWork),
-      tx.put(YJSKey(work.id), newContent),
+      tx.put(workKey({ id: work.id, type }), parsedWork),
+      tx.put(contentKey(work.id), newContent),
     ]);
   },
 
@@ -39,57 +41,85 @@ export const mutators = {
       newId,
       createdAt,
       lastUpdated,
-    }: { id: string; newId: string; lastUpdated: string; createdAt: string }
+      type,
+    }: {
+      id: string;
+      newId: string;
+      lastUpdated: string;
+      createdAt: string;
+      type: WorkType;
+    }
   ) => {
     console.log("mutators, duplicateWork");
-    const work = await getWork(tx, { id });
-    const content = (await tx.get(YJSKey(id))) as string;
+    const work = await getWork(tx, { id, type });
+    const content = (await tx.get(contentKey(id))) as string;
 
     if (work && content) {
-      await tx.put(workKey(newId), {
+      await tx.put(workKey({ id: newId, type }), {
         id: newId,
         createdAt,
         lastUpdated,
       });
-      await tx.put(YJSKey(newId), content);
+      await tx.put(contentKey(newId), content);
     }
   },
   publishWork: async (
     tx: WriteTransaction,
-    { id, type }: { id: string; type: "QUEST" | "SOLUTION" | "POST" }
+    props: PublishWorkAttributesType
   ) => {
     console.log("mutators, publishWork");
-    const work = (await getWork(tx, { id })) as MergedWorkType | undefined;
+    const work = (await getWork(tx, { id: props.id, type: props.type })) as
+      | MergedWorkType
+      | undefined;
+
     if (work) {
-      await tx.put(workKey(id), { ...work, published: true });
+      await tx.put(workKey({ id: props.id, type: props.type }), {
+        ...work,
+        ...props,
+      });
     }
   },
-  unpublishWork: async (tx: WriteTransaction, { id }: { id: string }) => {
+  unpublishWork: async (
+    tx: WriteTransaction,
+    { id, type }: { id: string; type: WorkType }
+  ) => {
     console.log("mutators, publishWork");
-    const work = (await getWork(tx, { id })) as MergedWorkType | undefined;
+    const work = (await getWork(tx, { id, type })) as
+      | MergedWorkType
+      | undefined;
     if (work) {
-      await tx.put(workKey(id), { ...work, published: false });
+      await tx.put(workKey({ id, type }), { ...work, published: false });
     }
   },
-  deleteWork: async (tx: WriteTransaction, { id }: { id: string }) => {
+  deleteWork: async (
+    tx: WriteTransaction,
+    { id, type }: { id: string; type: WorkType }
+  ) => {
     console.log("mutators, deleteWork");
-    const work = (await getWork(tx, { id })) as MergedWorkType | undefined;
+    const work = (await getWork(tx, { id, type })) as
+      | MergedWorkType
+      | undefined;
     if (work) {
-      await tx.put(workKey(id), { ...work, inTrash: true });
+      await tx.put(workKey({ id, type }), { ...work, inTrash: true });
     }
   },
   deleteWorkPermanently: async (
     tx: WriteTransaction,
-    { id }: { id: string }
+    { id, type }: { id: string; type: WorkType }
   ) => {
     console.log("mutators, perm delete");
-    await tx.del(workKey(id));
+    await tx.del(workKey({ id, type }));
   },
-  restoreWork: async (tx: WriteTransaction, { id }: { id: string }) => {
+  restoreWork: async (
+    tx: WriteTransaction,
+    { id, type }: { id: string; type: WorkType }
+  ) => {
     console.log("mutators, restore");
-    const work = (await tx.get(workKey(id))) as MergedWorkType | undefined;
+    const work = (await tx.get(workKey({ id, type }))) as
+      | MergedWorkType
+      | undefined;
     if (work) {
-      await tx.put(workKey(id), { ...work, inTrash: false });
+      await tx.put(workKey({ id, type }), { ...work, inTrash: false });
     }
   },
   updateWork: async (
@@ -98,28 +128,33 @@ export const mutators = {
       id,
 
       updates,
+      type,
     }: {
       id: string;
       updates: WorkUpdates;
+      type: WorkType;
     }
   ): Promise<void> => {
-    const work = (await getWork(tx, { id })) as Quest;
+    const work = (await getWork(tx, { id, type })) as Quest;
     if (!work) {
       console.info(`Quest ${id} not found`);
       return;
     }
     const updated = { ...work, ...updates };
-    await putWork(tx, { id, work: updated });
+    await putWork(tx, { id, work: updated, type });
   },
 
-  async updateYJS(
+  async updateContent(
     tx: WriteTransaction,
-    { id, update }: { id: string; update: { Ydoc: string } }
+    {
+      id,
+      update,
+    }: { id: string; update: { Ydoc: string; textContent?: string } }
   ) {
-    const prevYJS = (await getYJS(tx, { id })) as Content;
+    const prevYJS = await getContent(tx, { id });
 
     const updated = { ...prevYJS, ...update };
-    await tx.put(YJSKey(id), updated);
+    await tx.put(contentKey(id), updated);
   },
   async updateYJSAwareness(
     tx: WriteTransaction,
@@ -139,15 +174,21 @@ export const mutators = {
     await tx.del(awarenessKey(name, yjsClientID));
   },
 };
-export const getYJS = async (tx: ReadTransaction, { id }: { id: string }) => {
-  const yjs = await tx.get(YJSKey(id));
-  if (!yjs) {
+export const getContent = async (
+  tx: ReadTransaction,
+  { id }: { id: string }
+) => {
+  const content = await tx.get(contentKey(id));
+  if (!content) {
     return undefined;
   }
-  return yjs;
+  return content as Content;
 };
-export const getWork = async (tx: ReadTransaction, { id }: { id: string }) => {
-  const work = await tx.get(workKey(id));
+export const getWork = async (
+  tx: ReadTransaction,
+  { id, type }: { id: string; type: WorkType }
+) => {
+  const work = await tx.get(workKey({ id, type }));
   if (!work) {
     return undefined;
   }
@@ -155,22 +196,31 @@ export const getWork = async (tx: ReadTransaction, { id }: { id: string }) => {
 };
 export const putWork = async (
   tx: WriteTransaction,
-  { work, id }: { work: ReadonlyJSONValue; id: string }
+  { work, id, type }: { work: ReadonlyJSONValue; id: string; type: WorkType }
 ) => {
-  await tx.put(workKey(id), work);
+  await tx.put(workKey({ id, type }), work);
 };
 
 function awarenessKey(key: string, yjsClientID: number): string {
-  return `${YJSKey(key)}/awareness/${yjsClientID}`;
+  return `${contentKey(key)}/awareness/${yjsClientID}`;
 }
 
-export function workKey(key: string): string {
-  return `WORK#${key}`;
+export function workKey({
+  id,
+  type,
+}: {
+  id: string;
+  type: "QUEST" | "SOLUTION" | "POST";
+}): string {
+  if (type === "QUEST") return `WORK#QUEST#${id}`;
+  if (type === "SOLUTION") return `WORK#SOLUTION#${id}`;
+  if (type === "POST") return `WORK#POST#${id}`;
+  return "";
 }
 
 export function awarenessKeyPrefix(key: string): string {
-  return `${YJSKey(key)}/awareness/`;
+  return `${contentKey(key)}/awareness/`;
 }
-export function YJSKey(key: string): string {
-  return `YJS#${key}`;
+export function contentKey(key: string): string {
+  return `CONTENT#${key}`;
 }

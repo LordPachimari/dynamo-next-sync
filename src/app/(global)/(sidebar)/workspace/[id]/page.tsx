@@ -1,3 +1,4 @@
+import Editor from "~/components/Workspace/Editor";
 export default function MainPage({ params }: { params: { id: string } }) {
-  return <></>;
+  return <Editor id={params.id} />;
 }

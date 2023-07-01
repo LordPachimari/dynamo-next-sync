@@ -245,7 +245,7 @@ export const Reward = ({
   const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
   const [stateReward, setStateReward] = useState<number | "">("");
   useEffect(() => {
-    setStateReward(reward || 0);
+    setStateReward(reward || "");
   }, [reward]);
   return (
     <div className="my-1 flex items-center gap-2 " ref={parent}>
@@ -289,7 +289,7 @@ export const Slots = ({
   const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
   const [stateSlots, setStateSlots] = useState<number | "">("");
   useEffect(() => {
-    setStateSlots(slots || 0);
+    setStateSlots(slots || "");
   }, [slots]);
   return (
     <div className="my-1 flex items-center gap-2" ref={parent}>

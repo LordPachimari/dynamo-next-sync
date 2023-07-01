@@ -2,6 +2,7 @@ import { Content } from "next/font/google";
 import { StaticImageData } from "next/image";
 import { z } from "zod";
 
+export const WorkTypeEnum = ["POST", "QUEST", "SOLUTION"] as const;
 export type ThemeType = "dark" | "light";
 export const Entity = [
   "USER",
@@ -141,7 +142,7 @@ const QuestPartialZod = z
     deadline: z.string(),
     lastUpdated: z.string(),
     allowUnpublish: z.boolean(),
-    type: z.enum(Entity),
+    type: z.enum(WorkTypeEnum),
     collaborators: z.array(z.string()),
   })
   .partial();
@@ -165,12 +166,14 @@ export const PublishedQuestZod = QuestRequiredZod.extend({
   winnerId: z.optional(z.string()),
   status: z.enum(QuestStatus),
   solverCount: z.number(),
-  text: z.string(),
+  textContent: z.optional(z.string()),
   verified: z.optional(z.boolean()),
+  preview: z.optional(z.string()),
 }).omit({
   inTrash: true,
   createdAt: true,
   allowUnpublish: true,
+  collaborators: true,
 });
 export type PublishedQuest = z.infer<typeof PublishedQuestZod>;
 
@@ -261,7 +264,7 @@ const SolutionPartialZod = z
     lastUpdated: z.string(),
     viewed: z.boolean(),
     questCreatorId: z.string(),
-    type: z.enum(Entity),
+    type: z.enum(WorkTypeEnum),
     version: z.number(),
 
     collaborators: z.optional(z.array(z.string())),
@@ -286,7 +289,7 @@ export const PublishedSolutionZod = SolutionPartialZod.omit({
   .extend({
     status: z.optional(z.enum(SolutionStatus)),
     viewed: z.optional(z.boolean()),
-    text: z.string(),
+    textContent: z.string(),
   })
   .partial({ contributors: true, topic: true });
 export type PublishedSolution = z.infer<typeof PublishedSolutionZod>;
@@ -306,10 +309,8 @@ export const SolutionListComponentZod = SolutionZod.pick({
 export type SolutionListComponent = z.infer<typeof SolutionListComponentZod>;
 export const ContentZod = z.object({
   Ydoc: z.optional(z.string()),
-  text: z.optional(z.string()),
-  inTrash: z.boolean(),
+  textContent: z.optional(z.string()),
   type: z.enum(Entity),
-  published: z.boolean(),
   version: z.number(),
   collaborators: z.optional(z.string()),
 });
@@ -317,7 +318,7 @@ export const ContentZod = z.object({
 export type Content = z.infer<typeof ContentZod>;
 export const ContentUpdatesZod = ContentZod.pick({
   Ydoc: true,
-  text: true,
+  textContent: true,
 });
 export type ContentUpdates = z.infer<typeof ContentUpdatesZod>;
 export type WorkspaceList = {
@@ -363,8 +364,8 @@ export const PostZodPartial = z
     title: z.string(),
     topic: z.enum(Topics),
     publishedAt: z.string(),
-    text: z.string(),
-    type: z.enum(Entity),
+    textContent: z.string(),
+    type: z.enum(WorkTypeEnum),
     inTrash: z.boolean(),
     lastUpdated: z.string(),
     published: z.boolean(),
@@ -438,12 +439,25 @@ export type LastMutationId = {
   version: number;
 };
 export const WorkZod = z.union([QuestZod, SolutionZod, PostZod]);
-export type WorkType = z.infer<typeof WorkZod>;
 
+export type WorkType = "POST" | "QUEST" | "SOLUTION";
 export type MergedWorkType = (Post & Quest & Solution) & {
-  type: "POST" | "QUEST" | "SOLUTION";
+  type: WorkType;
 };
 
+export const PublishWorkAttributesZod = PublishedQuestZod.pick({
+  id: true,
+  publishedAt: true,
+  solverCount: true,
+  publisherProfile: true,
+  publisherUsername: true,
+  published: true,
+  type: true,
+  status: true,
+}).required({ id: true, type: true });
+export type PublishWorkAttributesType = z.infer<
+  typeof PublishWorkAttributesZod
+>;
 export const WorkUpdatesZod = QuestZod.pick({
   title: true,
   topic: true,
@@ -465,7 +479,7 @@ const mutationNames = [
   "deleteWorkPermanently",
   "duplicateWork",
   "restoreWork",
-  "updateYJS",
+  "updateContent",
   "publishWork",
   "unpublishWork",
 ] as const;

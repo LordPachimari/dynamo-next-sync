@@ -10,7 +10,7 @@ export const env = createEnv({
     CLERK_SECRET_KEY: z.string(),
     MAIN_TABLE_NAME: z.string(),
     CVR_INDEX_NAME: z.string(),
-    PUBLISHED_CVR_INDEX_NAME: z.string(),
+    PUBLISHED_QUESTS_CVR_INDEX_NAME: z.string(),
     EPHEMERAL_TABLE_NAME: z.string(),
     REGION: z.string(),
     DYNAMO_ACCESS_KEY: z.string(),
@@ -19,6 +19,8 @@ export const env = createEnv({
     PUSHER_APP_ID: z.string(),
     PUSHER_SECRET: z.string(),
     ROCKSET_API_KEY: z.string(),
+    MOMENTO_AUTH_TOKEN: z.string(),
+    NEXT_PUBLIC_MOMENTO_CACHE_NAME: z.string(),
   },
   /**
    * Specify your client-side environment variables schema here.
@@ -42,7 +44,8 @@ export const env = createEnv({
     NEXT_PUBLIC_REPLICACHE_KEY: process.env.NEXT_PUBLIC_REPLICACHE_KEY,
     MAIN_TABLE_NAME: process.env.MAIN_TABLE_NAME,
     CVR_INDEX_NAME: process.env.CVR_INDEX_NAME,
-    PUBLISHED_CVR_INDEX_NAME: process.env.PUBLISHED_CVR_INDEX_NAME,
+    PUBLISHED_QUESTS_CVR_INDEX_NAME:
+      process.env.PUBLISHED_QUESTS_CVR_INDEX_NAME,
     EPHEMERAL_TABLE_NAME: process.env.EPHEMERAL_TABLE_NAME,
     DYNAMO_ACCESS_KEY: process.env.DYNAMO_ACCESS_KEY,
     DYNAMO_SECRET_KEY: process.env.DYNAMO_SECRET_KEY,
@@ -52,6 +55,8 @@ export const env = createEnv({
     PUSHER_APP_ID: process.env.PUSHER_APP_ID,
     PUSHER_SECRET: process.env.PUSHER_SECRET,
     ROCKSET_API_KEY: process.env.ROCKSET_API_KEY,
+    MOMENTO_AUTH_TOKEN: process.env.MOMENTO_AUTH_TOKEN,
+    NEXT_PUBLIC_MOMENTO_CACHE_NAME: process.env.NEXT_PUBLIC_MOMENTO_CACHE_NAME,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   skipValidation: !!process.env.CI || !!process.env.SKIP_ENV_VALIDATION,

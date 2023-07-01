@@ -15,6 +15,7 @@ import { ulid } from "ulid";
 import { z } from "zod";
 import { M } from "~/repl/mutators";
 import {
+  MergedWorkType,
   Post,
   PostListComponent,
   PostListComponentZod,
@@ -24,6 +25,7 @@ import {
   Solution,
   SolutionListComponent,
   SolutionListComponentZod,
+  WorkType,
 } from "~/types/types";
 import { Button } from "~/ui/Button";
 import { cn } from "~/utils/cn";
@@ -52,7 +54,6 @@ export default function List({
   userId: string;
 }) {
   const segment = useSelectedLayoutSegment();
-  console.log("segment", segment);
   const undoManagerRef = useRef(new UndoManager());
   const [parent, enableAnimations] = useAutoAnimate();
   // const [listComponents, setListComponents] = useState<{
@@ -109,27 +110,43 @@ export default function List({
       };
       // await rep.mutate.createQuest({ quest: newQuest });
       await undoManagerRef.current.add({
-        execute: () => rep.mutate.createWork({ work: newQuest }),
-        undo: () => rep.mutate.deleteWork({ id: newQuest.id }),
+        execute: () =>
+          rep.mutate.createWork({
+            work: newQuest as MergedWorkType,
+            type: "QUEST",
+          }),
+        undo: () => rep.mutate.deleteWork({ id: newQuest.id, type: "QUEST" }),
       });
-      router.push(`/workspace/${id}`);
+      router.push(`/workspace/${id}?type=QUEST`);
     }
   };
-  const handleDeleteWork = async ({ id }: { id: string }) => {
+  const handleDeleteWork = async ({
+    id,
+    type,
+  }: {
+    id: string;
+    type: WorkType;
+  }) => {
     if (rep) {
       // await rep.mutate.createQuest({ quest: newQuest });
       await undoManagerRef.current.add({
         execute: async () => {
-          await rep.mutate.deleteWork({ id });
+          await rep.mutate.deleteWork({ id, type });
           if (routerId === id) {
             void router.push("/workspace");
           }
         },
-        undo: () => rep.mutate.restoreWork({ id }),
+        undo: () => rep.mutate.restoreWork({ id, type }),
       });
     }
   };
-  const handleDuplicateWork = async ({ id }: { id: string }) => {
+  const handleDuplicateWork = async ({
+    id,
+    type,
+  }: {
+    id: string;
+    type: WorkType;
+  }) => {
     const newId = ulid();
     const lastUpdated = new Date().toISOString();
     if (rep) {
@@ -141,9 +158,10 @@ export default function List({
             newId: newId,
             lastUpdated,
             createdAt: lastUpdated,
+            type,
           });
         },
-        undo: () => rep.mutate.deleteWork({ id: newId }),
+        undo: () => rep.mutate.deleteWork({ id: newId, type }),
       });
     }
   };
@@ -171,26 +189,15 @@ export default function List({
           </svg>
         </Button>
       </div>
-      <ListSettings>
-        <span
-          className={cn(
-            "absolute bottom-2 mx-2 flex w-[240px] cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
-            // path === item.href ? "bg-accent" : "transparent",
-            // item.disabled && "cursor-not-allowed opacity-80",
-          )}
-        >
-          <Trash className="text-orange-500" size={20} />
-          Trash
-        </span>
-      </ListSettings>
-      <ScrollArea className="h-fit w-full">
+
+      <ScrollArea className="h-5/6 w-full">
         <ul ref={parent}>
           {quests.map((work) => {
             return (
               <span
                 // eslint-disable-next-line @typescript-eslint/no-misused-promises
                 onMouseDown={() => {
-                  router.push(`/workspace/${work.id}`);
+                  router.push(`/workspace/${work.id}?type=${work.type}`);
                 }}
                 key={work.id}
                 className={cn(
@@ -213,9 +220,10 @@ export default function List({
                     <DropdownMenuItem
                       className="focus:bg-orange-100"
                       onClick={(e) => {
-                        handleDuplicateWork({ id: work.id }).catch((err) =>
-                          console.log(err)
-                        );
+                        handleDuplicateWork({
+                          id: work.id,
+                          type: work.type as WorkType,
+                        }).catch((err) => console.log(err));
                       }}
                     >
                       <Copy className="mr-2 h-4 w-4" />
@@ -224,9 +232,10 @@ export default function List({
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={(e) => {
-                        handleDeleteWork({ id: work.id }).catch((err) =>
-                          console.log(err)
-                        );
+                        handleDeleteWork({
+                          id: work.id,
+                          type: work.type as WorkType,
+                        }).catch((err) => console.log(err));
                       }}
                       className="focus:bg-orange-100"
                     >
@@ -263,6 +272,18 @@ export default function List({
           <span className="text-orange-500">Add quest</span>
         </span>
       </ScrollArea>
+      <ListSettings>
+        <span
+          className={cn(
+            " mx-2 flex w-[240px] cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
+            // path === item.href ? "bg-accent" : "transparent",
+            // item.disabled && "cursor-not-allowed opacity-80",
+          )}
+        >
+          <Trash className="text-orange-500" size={20} />
+          Trash
+        </span>
+      </ListSettings>
     </div>
   );
 }

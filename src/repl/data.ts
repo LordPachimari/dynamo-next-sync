@@ -13,6 +13,8 @@ import {
   PutCommandInput,
   QueryCommand,
   QueryCommandInput,
+  ScanCommand,
+  ScanCommandInput,
   TransactWriteCommand,
   TransactWriteCommandInput,
   UpdateCommand,
@@ -28,14 +30,18 @@ import {
   LastMutationId,
   MergedWorkType,
   Post,
+  PublishedQuest,
   Quest,
   Solution,
   SpaceVersion,
 } from "~/types/types";
-import { YJSKey } from "./mutators";
+import { contentKey } from "./mutators";
 import { rocksetClient } from "~/clients/rockset";
+import { PUBLISHED_QUESTS, WORKSPACE } from "~/utils/constants";
+import { CacheGet, CacheSet } from "@gomomento/sdk";
+import { momento } from "~/clients/momento";
+import { nanoid } from "nanoid";
 import { ulid } from "ulid";
-import { WORKSPACE } from "~/utils/constants";
 export const makeCVR = ({
   items,
 }: {
@@ -64,6 +70,8 @@ export const getPatch = async ({
   }
   const items = spaceId.startsWith(WORKSPACE)
     ? await getWorkspaceCVR({ spaceId, userId })
+    : spaceId === PUBLISHED_QUESTS
+    ? await getPublishedQuestsCVR()
     : [];
   try {
     const nextCVR = makeCVR({
@@ -229,6 +237,29 @@ const getWorkspaceCVR = async ({
     throw new Error("Failed to get workspace CVR");
   }
 };
+const getPublishedQuestsCVR = async () => {
+  const scanParams: ScanCommandInput = {
+    TableName: env.MAIN_TABLE_NAME,
+    IndexName: env.PUBLISHED_QUESTS_CVR_INDEX_NAME,
+  };
+
+  try {
+    const publishedQuestsCVR = await dynamoClient.send(
+      new ScanCommand(scanParams)
+    );
+    if (publishedQuestsCVR.Items && publishedQuestsCVR.Items.length > 0) {
+      return publishedQuestsCVR.Items as {
+        PK: string;
+        SK: string;
+        version: number;
+      }[];
+    }
+    return [];
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to get published quests CVR");
+  }
+};
 const getCVR = async ({ spaceId }: { spaceId: string }) => {
   try {
     const params: QueryCommandInput = {
@@ -257,6 +288,8 @@ const getResetPatch = async ({
 }) => {
   const items = spaceId.startsWith(WORKSPACE)
     ? await getWorkspaceItems({ spaceId, userId })
+    : spaceId === PUBLISHED_QUESTS
+    ? await getPublishedQuestItems()
     : [];
   const cvr = makeCVR({ items });
   const patch: PatchOperation[] = [
@@ -280,7 +313,7 @@ const getResetPatch = async ({
   };
 };
 
-const recursiveQuery = async (params: QueryCommandInput) => {
+const recursiveQuery = async (params: QueryCommandInput | ScanCommandInput) => {
   let items: Record<string, any>[] = [];
   let lastEvaluatedKey;
 
@@ -353,6 +386,11 @@ const getWorkspaceItems = async ({
     console.log(error);
     throw new Error("Failed to get workspace items");
   }
+};
+export const getPublishedQuestItems = async () => {
+  const keys = await getPublishedQuestsCVR();
+  const fullItems = await getFullItems({ keys });
+  return fullItems as (PublishedQuest & { SK: string })[];
 };
 
 export const getFullItems = async ({
@@ -508,6 +546,9 @@ export const updateItems = async ({
     )}, #version = #version + :inc`;
     const ExpressionAttributeValues: Record<string, JSONValue | undefined> = {};
     Object.entries(value).forEach(([attr, val]) => {
+      if (attr === "textContent" && !val) {
+        return (ExpressionAttributeValues[`:${attr}`] = "");
+      }
       ExpressionAttributeValues[`:${attr}`] = val;
     });
 
@@ -519,15 +560,11 @@ export const updateItems = async ({
           SK: key,
         },
 
-        ConditionExpression: "#published = :published",
-
         ExpressionAttributeNames: {
-          "#published": "published",
           "#version": "version",
         },
         UpdateExpression,
         ExpressionAttributeValues: {
-          ":published": false,
           ":inc": 1,
           ...ExpressionAttributeValues,
         },
@@ -693,7 +730,7 @@ export const delPermItems = async ({
           Key: {
             PK: spaceId,
 
-            SK: `${YJSKey(key.substring(7))}`,
+            SK: `${contentKey(key.substring(7))}`,
           },
           UpdateExpression: "SET #ttl = :ttl, deleted = :deleted",
           ExpressionAttributeNames: {
@@ -701,7 +738,7 @@ export const delPermItems = async ({
             "#ttl": "ttl",
           },
           ExpressionAttributeValues: {
-            ":ttl": expirationTime,
+            ":ttl": oneDayInSeconds,
             ":deleted": true,
           },
           TableName: env.MAIN_TABLE_NAME,
@@ -872,27 +909,24 @@ export const setLastMutationIds = async ({
     throw new Error("Transact update lastMutationIds failed");
   }
 };
-export const getPrevCVR = async ({
-  spaceId,
-  key,
-}: {
-  spaceId: string;
-  key: string | undefined;
-}) => {
+export const getPrevCVR = async ({ key }: { key: string | undefined }) => {
   if (!key) {
     return undefined;
   }
-  const getParams: GetCommandInput = {
-    Key: {
-      PK: spaceId,
-      SK: key,
-    },
-    TableName: env.EPHEMERAL_TABLE_NAME,
-  };
+
   try {
-    const result = await dynamoClient.send(new GetCommand(getParams));
-    if (result.Item) {
-      return result.Item as ClientViewRecord;
+    const getResponse = await momento.get(
+      env.NEXT_PUBLIC_MOMENTO_CACHE_NAME,
+      key
+    );
+    if (getResponse instanceof CacheGet.Hit) {
+      console.log("cache CVR hit!");
+      // increasing view count on the quest logic. If user exists and haven't seen the quest by checking whether user has this quest id as a sort key in VIEWS_TABLE.
+      const result = JSON.parse(getResponse.valueString()) as ClientViewRecord;
+
+      return result;
+    } else if (getResponse instanceof CacheGet.Error) {
+      console.log(`Error: ${getResponse.message()}`);
     }
     return undefined;
   } catch (error) {
@@ -902,87 +936,24 @@ export const getPrevCVR = async ({
 };
 export const setCVR = async ({
   key,
-  spaceId,
   CVR,
 }: {
-  spaceId: string;
   key: string;
   CVR: ClientViewRecord;
 }) => {
-  const oneDayInSeconds = 24 * 60 * 60;
-  const expirationTime = Math.floor(Date.now() / 1000) + oneDayInSeconds;
-  const putParams: PutCommandInput = {
-    TableName: env.EPHEMERAL_TABLE_NAME,
-    Item: {
-      PK: spaceId,
-      SK: key,
-      ...CVR,
-      ttl: expirationTime,
-    },
-  };
   try {
-    await dynamoClient.send(new PutCommand(putParams));
+    const setResponse = await momento.set(
+      env.NEXT_PUBLIC_MOMENTO_CACHE_NAME,
+      key,
+      JSON.stringify(CVR)
+    );
+    if (setResponse instanceof CacheSet.Success) {
+      console.log("Key CVR stored successfully!");
+    } else {
+      console.log(`Error setting key: ${setResponse.toString()}`);
+    }
   } catch (error) {
     console.log(error);
     throw new Error("failed to set CVR");
-  }
-};
-
-export const getLastMutationIdsCVR = async ({
-  spaceId,
-  key,
-}: {
-  spaceId: string;
-  key: string | undefined;
-}) => {
-  if (!key) {
-    return undefined;
-  }
-  const getParams: GetCommandInput = {
-    Key: {
-      PK: spaceId,
-      SK: key,
-    },
-    TableName: env.EPHEMERAL_TABLE_NAME,
-  };
-  try {
-    const result = await dynamoClient.send(new GetCommand(getParams));
-    if (result.Item) {
-      return result.Item as ClientViewRecord;
-    }
-    return undefined;
-  } catch (error) {
-    console.log(error);
-    throw new Error("Failed to get item");
-  }
-};
-export const setLastMutationIdsCVR = async ({
-  spaceId,
-  key,
-  CVR,
-}: {
-  spaceId: string;
-  key: string;
-  CVR: ClientViewRecord;
-}) => {
-  if (!key) {
-    return undefined;
-  }
-  const oneDayInSeconds = 24 * 60 * 60;
-  const expirationTime = Math.floor(Date.now() / 1000) + oneDayInSeconds;
-  const putParams: PutCommandInput = {
-    TableName: env.EPHEMERAL_TABLE_NAME,
-    Item: {
-      PK: spaceId,
-      SK: key,
-      ...CVR,
-      ttl: expirationTime,
-    },
-  };
-  try {
-    await dynamoClient.send(new PutCommand(putParams));
-  } catch (error) {
-    console.log(error);
-    throw new Error("failed to set LastmutationsId CVR");
   }
 };

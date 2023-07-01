@@ -5,7 +5,6 @@ import Pusher from "pusher-js";
 import { useAuth } from "@clerk/nextjs";
 import { useParams, useRouter } from "next/navigation";
 import { Replicache } from "replicache";
-import Editor from "~/components/Workspace/Editor";
 import { env } from "~/env.mjs";
 import { M, mutators } from "~/repl/mutators";
 import { Button } from "~/ui/Button";
@@ -32,8 +31,6 @@ export default function WorkspaceLayout({
   const setRep = WorkspaceStore((state) => state.setRep);
 
   const { userId } = useAuth();
-  const { id } = useParams();
-  console.log("id", id);
 
   useEffect(() => {
     if (rep) {
@@ -41,7 +38,7 @@ export default function WorkspaceLayout({
     }
     if (userId) {
       const r = new Replicache({
-        name: userId,
+        name: `${WORKSPACE}#${userId}`,
         licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
         pushURL: `/api/replicache-push?spaceId=${WORKSPACE}`,
         pullURL: `/api/replicache-pull?spaceId=${WORKSPACE}`,
@@ -54,14 +51,14 @@ export default function WorkspaceLayout({
           cluster: env.NEXT_PUBLIC_PUSHER_CLUSTER,
         });
 
-        const channel = pusher.subscribe("workspace");
+        const channel = pusher.subscribe(WORKSPACE);
         channel.bind("poke", () => {
           r.pull();
         });
       }
+
       setRep(r);
     }
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rep, userId]);
 
@@ -99,15 +96,6 @@ export default function WorkspaceLayout({
             </svg>
           </Button>
         ) : null}
-        {id && rep ? (
-          <Editor id={id} />
-        ) : !id ? (
-          <div className="flex w-full flex-col items-center p-5">
-            <Actions />
-          </div>
-        ) : (
-          <></>
-        )}
 
         {children}
       </div>

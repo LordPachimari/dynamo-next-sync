@@ -1,5 +1,11 @@
 import { ChangeEvent, FormEvent, useCallback } from "react";
-import { Quest, TopicsType, UpdateQueue, WorkUpdates } from "../../types/types";
+import {
+  Quest,
+  TopicsType,
+  UpdateQueue,
+  WorkType,
+  WorkUpdates,
+} from "../../types/types";
 
 import { WorkspaceStore } from "../../zustand/workspace";
 import {
@@ -29,6 +35,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
         await rep.mutate.updateWork({
           id: quest.id,
           updates: { title },
+          type: quest.type as WorkType,
         });
       }
     }, 1000),
@@ -40,6 +47,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
       await rep.mutate.updateWork({
         id: quest.id,
         updates: { topic },
+        type: quest.type as WorkType,
       });
     }
   };
@@ -55,6 +63,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
       await rep.mutate.updateWork({
         id: quest.id,
         updates: { subtopic: strings },
+        type: quest.type as WorkType,
       });
     }
   };
@@ -65,6 +74,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
       await rep.mutate.updateWork({
         id: quest.id,
         updates: { reward },
+        type: quest.type as WorkType,
       });
     }
   };
@@ -75,6 +85,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
       await rep.mutate.updateWork({
         id: quest.id,
         updates: { slots },
+        type: quest.type as WorkType,
       });
     }
   };
@@ -86,6 +97,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
         await rep.mutate.updateWork({
           id: quest.id,
           updates: { deadline: date.toISOString() },
+          type: quest.type as WorkType,
         });
       }
     }

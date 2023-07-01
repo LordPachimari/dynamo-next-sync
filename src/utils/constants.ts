@@ -1,1 +1,2 @@
 export const WORKSPACE = "WORKSPACE";
+export const PUBLISHED_QUESTS = "PUBLISHED_QUESTS";

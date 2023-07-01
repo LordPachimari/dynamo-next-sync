@@ -1,39 +1,24 @@
-import * as Toolbar from "@radix-ui/react-toolbar";
-import {
-  BubbleMenu,
-  EditorContent,
-  FloatingMenu,
-  useEditor,
-} from "@tiptap/react";
+import Collaboration from "@tiptap/extension-collaboration";
+import { EditorContent, useEditor } from "@tiptap/react";
+import * as base64 from "base64-js";
 import debounce from "lodash.debounce";
-import { Bold, Image as ImageIcon, Italic, Strikethrough } from "lucide-react";
 import {
-  ChangeEvent,
   Dispatch,
-  MutableRefObject,
   SetStateAction,
   memo,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
-  useState,
 } from "react";
-import * as Y from "yjs";
-import { Button } from "~/ui/Button";
-import { cn } from "~/utils/cn";
-import { TiptapExtensions } from "./extensions";
-import Collaboration from "@tiptap/extension-collaboration";
 import { useSubscribe } from "replicache-react";
-import { WorkspaceStore } from "~/zustand/workspace";
-import { YJSKey, workKey } from "~/repl/mutators";
-import * as base64 from "base64-js";
-import { Content } from "~/types/types";
-import { TiptapEditorProps } from "./props";
-import { EditorBubbleMenu } from "./components/EditorBubleMenu";
-import { useUploadThing } from "~/utils/useUploadThing";
 import { toast } from "sonner";
-import { generatePermittedFileTypes } from "./utils/imageUpload";
+import * as Y from "yjs";
+import { contentKey } from "~/repl/mutators";
+import { Content } from "~/types/types";
+import { useUploadThing } from "~/utils/useUploadThing";
+import { WorkspaceStore } from "~/zustand/workspace";
+import { EditorBubbleMenu } from "./components/EditorBubleMenu";
+import { TiptapExtensions } from "./extensions";
 const TiptapEditor = (props: {
   id: string;
   ydoc: Y.Doc;
@@ -45,7 +30,7 @@ const TiptapEditor = (props: {
   const Ydoc = useSubscribe(
     rep,
     async (tx) => {
-      const content = (await tx.get(YJSKey(id))) as Content;
+      const content = (await tx.get(contentKey(id))) as Content;
       console.log(content);
       if (content && content.Ydoc) {
         console.log("ydoc from subscribe", content.Ydoc);
@@ -81,16 +66,19 @@ const TiptapEditor = (props: {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateContent = useCallback(
-    debounce(async () => {
+    debounce(async (textContent?: string) => {
       console.log("update", ydoc, rep);
       if (ydoc) {
         const update = Y.encodeStateAsUpdateV2(ydoc);
         if (rep) {
           console.log("mutating", base64.fromByteArray(update));
           // await Promise.all([
-          await rep.mutate.updateYJS({
+          await rep.mutate.updateContent({
             id,
-            update: { Ydoc: base64.fromByteArray(update) },
+            update: {
+              Ydoc: base64.fromByteArray(update),
+              ...(textContent && { textContent }),
+            },
           });
           // ]);
         }
@@ -207,7 +195,7 @@ const TiptapEditor = (props: {
         if (renderCount < 3) {
           setRenderCount((old) => old + 1);
         } else {
-          await updateContent();
+          await updateContent(editor.getText());
           console.log("ur ugly");
         }
       },

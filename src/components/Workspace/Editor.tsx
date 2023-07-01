@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Content, MergedWorkType } from "~/types/types";
+import { Content, MergedWorkType, WorkType } from "~/types/types";
 import {
   NonEditableQuestAttributes,
   NonEditableSolutionAttributes,
@@ -32,10 +32,16 @@ const TiptapEditor = dynamic(() => import("../Tiptap/TiptapEditor"), {
 });
 
 import * as Y from "yjs";
-import { YJSKey, workKey } from "~/repl/mutators";
+import { contentKey, workKey } from "~/repl/mutators";
 import Publish from "./Publish";
+import { useAuth } from "@clerk/nextjs";
 
 const Editor = ({ id }: { id: string }) => {
+  const { userId } = useAuth();
+  const searchParams = useSearchParams();
+
+  const type = searchParams.get("type") as WorkType;
+
   const rep = WorkspaceStore((state) => state.rep);
   const resetAttributeErrors = WorkspaceStore((state) => state.resetErrors);
 
@@ -45,7 +51,7 @@ const Editor = ({ id }: { id: string }) => {
   const work = useSubscribe(
     rep,
     async (tx) => {
-      const editor = (await tx.get(workKey(id))) || null;
+      const editor = (await tx.get(workKey({ id, type }))) || null;
       console.log("editor", editor);
 
       return editor;
@@ -80,7 +86,7 @@ const Editor = ({ id }: { id: string }) => {
         ) : work && work.type === "SOLUTION" ? (
           <SolutionAttributes solution={work} />
         ) : (
-          <div className="h-[250px]">No work found</div>
+          <div className="h-[250px]"></div>
         )}
         {work && work.published ? (
           // &&
@@ -98,28 +104,34 @@ const Editor = ({ id }: { id: string }) => {
           <></>
         )}
       </div>
-      {work && !work.published && ydoc && <Publish work={work} ydoc={ydoc} />}
+      {work && !work.published && ydoc && userId === work.creatorId && (
+        <Publish work={work} ydoc={ydoc} />
+      )}
 
       {work && work.published && (
         <div className="mt-3 flex gap-5">
-          <Button className="w-32 bg-red-500">Unpublish</Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline">Show Dialog</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirm your action</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure? All current active solvers will be lost
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction>Unpusblish</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {work.creatorId && userId && (
+            <>
+              <Button className="w-32 bg-red-500">Unpublish</Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline">Show Dialog</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirm your action</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure? All current active solvers will be lost
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction>Unpusblish</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          )}
 
           <Button
             className="w-full bg-green-500"

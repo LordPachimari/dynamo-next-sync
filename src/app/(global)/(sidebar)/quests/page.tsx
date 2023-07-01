@@ -1,9 +1,11 @@
 "use client";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { MessageCircle } from "lucide-react";
 import { useState } from "react";
+import { useSubscribe } from "replicache-react";
 import { classNames } from "uploadthing/client";
 import QuestComponent from "~/components/QuestComponent";
-import { PublishedQuest } from "~/types/types";
+import { PublishedQuest, Quest } from "~/types/types";
 import { Button } from "~/ui/Button";
 import {
   Select,
@@ -12,8 +14,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/ui/Select";
-export default function Home() {
+import { ReplicacheInstancesStore } from "~/zustand/rep";
+const date = new Date().toISOString();
+
+// const quests: PublishedQuest[] = [
+//   {
+//     id: "quest1",
+//     creatorId: "user1",
+//     deadline: date,
+//     lastUpdated: date,
+//     published: true,
+//     publishedAt: date,
+//     publisherUsername: "pachimari",
+//     reward: 10,
+//     slots: 10,
+//     solverCount: 0,
+//     status: "OPEN",
+//     subtopic: ["LOGO"],
+//     textContent: "Hello world",
+//     title: "Hello world",
+//     topic: "BUSINESS",
+//     type: "QUEST",
+//     version: 1,
+//     collaborators: [],
+//   },
+// ];
+export default function Quests() {
   const [showChat, setShowChat] = useState(false);
+  const rep = ReplicacheInstancesStore((state) => state.publishedQuestsRep);
+  const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
+  const quests = useSubscribe(
+    rep,
+    async (tx) => {
+      const quests = (await tx
+        .scan({ prefix: "WORK#QUEST" })
+        .entries()
+        .toArray()) as [key: string, value: PublishedQuest][];
+
+      console.log("quests", quests);
+      return quests;
+    },
+    null,
+    []
+  ) as [key: string, value: PublishedQuest][] | null;
   return (
     <div className="top-0 mb-20 mt-20 flex w-full justify-center ">
       <div className="flex w-11/12 justify-center">
@@ -57,13 +100,31 @@ export default function Home() {
               setSearchLoading={setSearchLoading}
             /> */}
 
-          <div className="flex flex-col gap-3">
-            <QuestComponent
-              // key={quest.id}
-              quest={quest}
-              includeContent={true}
-              includeDetails={true}
-            />
+          <div className="flex flex-col gap-3" ref={parent}>
+            {quests &&
+              quests.map(([key, value]) => {
+                return (
+                  <QuestComponent
+                    key={key}
+                    // key={quest.id}
+                    quest={value}
+                    includeContent={true}
+                    includeDetails={true}
+                  />
+                );
+              })}
+            {/* {quests &&
+              quests.map((q) => {
+                return (
+                  <QuestComponent
+                    key={q.id}
+                    // key={quest.id}
+                    quest={q}
+                    includeContent={true}
+                    includeDetails={true}
+                  />
+                );
+              })} */}
           </div>
         </div>
         <div className=" sticky top-20 hidden h-screen w-80 flex-col gap-10 pl-10 lg:flex">

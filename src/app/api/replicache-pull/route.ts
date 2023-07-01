@@ -2,17 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { z } from "zod";
 import {
-  getLastMutationIdsCVR,
   getLastMutationIdsSince,
   getPatch,
   getPrevCVR,
   setCVR,
-  setLastMutationIdsCVR,
 } from "~/repl/data";
 
 import { auth } from "@clerk/nextjs";
 import { ClientID, PatchOperation } from "replicache";
-import { WORKSPACE } from "~/utils/constants";
+import { PUBLISHED_QUESTS, WORKSPACE } from "~/utils/constants";
 
 export type PullResponse = {
   cookie: string;
@@ -20,9 +18,12 @@ export type PullResponse = {
   patch: PatchOperation[];
 };
 const cookieSchema = z.object({
-  keyCVR: z.string(),
-  keyLastMutationIdsCVR: z.optional(z.string()),
+  PUBLISHED_QUESTS_CVR: z.optional(z.string()),
+  WORKSPACE_CVR: z.optional(z.string()),
+
+  lastMutationIdsCVRKey: z.optional(z.string()),
 });
+type cookieSchemaType = z.infer<typeof cookieSchema>;
 const pullRequestSchema = z.object({
   pullVersion: z.literal(1),
   profileID: z.string(),
@@ -60,17 +61,21 @@ export async function POST(req: NextRequest, res: NextResponse) {
   const startTransact = Date.now();
   const processPull = async () => {
     // let items: any[] = [];
-
+    const getCVRstartTime = Date.now();
     const [prevCVR, prevLastMutationIdsCVR] = await Promise.all([
       getPrevCVR({
-        key: requestCookie ? requestCookie.keyCVR : undefined,
-        spaceId: adjustedSpaceId,
+        key:
+          requestCookie && spaceId === WORKSPACE
+            ? requestCookie.WORKSPACE_CVR
+            : requestCookie && spaceId === PUBLISHED_QUESTS
+            ? requestCookie.PUBLISHED_QUESTS_CVR
+            : undefined,
       }),
-      getLastMutationIdsCVR({
-        spaceId: adjustedSpaceId,
-        key: requestCookie ? requestCookie.keyLastMutationIdsCVR : undefined,
+      getPrevCVR({
+        key: requestCookie ? requestCookie.lastMutationIdsCVRKey : undefined,
       }),
     ]);
+    console.log("Getting CVR time", Date.now() - getCVRstartTime);
 
     const patchPromise = getPatch({
       prevCVR,
@@ -98,26 +103,28 @@ export async function POST(req: NextRequest, res: NextResponse) {
   const resp: PullResponse = {
     lastMutationIDChanges,
     cookie: JSON.stringify({
-      keyCVR: nextCVR.id,
-      keyLastMutationIdsCVR: nextLastMutationIdsCVR
-        ? nextLastMutationIdsCVR.id
-        : null,
-    }),
+      ...requestCookie,
+
+      ...(spaceId === WORKSPACE && { WORKSPACE_CVR: nextCVR.id }),
+      ...(spaceId === PUBLISHED_QUESTS && { PUBLISHED_QUESTS_CVR: nextCVR.id }),
+      ...(nextLastMutationIdsCVR && {
+        lastMutationIdsCVRKey: nextLastMutationIdsCVR.id,
+      }),
+    } satisfies cookieSchemaType),
     patch,
   };
   console.log("patch", resp);
   try {
     if (nextLastMutationIdsCVR) {
       await Promise.allSettled([
-        setCVR({ CVR: nextCVR, key: nextCVR.id, spaceId: adjustedSpaceId }),
-        setLastMutationIdsCVR({
-          spaceId: adjustedSpaceId,
+        setCVR({ CVR: nextCVR, key: nextCVR.id }),
+        setCVR({
           CVR: nextLastMutationIdsCVR,
           key: nextLastMutationIdsCVR.id,
         }),
       ]);
     } else {
-      await setCVR({ CVR: nextCVR, key: nextCVR.id, spaceId: adjustedSpaceId });
+      await setCVR({ CVR: nextCVR, key: nextCVR.id });
     }
   } catch (error) {
     console.log(error);

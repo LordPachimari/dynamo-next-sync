@@ -1,5 +1,6 @@
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { Gem, Users2 } from "lucide-react";
+import Link from "next/link";
 import { PublishedQuest } from "~/types/types";
 import { Avatar, AvatarFallback, AvatarImage } from "~/ui/Avatar";
 import { Badge } from "~/ui/Badge";
@@ -18,8 +19,8 @@ export default function QuestComponent({
   return (
     <Card className="h-fit w-full rounded-xl drop-shadow-md">
       <CardHeader className="flex w-full p-2">
-        <div className="flex flex-wrap justify-between gap-5">
-          <div className="flex items-center gap-4">
+        <div className="flex w-full justify-between gap-5">
+          <div className="flex w-full items-center gap-4">
             {quest.publisherUsername && (
               // <Link href={`/profile/${quest.username}`}>
               <Avatar>
@@ -29,12 +30,28 @@ export default function QuestComponent({
               // </Link>
             )}
 
-            <div>
-              <div className="flex items-center gap-2">
-                <h3>{quest.publisherUsername}</h3>
-                <p>
-                  {formatDistanceToNowStrict(new Date(quest.publishedAt))} ago
-                </p>
+            <div className="w-full">
+              <div className="flex w-full items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <p className="text-lg font-extrabold">
+                    {quest.publisherUsername}
+                  </p>
+                  <p className="font-bold opacity-70">
+                    {formatDistanceToNowStrict(new Date(quest.publishedAt))} ago
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex h-8 items-center gap-1">
+                    <p>due</p>
+                    <Badge className="h-6 w-28 bg-blue-400">
+                      <p>{format(new Date(quest.deadline), "PPP")} </p>
+                    </Badge>
+                    <Badge className="h-6 w-16 justify-center bg-green-400 text-center">
+                      <p className="text-sm font-bold">{quest.status}</p>
+                    </Badge>
+                  </div>
+                </div>
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 <Badge className={`${TopicColor({ topic: quest.topic })}`}>
@@ -48,29 +65,18 @@ export default function QuestComponent({
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <div className="flex h-8 flex-wrap items-center  gap-1">
-              <p>due</p>
-              <Badge className="h-6 bg-blue-400">
-                <p>{format(new Date(quest.deadline), "PPP")} </p>
-              </Badge>
-            </div>
-            <Badge className="h-6 w-16 justify-center bg-green-400 text-center">
-              <p className="text-sm font-bold">{quest.status}</p>
-            </Badge>
-          </div>
         </div>
       </CardHeader>
 
-      {/* <Link href={`/quests/${quest.id}`}> */}
-      <CardContent className="md:16 h-30 overflow-x-hidden text-ellipsis whitespace-nowrap p-3">
-        <h3 className="text-xl font-extrabold">{quest.title}</h3>
-        {includeContent && <p>{quest.text}</p>}
-      </CardContent>
-      {/* </Link> */}
+      <Link href={`/quests/${quest.id}`}>
+        <CardContent className="md:16 h-30 max-h-[200px] min-h-[100px] overflow-x-hidden text-ellipsis whitespace-nowrap p-3">
+          <h3 className="text-xl font-extrabold">{quest.title}</h3>
+          {includeContent && <p>{quest.textContent}</p>}
+        </CardContent>
+      </Link>
 
       {includeDetails && (
-        <CardFooter className="flex gap-2 px-3 pb-2">
+        <CardFooter className="flex  gap-2 border-t-2 px-3 pb-2  pt-2">
           <span className="flex gap-2">
             <Gem className="text-purple-500" size={20} />
 

@@ -1,8 +1,7 @@
-import { FormEvent, useRef } from "react";
+import { useRef } from "react";
 
-import { Solution, UpdateQueue, WorkUpdates } from "~/types/types";
+import { Solution } from "~/types/types";
 import { WorkspaceStore } from "../../zustand/workspace";
-import { Title } from "./Attributes";
 
 const SolutionAttributes = ({ solution }: { solution: Solution }) => {
   const { id } = solution;

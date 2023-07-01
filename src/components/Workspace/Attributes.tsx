@@ -213,15 +213,15 @@ export const Subtopic = ({
         value={subtopicState}
         placeholder="Select subtopic"
         closeMenuOnSelect={false}
-        styles={customStyles}
+        // styles={customStyles}
         classNames={{
           control: (state) => (state.isFocused ? "#f97316" : "border-grey-100"),
         }}
         onChange={async (val) => {
           await handleSubtopicChange({
-            subtopics: val as MultiValue<OptionType>,
+            subtopics: val,
           }),
-            setSubtopicState((old) => val as MultiValue<OptionType>);
+            setSubtopicState((old) => val);
         }}
       />
       {error.error && (

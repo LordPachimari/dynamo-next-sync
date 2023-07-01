@@ -1,12 +1,8 @@
-import { ChangeEvent, FormEvent, useCallback } from "react";
-import {
-  Quest,
-  TopicsType,
-  UpdateQueue,
-  WorkType,
-  WorkUpdates,
-} from "../../types/types";
+import { ChangeEvent, useCallback } from "react";
+import { Quest, TopicsType, WorkType } from "../../types/types";
 
+import debounce from "lodash.debounce";
+import { MultiValue } from "react-select";
 import { WorkspaceStore } from "../../zustand/workspace";
 import {
   DatePicker,
@@ -17,8 +13,6 @@ import {
   Title,
   TopicSelect,
 } from "./Attributes";
-import { MultiValue, SingleValue } from "react-select";
-import debounce from "lodash.debounce";
 
 const QuestAttributes = ({ quest }: { quest: Quest }) => {
   const attributeErrors = WorkspaceStore((state) => state.attributeErrors);

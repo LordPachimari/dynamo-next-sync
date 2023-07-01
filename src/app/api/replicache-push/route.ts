@@ -19,10 +19,6 @@ const mutationSchema = z.object({
   args: jsonSchema,
   clientID: z.string(),
 });
-export const idSchema = z.object({
-  id: z.string(),
-});
-const createQuestArgsSchema = z.object({ quest: QuestZod });
 
 export type Mutation = z.infer<typeof mutationSchema>;
 

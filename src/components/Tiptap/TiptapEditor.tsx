@@ -21,18 +21,23 @@ import { EditorBubbleMenu } from "./components/EditorBubleMenu";
 import { TiptapExtensions } from "./extensions";
 const TiptapEditor = (props: {
   id: string;
-  ydoc: Y.Doc;
+  // ydoc: Y.Doc;
   setRenderCount: Dispatch<SetStateAction<number>>;
   renderCount: number;
 }) => {
-  const { id, ydoc, setRenderCount, renderCount } = props;
+  const { id, setRenderCount, renderCount } = props;
   const rep = WorkspaceStore((state) => state.rep);
+  const ydocRef = useRef(new Y.Doc());
+  const ydoc = ydocRef.current;
   const Ydoc = useSubscribe(
     rep,
     async (tx) => {
       const content = (await tx.get(contentKey(id))) as Content;
       console.log(content);
       if (content && content.Ydoc) {
+        if (content.textContent) {
+          console.log("text", content.textContent);
+        }
         console.log("ydoc from subscribe", content.Ydoc);
         if (ydoc) {
           console.log("updating yjs");
@@ -44,8 +49,9 @@ const TiptapEditor = (props: {
       return null;
     },
     null,
-    [ydoc]
+    [id]
   );
+
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const { startUpload, isUploading, permittedFileInfo } = useUploadThing({
@@ -84,7 +90,7 @@ const TiptapEditor = (props: {
         }
       }
     }, 1000),
-    [ydoc]
+    [id, ydoc]
   );
 
   const editor = useEditor(
@@ -200,7 +206,7 @@ const TiptapEditor = (props: {
         }
       },
     },
-    [ydoc]
+    [id]
   );
   useEffect(() => {
     if (isUploading) {

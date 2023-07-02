@@ -63,14 +63,14 @@ const Editor = ({ id }: { id: string }) => {
 
   const ydocRef = useRef(new Y.Doc());
 
-  useEffect(() => {
-    ydocRef.current = new Y.Doc();
+  // useEffect(() => {
+  //   ydocRef.current = new Y.Doc();
 
-    setYdoc(ydocRef.current);
-    setRenderCount(0);
-    resetAttributeErrors();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  //   setYdoc(ydocRef.current);
+  //   setRenderCount(0);
+  //   resetAttributeErrors();
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [id]);
 
   const router = useRouter();
 
@@ -93,10 +93,10 @@ const Editor = ({ id }: { id: string }) => {
           //  content
           // <NonEditableContent content={content.content} />
           <></>
-        ) : work && !work.published && ydoc ? (
+        ) : work && !work.published ? (
           <TiptapEditor
             id={id}
-            ydoc={ydoc}
+            // ydoc={ydoc}
             setRenderCount={setRenderCount}
             renderCount={renderCount}
           />

@@ -91,7 +91,6 @@ export default function List({
       }
     }
   }
-  console.log("quests", quests);
 
   const handleCreateQuest = async () => {
     if (rep) {

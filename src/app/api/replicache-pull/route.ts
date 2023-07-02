@@ -113,7 +113,8 @@ export async function POST(req: NextRequest, res: NextResponse) {
     } satisfies cookieSchemaType),
     patch,
   };
-  console.log("patch", resp);
+  console.log("patch", JSON.stringify(resp));
+  console.log("clientgrou[ id", pull.clientGroupID);
   try {
     if (nextLastMutationIdsCVR) {
       await Promise.allSettled([

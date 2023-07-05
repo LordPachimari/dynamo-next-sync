@@ -10,10 +10,8 @@ import {
   useEffect,
   useRef,
 } from "react";
-import { useSubscribe } from "replicache-react";
 import { toast } from "sonner";
 import * as Y from "yjs";
-import { Content } from "~/types/types";
 import { useUploadThing } from "~/utils/useUploadThing";
 import { WorkspaceStore } from "~/zustand/workspace";
 import { EditorBubbleMenu } from "./components/EditorBubleMenu";

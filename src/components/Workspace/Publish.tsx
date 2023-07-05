@@ -113,24 +113,24 @@ const Publish = ({ work, ydoc }: { work: MergedWorkType; ydoc: Y.Doc }) => {
     }
   };
 
-  const handlePublish = async () => {
+  const handleQuestPublish = async () => {
     const publishedAt = new Date().toISOString();
     if (rep) {
       await undoManagerRef.current.add({
         execute: () =>
           rep.mutate.publishWork({
             id: work.id,
-            type: work.type,
             publishedAt,
             published: true,
             publisherUsername: "Pachimari",
-            solverCount: 0,
+            publisherProfile: "hello",
             status: "OPEN",
+            type: "QUEST",
           }),
 
         undo: () => rep.mutate.unpublishWork({ id: work.id, type: work.type }),
       });
-      toast.success("Successfully published");
+      toast.success("Successfully published quest");
     }
   };
 
@@ -192,7 +192,9 @@ const Publish = ({ work, ydoc }: { work: MergedWorkType; ydoc: Y.Doc }) => {
             <AlertDialogAction
               className="bg-emerald-500 hover:bg-emerald-600"
               // eslint-disable-next-line @typescript-eslint/no-misused-promises
-              onClick={handlePublish}
+              onClick={() => {
+                if (work.type === "QUEST") void handleQuestPublish();
+              }}
             >
               Continue
             </AlertDialogAction>

@@ -492,7 +492,7 @@ export const PublishWorkParamsZod = z.intersection(
   basePublishWorkSchema,
   z.union([questSchema, solutionSchema, postSchema])
 );
-export type PublishWorkParams = z.infer<typeof PublishWorkParamsZod>;
+export type PublishWorkParams = z.infer<typeof PublishWorkParamsZod>
 
 export const WorkUpdatesZod = QuestZod.pick({
   title: true,

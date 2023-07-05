@@ -8,15 +8,20 @@ await import("./src/env.mjs");
 const config = {
   reactStrictMode: true,
   experimental: {
-    appDir: true,
-    esmExternals: "loose",
+    serverActions: true,
   },
+
   images: {
-formats: [ 'image/avif', 'image/webp'],
-remotePatterns: [{protocol:'https',
-hostname:"uploadthing.com",
-port:'',
-pathname :"/f/*",}]},
+    formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "uploadthing.com",
+        port: "",
+        pathname: "/f/*",
+      },
+    ],
+  },
 
   /**
    * If you have `experimental: { appDir: true }` set, then you must comment the below `i18n` config

@@ -12,11 +12,11 @@ import {
   WorkZod,
   Content,
   EntityType,
-  PublishWorkAttributesType,
+  Solver,
+  SolverPartial,
+  PublishWorkParams,
 } from "~/types/types";
-export type M = typeof mutators;
-
-export const mutators = {
+export const wokrspaceMutators = {
   createWork: async (
     tx: WriteTransaction,
     { work, type }: { work: MergedWorkType; type: WorkType }
@@ -63,10 +63,7 @@ export const mutators = {
       await tx.put(contentKey(newId), content);
     }
   },
-  publishWork: async (
-    tx: WriteTransaction,
-    props: PublishWorkAttributesType
-  ) => {
+  publishWork: async (tx: WriteTransaction, props: PublishWorkParams) => {
     console.log("mutators, publishWork");
     const work = (await getWork(tx, { id: props.id, type: props.type })) as
       | MergedWorkType

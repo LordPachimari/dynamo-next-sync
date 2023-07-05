@@ -2,8 +2,14 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Content, MergedWorkType, WorkType } from "~/types/types";
 import {
+  Content,
+  MergedWorkType,
+  PublishedContent,
+  WorkType,
+} from "~/types/types";
+import {
+  NonEditableContent,
   NonEditableQuestAttributes,
   NonEditableSolutionAttributes,
 } from "./NonEditable";
@@ -32,9 +38,9 @@ const TiptapEditor = dynamic(() => import("../Tiptap/TiptapEditor"), {
 });
 
 import * as Y from "yjs";
-import { contentKey, workKey } from "~/repl/mutators";
 import Publish from "./Publish";
 import { useAuth } from "@clerk/nextjs";
+import { contentKey, workKey } from "~/repl/mutators/workspace";
 
 const Editor = ({ id }: { id: string }) => {
   const { userId } = useAuth();
@@ -45,7 +51,6 @@ const Editor = ({ id }: { id: string }) => {
   const rep = WorkspaceStore((state) => state.rep);
   const resetAttributeErrors = WorkspaceStore((state) => state.resetErrors);
 
-  const [ydoc, setYdoc] = useState<Y.Doc>();
   const [renderCount, setRenderCount] = useState(0);
 
   const work = useSubscribe(
@@ -62,21 +67,49 @@ const Editor = ({ id }: { id: string }) => {
   ) as MergedWorkType;
 
   const ydocRef = useRef(new Y.Doc());
+  const ydoc = ydocRef.current;
+  const Ydoc = useSubscribe(
+    rep,
+    async (tx) => {
+      const content = (await tx.get(contentKey(id))) as Content;
+      console.log(content);
+      if (content && content.Ydoc) {
+        if (content.textContent) {
+          console.log("text", content.textContent);
+        }
+        console.log("ydoc from subscribe", content.Ydoc);
+        if (ydoc) {
+          console.log("updating yjs");
+          const update = base64.toByteArray(content.Ydoc);
+          Y.applyUpdateV2(ydoc, update);
+        }
+        return content.Ydoc;
+      }
+      return null;
+    },
+    null,
+    [id]
+  );
+  const publishedContent = useSubscribe(
+    rep,
+    async (tx) => {
+      const content = (await tx.get(
+        `PUBLISHED#${contentKey(id)}`
+      )) as PublishedContent;
+      if (content) {
+        return content.content;
+      }
 
-  // useEffect(() => {
-  //   ydocRef.current = new Y.Doc();
-
-  //   setYdoc(ydocRef.current);
-  //   setRenderCount(0);
-  //   resetAttributeErrors();
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [id]);
-
+      return null;
+    },
+    null,
+    [id]
+  );
   const router = useRouter();
 
   return (
     <div className="mb-20 mt-10 flex flex-col items-center justify-center">
-      <div className="b w-5/6 max-w-2xl rounded-md bg-white p-5 drop-shadow-lg">
+      <div className="w-5/6 max-w-2xl rounded-md border-[1px] bg-white p-4 ">
         {work && work.published && work.type === "QUEST" ? (
           <NonEditableQuestAttributes quest={work} />
         ) : work && work.type === "QUEST" ? (
@@ -88,15 +121,12 @@ const Editor = ({ id }: { id: string }) => {
         ) : (
           <div className="h-[250px]"></div>
         )}
-        {work && work.published ? (
-          // &&
-          //  content
-          // <NonEditableContent content={content.content} />
-          <></>
+        {work && work.published && publishedContent ? (
+          <NonEditableContent content={publishedContent} />
         ) : work && !work.published ? (
           <TiptapEditor
             id={id}
-            // ydoc={ydoc}
+            ydoc={ydoc}
             setRenderCount={setRenderCount}
             renderCount={renderCount}
           />
@@ -112,10 +142,11 @@ const Editor = ({ id }: { id: string }) => {
         <div className="mt-3 flex gap-5">
           {work.creatorId && userId && (
             <>
-              <Button className="w-32 bg-red-500">Unpublish</Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline">Show Dialog</Button>
+                  <Button className="w-32 bg-red-500 hover:bg-red-600">
+                    Unpublish
+                  </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -126,7 +157,11 @@ const Editor = ({ id }: { id: string }) => {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction>Unpusblish</AlertDialogAction>
+                    <AlertDialogAction asChild>
+                      <Button className="w-32 bg-red-500 hover:bg-red-600">
+                        Unpublish
+                      </Button>
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -134,7 +169,7 @@ const Editor = ({ id }: { id: string }) => {
           )}
 
           <Button
-            className="w-full bg-green-500"
+            className="w-44 bg-green-500 hover:bg-green-600"
             onClick={() => {
               if (work) void router.push(`/quests/${work.id}`);
             }}

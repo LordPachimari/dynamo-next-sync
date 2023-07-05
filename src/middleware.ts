@@ -2,7 +2,14 @@ import { authMiddleware } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 
 export default authMiddleware({
-  publicRoutes: ["/", "/sign-in", "/quests", "/api/uploadthing"],
+  publicRoutes: [
+    "/",
+    "/sign-in",
+    "/quests(.*)",
+    "/api/uploadthing",
+    "/api/replicache-pull",
+    "/api/replicache-push",
+  ],
   afterAuth(auth, req, evt) {
     const isAuthPage =
       req.nextUrl.pathname === "/" ||

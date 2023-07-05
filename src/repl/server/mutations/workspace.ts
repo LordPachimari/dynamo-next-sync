@@ -1,19 +1,24 @@
+import { yDocToProsemirrorJSON } from "y-prosemirror";
 import { z } from "zod";
 import { Mutation } from "~/app/api/replicache-push/route";
 import { getItem } from "~/repl/data";
-import { contentKey, workKey } from "~/repl/mutators";
 import { ReplicacheTransaction } from "~/repl/transaction";
+import * as Y from "yjs";
+import * as base64 from "base64-js";
 import {
   Content,
-  Entity,
-  PublishWorkAttributesZod,
+  MergedWorkType,
+  PublishWorkParamsZod,
+  PublishedPostZod,
   PublishedQuestZod,
+  PublishedSolutionZod,
   Quest,
   WorkType,
   WorkTypeEnum,
   WorkUpdatesZod,
   WorkZod,
 } from "~/types/types";
+import { contentKey, workKey } from "~/repl/mutators/workspace";
 const updateWorkArgsSchema = z.object({
   id: z.string(),
   type: z.enum(WorkTypeEnum),
@@ -24,10 +29,12 @@ export const WorkspaceMutations = async ({
   tx,
   mutation,
   spaceId,
+  userId,
 }: {
   tx: ReplicacheTransaction;
   mutation: Mutation;
   spaceId: string;
+  userId: string;
 }) => {
   if (mutation.name === "createWork") {
     const { work } = z.object({ work: WorkZod }).parse(mutation.args);
@@ -105,36 +112,66 @@ export const WorkspaceMutations = async ({
       .parse(mutation.args);
     tx.update({ key: contentKey(content.id), value: content.update });
   } else if (mutation.name === "publishWork") {
-    const params = PublishWorkAttributesZod.parse(mutation.args);
-    const [quest, content] = (await Promise.all([
+    const params = PublishWorkParamsZod.parse(mutation.args);
+    const [work, content] = (await Promise.all([
       getItem({ spaceId, key: workKey({ id: params.id, type: params.type }) }),
       getItem({
         spaceId,
         key: contentKey(params.id),
       }),
-    ])) as [Quest, Content];
-    console.log("quest", quest);
-    PublishedQuestZod.parse({ ...quest, ...params });
+    ])) as [MergedWorkType, Content];
+    console.log("work", work);
+    if (params.type === "QUEST") {
+      PublishedQuestZod.parse({ ...work, ...params });
+    }
+
+    if (params.type === "POST") {
+      PublishedPostZod.parse({ ...work, ...params });
+    }
+    if (params.type === "SOLUTION") {
+      PublishedSolutionZod.parse({ ...work, ...params });
+      tx.update({
+        key: `SOLVER#${params.questId}#${userId}`,
+        value: {
+          status: "POSTED",
+          solutionId: params.id,
+        },
+      });
+    }
     tx.update({
       key: workKey({ id: params.id, type: params.type }),
       value: {
-        published: true,
-        publishedQuestKey: params.id,
-        publishedAt: params.publishedAt,
+        ...params,
         textContent: content.textContent,
-        publisherUsername: params.publisherUsername,
-        solverCount: params.solverCount,
-        ...(params.publisherProfile && {
-          publisherProfile: params.publisherProfile,
+        ...((params.type === "QUEST" || params.type === "SOLUTION") && {
+          publishedQuestKey: params.id,
         }),
+        ...(params.type === "POST" &&
+          params.destination === "FORUM" && {
+            forumKey: params.id,
+          }),
+
+        ...(params.type === "POST" &&
+          params.destination === "TALENT" && {
+            talentKey: params.id,
+          }),
       },
     });
-    tx.update({
-      key: contentKey(params.id),
-      value: {
-        publishedQuestKey: params.id,
-      },
-    });
+
+    if (content.Ydoc) {
+      const ydoc = new Y.Doc();
+      const update = base64.toByteArray(content.Ydoc);
+      Y.applyUpdateV2(ydoc, update);
+      const proseMirrorJSON = yDocToProsemirrorJSON(ydoc, "content");
+      tx.put({
+        key: `PUBLISHED#${contentKey(params.id)}`,
+        value: {
+          publishedQuestKey: params.id,
+          content: JSON.stringify(proseMirrorJSON),
+          version: 1,
+        },
+      });
+    }
   } else if (mutation.name === "unpublishWork") {
     const params = z
       .object({ id: z.string(), type: z.enum(WorkTypeEnum) })
@@ -142,6 +179,9 @@ export const WorkspaceMutations = async ({
     tx.update({
       key: workKey({ id: params.id, type: params.type }),
       value: { published: false, publishedKey: null },
+    });
+    tx.del({
+      key: `PUBLISHED#${contentKey(params.id)}`,
     });
   }
 };

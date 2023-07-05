@@ -12,6 +12,8 @@ export const Entity = [
   "POST",
   "GUILD",
   "CONTENT",
+  "INQUIRY",
+  "INVITATION",
 ] as const;
 const SPACE_NAMES = [
   "PUBLISHED_QUESTS",
@@ -30,6 +32,8 @@ export const SubtopicSuggestion = [
   "WEB",
   "MOBILE-DEV",
 ];
+export const guildRankings = ["NEWBIE", "MID", "LORD", "FOUNDER"] as const;
+export const Destination = ["FORUM", "TALENT"] as const;
 export const SpaceNamesZod = z.enum(SPACE_NAMES);
 export type SpaceNamesType = z.infer<typeof SpaceNamesZod>;
 export type EntityType = typeof Entity;
@@ -99,11 +103,13 @@ export const UserZod = z.object({
   topics: z.optional(z.array(z.enum(Topics))),
   subtopics: z.optional(z.array(z.string())),
   guildId: z.optional(z.string()),
+  guildRank: z.optional(z.enum(guildRankings)),
   createdAt: z.string(),
   type: z.enum(Entity),
   questsSolved: z.optional(z.number()),
   rewarded: z.optional(z.number()),
   links: z.optional(z.object({ twitter: z.string(), discord: z.string() })),
+  version: z.number(),
 });
 export type User = z.infer<typeof UserZod>;
 export const UserDynamoZod = UserZod.extend({
@@ -165,7 +171,6 @@ export const PublishedQuestZod = QuestRequiredZod.extend({
   publisherUsername: z.string(),
   winnerId: z.optional(z.string()),
   status: z.enum(QuestStatus),
-  solverCount: z.number(),
   textContent: z.optional(z.string()),
   verified: z.optional(z.boolean()),
   preview: z.optional(z.string()),
@@ -235,9 +240,7 @@ export const UpdateUserAttributesZod = UserZod.pick({
   topics: true,
   subtopics: true,
   links: true,
-})
-  .partial()
-  .required({ username: true });
+}).partial();
 export type UpdateUserAttributes = z.infer<typeof UpdateUserAttributesZod>;
 export const UpdateInventoryZod = z.object({
   inventory: z.instanceof(Uint8Array),
@@ -321,6 +324,9 @@ export const ContentUpdatesZod = ContentZod.pick({
   textContent: true,
 });
 export type ContentUpdates = z.infer<typeof ContentUpdatesZod>;
+export type PublishedContent = {
+  content: string;
+};
 export type WorkspaceList = {
   quests: QuestListComponent[];
   solutions: SolutionListComponent[];
@@ -381,6 +387,20 @@ export const PostZod = PostZodPartial.required({
   lastUpdated: true,
   version: true,
 });
+export const PublishedPostZod = PostZodPartial.required()
+  .extend({
+    publisherProfile: z.optional(z.string()),
+    publisherUsername: z.string(),
+    textContent: z.optional(z.string()),
+    verified: z.optional(z.boolean()),
+    preview: z.optional(z.string()),
+    destination: z.enum(["FORUM", "TALENT"] as const),
+  })
+  .omit({
+    inTrash: true,
+    createdAt: true,
+    allowUnpublish: true,
+  });
 export type Post = z.infer<typeof PostZod>;
 export const PostListComponentZod = PostZod.pick({
   id: true,
@@ -445,19 +465,35 @@ export type MergedWorkType = (Post & Quest & Solution) & {
   type: WorkType;
 };
 
-export const PublishWorkAttributesZod = PublishedQuestZod.pick({
-  id: true,
-  publishedAt: true,
-  solverCount: true,
-  publisherProfile: true,
-  publisherUsername: true,
-  published: true,
-  type: true,
-  status: true,
-}).required({ id: true, type: true });
-export type PublishWorkAttributesType = z.infer<
-  typeof PublishWorkAttributesZod
->;
+const basePublishWorkSchema = z.object({
+  id: z.string(),
+  publishedAt: z.string(),
+  publisherProfile: z.string(),
+  publisherUsername: z.string(),
+  published: z.boolean(),
+});
+
+const questSchema = z.object({
+  type: z.literal("QUEST"),
+  status: z.union([z.literal("OPEN"), z.literal("CLOSED")]),
+});
+
+const solutionSchema = z.object({
+  type: z.literal("SOLUTION"),
+  questId: z.string(),
+});
+
+const postSchema = z.object({
+  type: z.literal("POST"),
+  destination: z.union([z.literal("FORUM"), z.literal("TALENT")]),
+});
+
+export const PublishWorkParamsZod = z.intersection(
+  basePublishWorkSchema,
+  z.union([questSchema, solutionSchema, postSchema])
+);
+export type PublishWorkParams = z.infer<typeof PublishWorkParamsZod>;
+
 export const WorkUpdatesZod = QuestZod.pick({
   title: true,
   topic: true,
@@ -482,6 +518,19 @@ const mutationNames = [
   "updateContent",
   "publishWork",
   "unpublishWork",
+  "createUser",
+  "updateUser",
+  "joinQuest",
+  "leaveQuest",
+  "acceptSolution",
+  "acknowledgeSolution",
+  "rejectSolution",
+  "createGuild",
+  "acceptMemberInquiry",
+  "rejectMemberInquiry",
+  "inviteMember",
+  "acceptGuildInvitation",
+  "createMemberInquiry",
 ] as const;
 export const MutationNamesZod = z.enum(mutationNames);
 export type MutaitonNamesType = z.infer<typeof MutationNamesZod>;
@@ -489,3 +538,45 @@ export type ClientViewRecord = {
   id: string;
   keys: Record<string, number>;
 };
+
+export const InquiryZod = z.object({
+  id: z.string(),
+  userId: z.string(),
+  topic: z.string(),
+  title: z.string(),
+  message: z.string(),
+  guildId: z.string(),
+  createdAt: z.string(),
+  status: z.optional(z.enum(["REJECTED", "ACCEPTED"] as const)),
+  type: z.enum(["INQUIRY"]),
+});
+export type Inquiry = z.infer<typeof InquiryZod>;
+export const GuildZod = z.object({
+  id: z.string(),
+  name: z.string(),
+  specialty: z.array(z.string()),
+  createdAt: z.string(),
+  founderId: z.string(),
+  emblem: z.optional(z.string()),
+  memberIds: z.optional(z.array(z.string())),
+  inquiryIds: z.optional(z.array(z.string())),
+});
+export const CreateGuildParamsZod = GuildZod.pick({
+  id: true,
+  name: true,
+  emblem: true,
+  specialty: true,
+});
+export type CreateGuildParams = z.infer<typeof CreateGuildParamsZod>;
+export type Guild = z.infer<typeof GuildZod>;
+export const GuildInvitationZod = z.object({
+  id: z.string(),
+  senderId: z.string(),
+  title: z.string(),
+  message: z.string(),
+  sentAt: z.string(),
+  guildId: z.string(),
+  receiverId: z.string(),
+  type: z.enum(["INVITATION"]),
+});
+export type GuildInvitation = z.infer<typeof GuildInvitationZod>;

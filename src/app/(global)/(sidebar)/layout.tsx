@@ -1,5 +1,6 @@
 "use client";
 
+import { Menu } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "~/ui/Button";
 import Sidebar from "~/ui/Sidebar";
@@ -39,21 +40,10 @@ export default function SidebarLayout({
       >
         {!showSidebar ? (
           <Button
-            className="fixed z-30 m-2 bg-orange-100 hover:bg-orange-200"
+            className="fixed z-30 m-2 bg-blue-100 hover:bg-blue-200"
             onClick={() => toggleShowSidebar()}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              width="24"
-              height="24"
-            >
-              <path fill="none" d="M0 0h24v24H0z" />
-              <path
-                d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"
-                fill="var(--orange)"
-              />
-            </svg>
+            <Menu className="text-blue-500" />
           </Button>
         ) : null}
         <div className="border-black-500 fixed z-10 h-14 w-full border bg-white">

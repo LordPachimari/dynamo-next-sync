@@ -38,18 +38,26 @@ type PullRequestSchemaType = {
 };
 export async function POST(req: NextRequest, res: NextResponse) {
   console.log("----------------------------------------------------");
+
+  const { searchParams } = new URL(req.url);
+  const spaceId = z.string().parse(searchParams.get("spaceId"));
   const { userId } = auth();
+
   if (!userId) {
-    return new Response("Unauthorized", { status: 401 });
+    if (spaceId !== PUBLISHED_QUESTS) {
+      return {
+        cookie: "",
+        lastMutationIDChanges: {},
+        patch: [],
+      } satisfies PullResponse;
+    }
   }
   const json = (await req.json()) as PullRequestSchemaType;
 
   console.log("Processing mutation pull:", JSON.stringify(json, null, ""));
-  const { searchParams } = new URL(req.url);
-  const spaceId = z.string().parse(searchParams.get("spaceId"));
   const adjustedSpaceId =
     //if the space is workspace list  -- make it private by adding userId.
-    spaceId === WORKSPACE ? `${spaceId}#${userId}` : spaceId;
+    spaceId === WORKSPACE && userId ? `${spaceId}#${userId}` : spaceId;
   console.log("spaceId", adjustedSpaceId);
   const pull = pullRequestSchema.parse(json);
   const requestCookie = pull.cookie
@@ -113,7 +121,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
     } satisfies cookieSchemaType),
     patch,
   };
-  console.log("patch", JSON.stringify(resp));
+  console.log("patch", resp);
   console.log("clientgrou[ id", pull.clientGroupID);
   try {
     if (nextLastMutationIdsCVR) {

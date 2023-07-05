@@ -169,7 +169,7 @@ export default function List({
       <div className="flex flex-row-reverse p-2">
         <Button
           aria-label="close list"
-          className="bg-orange-100 hover:bg-orange-200"
+          className="bg-blue-100 hover:bg-blue-200"
           onClick={() => {
             toggleShowList((val) => !val);
           }}
@@ -183,7 +183,7 @@ export default function List({
             <path fill="none" d="M0 0H24V24H0z" />
             <path
               d="M21 18v2H3v-2h18zM6.596 3.904L8.01 5.318 4.828 8.5l3.182 3.182-1.414 1.414L2 8.5l4.596-4.596zM21 11v2h-9v-2h9zm0-7v2h-9V4h9z"
-              fill="var(--orange)"
+              fill="var(--blue)"
             />
           </svg>
         </Button>
@@ -200,24 +200,24 @@ export default function List({
                 }}
                 key={work.id}
                 className={cn(
-                  "mx-2 my-1 flex cursor-pointer items-center justify-between gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground",
+                  "mx-2 my-1 flex cursor-pointer items-center justify-between gap-2 rounded-md p-2 text-sm font-normal hover:bg-blue-100 hover:text-accent-foreground",
 
                   {
-                    "bg-orange-100": segment === work.id,
+                    "bg-blue-100": segment === work.id,
                   }
                 )}
               >
                 <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                   {work.title || "Untitled"}
                 </span>
-                {/* <Button className="h-6 w-5 bg-orange-300 hover:bg-orange-400"> */}
+                {/* <Button className="h-6 w-5 bg-blue-300 hover:bg-blue-400"> */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <LucidList className="w-5 text-orange-500" />
+                    <LucidList className="w-5 text-blue-500" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-30">
                     <DropdownMenuItem
-                      className="focus:bg-orange-100"
+                      className="focus:bg-blue-100"
                       onClick={(e) => {
                         handleDuplicateWork({
                           id: work.id,
@@ -236,7 +236,7 @@ export default function List({
                           type: work.type as WorkType,
                         }).catch((err) => console.log(err));
                       }}
-                      className="focus:bg-orange-100"
+                      className="focus:bg-blue-100"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       <span>Delete</span>
@@ -250,7 +250,7 @@ export default function List({
         </ul>
         <span
           className={cn(
-            "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 "
+            "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-blue-100 "
             // path === item.href ? "bg-accent" : "transparent",
             // item.disabled && "cursor-not-allowed opacity-80",
           )}
@@ -265,21 +265,21 @@ export default function List({
           >
             <path
               d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"
-              fill="var(--orange)"
+              fill="var(--blue)"
             ></path>
           </svg>
-          <span className="text-orange-500">Add quest</span>
+          <span className="text-blue-500">Add quest</span>
         </span>
       </ScrollArea>
       <ListSettings>
         <span
           className={cn(
-            " mx-2 flex w-[240px] cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-orange-100 hover:text-accent-foreground"
+            " mx-2 flex w-[240px] cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal text-blue-500 hover:bg-blue-100 hover:text-accent-foreground"
             // path === item.href ? "bg-accent" : "transparent",
             // item.disabled && "cursor-not-allowed opacity-80",
           )}
         >
-          <Trash className="text-orange-500" size={20} />
+          <Trash className="text-blue-500" size={20} />
           Trash
         </span>
       </ListSettings>

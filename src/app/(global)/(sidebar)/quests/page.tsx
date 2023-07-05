@@ -66,7 +66,7 @@ export default function Quests() {
               <></>
             ) : (
               // <GlobalChat setShowChat={setShowChat} />
-              <Button className="w-25 fixed bottom-10 right-[150px] z-40 bg-orange-400 hover:bg-orange-500 ">
+              <Button className="w-25 fixed bottom-10 right-[150px] z-40 bg-blue-500 hover:bg-blue-600 ">
                 {/* <MessageCircle size={28} className="text-color-white pr-2" /> */}
                 Global chat
               </Button>

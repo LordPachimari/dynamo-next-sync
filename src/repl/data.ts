@@ -35,13 +35,13 @@ import {
   Solution,
   SpaceVersion,
 } from "~/types/types";
-import { contentKey } from "./mutators";
 import { rocksetClient } from "~/clients/rockset";
 import { PUBLISHED_QUESTS, WORKSPACE } from "~/utils/constants";
 import { CacheGet, CacheSet } from "@gomomento/sdk";
 import { momento } from "~/clients/momento";
 import { nanoid } from "nanoid";
 import { ulid } from "ulid";
+import { contentKey } from "./mutators/workspace";
 export const makeCVR = ({
   items,
 }: {
@@ -63,16 +63,17 @@ export const getPatch = async ({
 }: {
   spaceId: string;
   prevCVR: ClientViewRecord | undefined;
-  userId: string;
+  userId: string | null;
 }) => {
   if (!prevCVR) {
     return await getResetPatch({ spaceId, userId });
   }
-  const items = spaceId.startsWith(WORKSPACE)
-    ? await getWorkspaceCVR({ spaceId, userId })
-    : spaceId === PUBLISHED_QUESTS
-    ? await getPublishedQuestsCVR()
-    : [];
+  const items =
+    spaceId.startsWith(WORKSPACE) && userId
+      ? await getWorkspaceCVR({ spaceId, userId })
+      : spaceId === PUBLISHED_QUESTS
+      ? await getPublishedQuestsCVR()
+      : [];
   try {
     const nextCVR = makeCVR({
       items,
@@ -92,6 +93,10 @@ export const getPatch = async ({
         delKeys.push(key);
       }
     }
+    console.log("prev CVR keys", prevCVR);
+
+    console.log("next CVR keys", nextCVR);
+    console.log("put keys", putKeys);
     const fullItems = await getFullItems({
       keys: putKeys,
     });
@@ -260,37 +265,20 @@ const getPublishedQuestsCVR = async () => {
     throw new Error("Failed to get published quests CVR");
   }
 };
-const getCVR = async ({ spaceId }: { spaceId: string }) => {
-  try {
-    const params: QueryCommandInput = {
-      TableName: env.MAIN_TABLE_NAME,
-      IndexName: env.CVR_INDEX_NAME,
-      KeyConditionExpression: "PK = :PK",
-      ExpressionAttributeValues: { ":PK": spaceId },
-    };
-    const result = await dynamoClient.send(new QueryCommand(params));
-    if (result.Items && result.Items.length > 0) {
-      return result.Items as { SK: string; version: number }[];
-    }
 
-    return [];
-  } catch (error) {
-    console.log(error);
-    throw new Error("Failed to get space items");
-  }
-};
 const getResetPatch = async ({
   spaceId,
   userId,
 }: {
   spaceId: string;
-  userId: string;
+  userId: string | null;
 }) => {
-  const items = spaceId.startsWith(WORKSPACE)
-    ? await getWorkspaceItems({ spaceId, userId })
-    : spaceId === PUBLISHED_QUESTS
-    ? await getPublishedQuestItems()
-    : [];
+  const items =
+    spaceId.startsWith(WORKSPACE) && userId
+      ? await getWorkspaceItems({ spaceId, userId })
+      : spaceId === PUBLISHED_QUESTS
+      ? await getPublishedQuestItems()
+      : [];
   const cvr = makeCVR({ items });
   const patch: PatchOperation[] = [
     {
@@ -455,13 +443,15 @@ export const getFullItems = async ({
 export const getItem = async ({
   spaceId,
   key,
+  PK,
 }: {
+  PK?: string;
   spaceId: string;
   key: string;
 }) => {
   const getParams: GetCommandInput = {
     Key: {
-      PK: spaceId,
+      PK: PK ? PK : spaceId,
       SK: key,
     },
     TableName: env.MAIN_TABLE_NAME,
@@ -482,7 +472,7 @@ export const putItems = async ({
   items,
 }: {
   spaceId: string;
-  items: { key: string; value: JSONObject }[];
+  items: { PK?: string; key: string; value: JSONObject }[];
 }) => {
   if (items.length === 0) {
     return;
@@ -502,7 +492,7 @@ export const putItems = async ({
         TableName: env.MAIN_TABLE_NAME,
         Item: {
           ...item.value,
-          PK: spaceId,
+          PK: item.PK ? item.PK : spaceId,
 
           SK: item.key,
         },
@@ -525,7 +515,7 @@ export const updateItems = async ({
   items,
 }: {
   spaceId: string;
-  items: { key: string; value: JSONObject }[];
+  items: { PK?: string; key: string; value: JSONObject }[];
 }) => {
   if (items.length === 0) {
     return;
@@ -537,9 +527,9 @@ export const updateItems = async ({
       ExpressionAttributeValues?: Record<string, any> | undefined;
     };
   }[] = [];
-  for (const { key, value } of items) {
+  for (const { key, value, PK } of items) {
     const attributes = Object.keys(value).map((attribute) => {
-      return `${attribute} = :${attribute}`;
+      return `#${attribute} = :${attribute}`;
     });
     const UpdateExpression = `set ${attributes.join(
       ", "
@@ -551,17 +541,22 @@ export const updateItems = async ({
       }
       ExpressionAttributeValues[`:${attr}`] = val;
     });
+    const ExpressionAttributeNames: Record<string, JSONValue | undefined> = {};
+    Object.entries(value).forEach(([attr, val]) => {
+      ExpressionAttributeNames[`#${attr}`] = attr;
+    });
 
     updateItems.push({
       Update: {
         TableName: env.MAIN_TABLE_NAME,
         Key: {
-          PK: spaceId,
+          PK: PK ? PK : spaceId,
           SK: key,
         },
 
         ExpressionAttributeNames: {
           "#version": "version",
+          ...ExpressionAttributeNames,
         },
         UpdateExpression,
         ExpressionAttributeValues: {
@@ -696,50 +691,32 @@ export const delPermItems = async ({
   if (keysToDel.length === 0) {
     return;
   }
-  const updateItems: {
-    Update:
-      | (Omit<Update, "Key" | "ExpressionAttributeValues"> & {
+  const delItems: {
+    Delete?:
+      | (Omit<Delete, "ExpressionAttributeValues" | "Key"> & {
           Key: Record<string, any> | undefined;
           ExpressionAttributeValues?: Record<string, any> | undefined;
         })
       | undefined;
   }[] = [];
-
-  const oneDayInSeconds = 24 * 60 * 60;
-  const expirationTime = Math.floor(Date.now() / 1000) + oneDayInSeconds;
   for (const key of keysToDel) {
-    updateItems.push({
-      Update: {
+    delItems.push({
+      Delete: {
         Key: {
           PK: spaceId,
 
           SK: key,
         },
-        UpdateExpression: "SET #ttl = :ttl, deleted = :deleted",
-        ExpressionAttributeNames: {
-          "#version": "version",
-          "#ttl": "ttl",
-        },
-        ExpressionAttributeValues: { ":ttl": expirationTime, ":deleted": true },
         TableName: env.MAIN_TABLE_NAME,
       },
     });
-    if (key.startsWith("EDITOR")) {
-      updateItems.push({
-        Update: {
+    if (key.startsWith("WORK")) {
+      delItems.push({
+        Delete: {
           Key: {
             PK: spaceId,
 
-            SK: `${contentKey(key.substring(7))}`,
-          },
-          UpdateExpression: "SET #ttl = :ttl, deleted = :deleted",
-          ExpressionAttributeNames: {
-            "#version": "version",
-            "#ttl": "ttl",
-          },
-          ExpressionAttributeValues: {
-            ":ttl": oneDayInSeconds,
-            ":deleted": true,
+            SK: `${contentKey(key.substring(5))}`,
           },
           TableName: env.MAIN_TABLE_NAME,
         },
@@ -747,7 +724,7 @@ export const delPermItems = async ({
     }
   }
   const transactUpdateParams: TransactWriteCommandInput = {
-    TransactItems: updateItems,
+    TransactItems: delItems,
   };
   try {
     await dynamoClient.send(new TransactWriteCommand(transactUpdateParams));

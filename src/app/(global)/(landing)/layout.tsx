@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs";
+import Link from "next/link";
 import { ReactNode } from "react";
 import LandingPageButtons from "~/components/Landing/LandingPageButtons";
 
@@ -60,6 +61,7 @@ export default function GlobalLayout({
             <h1 className="text-center text-5xl font-black">
               Welcome to studlancer
             </h1>
+
             <p className="md pt-5 text-center font-bold">
               Unleash your potential by conquering quests and leveling up your
               skill!
@@ -93,7 +95,7 @@ export default function GlobalLayout({
         </div>
       </div>
       <div className="full">
-        <div className="flex h-fit w-full flex-col justify-center bg-orange-100 p-10">
+        <div className="flex h-fit w-full flex-col justify-center bg-blue-100 p-10">
           <div className="flex h-4/6 flex-col items-center justify-center gap-10  lg:flex-row">
             <h1 className="text-3xl font-bold">For companies</h1>
           </div>
@@ -110,7 +112,7 @@ export default function GlobalLayout({
           </div>
         </div>
       </div>
-      <div className="flex h-fit w-full flex-col border-t-2 border-gray-200 bg-orange-300 p-16 lg:flex-row">
+      <div className="flex h-fit w-full flex-col border-t-2 border-gray-200 bg-blue-300 p-16 lg:flex-row">
         <div className="flex w-[100] flex-col lg:w-2/6">
           <h2>Studlancer</h2>
           <p>Links</p>

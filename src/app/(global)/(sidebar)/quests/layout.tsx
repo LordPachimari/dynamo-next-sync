@@ -1,11 +1,4 @@
-import { useAuth } from "@clerk/nextjs";
-import { ReactNode, useEffect, useState } from "react";
-import { Replicache } from "replicache";
-import { env } from "~/env.mjs";
-import { mutators } from "~/repl/mutators";
-import { PUBLISHED_QUESTS } from "~/utils/constants";
-import { ReplicacheInstancesStore } from "~/zustand/rep";
-import Pusher from "pusher-js";
+import { ReactNode } from "react";
 import SettingRep from "./SettingRep";
 
 // const Editor = dynamic(

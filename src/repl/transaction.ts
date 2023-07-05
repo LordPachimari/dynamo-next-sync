@@ -55,10 +55,10 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
     this._userId = userId;
   }
 
-  put({ key, value }: { key: string; value: JSONObject }) {
+  put({ key, value }: { PK?: string; key: string; value: JSONObject }) {
     this._cache.set(key, { method: PUT, value });
   }
-  update({ key, value }: { key: string; value: JSONObject }) {
+  update({ key, value }: { PK?: string; key: string; value: JSONObject }) {
     this._cache.set(key, { method: UPDATE, value });
   }
   del({ key }: { key: string }) {

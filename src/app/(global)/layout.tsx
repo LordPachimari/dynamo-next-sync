@@ -6,7 +6,7 @@ export default function GlobalLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="flex h-full w-full justify-center bg-orange-50">
+    <div className="flex h-full w-full justify-center bg-slate-50">
       <div className="w-full max-w-[1984px]">{children}</div>
     </div>
   );

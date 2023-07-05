@@ -21,36 +21,12 @@ import { EditorBubbleMenu } from "./components/EditorBubleMenu";
 import { TiptapExtensions } from "./extensions";
 const TiptapEditor = (props: {
   id: string;
-  // ydoc: Y.Doc;
+  ydoc: Y.Doc;
   setRenderCount: Dispatch<SetStateAction<number>>;
   renderCount: number;
 }) => {
-  const { id, setRenderCount, renderCount } = props;
+  const { id, setRenderCount, renderCount, ydoc } = props;
   const rep = WorkspaceStore((state) => state.rep);
-  const ydocRef = useRef(new Y.Doc());
-  const ydoc = ydocRef.current;
-  const Ydoc = useSubscribe(
-    rep,
-    async (tx) => {
-      const content = (await tx.get(contentKey(id))) as Content;
-      console.log(content);
-      if (content && content.Ydoc) {
-        if (content.textContent) {
-          console.log("text", content.textContent);
-        }
-        console.log("ydoc from subscribe", content.Ydoc);
-        if (ydoc) {
-          console.log("updating yjs");
-          const update = base64.toByteArray(content.Ydoc);
-          Y.applyUpdateV2(ydoc, update);
-        }
-        return content.Ydoc;
-      }
-      return null;
-    },
-    null,
-    [id]
-  );
 
   const imageInputRef = useRef<HTMLInputElement>(null);
 

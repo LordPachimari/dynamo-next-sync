@@ -9,13 +9,13 @@ export default function LandingPageButtons() {
   return (
     <>
       <Button
-        className="w-40 bg-orange-400 font-bold text-white shadow-lg hover:bg-orange-500"
-        onClick={() => void router.push("/home")}
+        className="w-40 bg-blue-400 font-bold text-white shadow-lg hover:bg-blue-500"
+        onClick={() => void router.push("/quests")}
       >
         View quests
       </Button>{" "}
       <Button
-        className="w-40 bg-orange-400 font-bold text-white shadow-lg hover:bg-orange-500"
+        className="w-40 bg-blue-400 font-bold text-white shadow-lg hover:bg-blue-500"
         onClick={() => {
           if (window.innerWidth < 1024) {
             window.scrollBy({

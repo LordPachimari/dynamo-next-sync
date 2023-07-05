@@ -17,7 +17,7 @@ export default function QuestComponent({
 }) {
   console.log(TopicColor({ topic: quest.topic }));
   return (
-    <Card className="h-fit w-full rounded-xl drop-shadow-md">
+    <Card className="h-fit w-full rounded-xl drop-shadow-sm">
       <CardHeader className="flex w-full p-2">
         <div className="flex w-full justify-between gap-5">
           <div className="flex w-full items-center gap-4">
@@ -32,7 +32,7 @@ export default function QuestComponent({
 
             <div className="w-full">
               <div className="flex w-full items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <p className="text-lg font-extrabold">
                     {quest.publisherUsername}
                   </p>
@@ -42,7 +42,7 @@ export default function QuestComponent({
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <div className="flex h-8 items-center gap-1">
+                  <div className="flex h-8  items-center gap-1">
                     <p>due</p>
                     <Badge className="h-6 w-28 bg-blue-400">
                       <p>{format(new Date(quest.deadline), "PPP")} </p>
@@ -84,9 +84,7 @@ export default function QuestComponent({
           </span>
           <span className="flex gap-2">
             <Users2 className="text-gray-500" size={22} />
-            <p className="text-gray-500">
-              {`${quest.solverCount}/${quest.slots}`}
-            </p>
+            <p className="text-gray-500">{`${quest.slots}`}</p>
           </span>
         </CardFooter>
       )}

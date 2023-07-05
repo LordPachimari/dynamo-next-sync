@@ -31,9 +31,13 @@ const pushRequestSchema = z.object({
 
 export async function POST(req: Request, res: Response) {
   console.log("----------------------------------------------------");
+
+  const { searchParams } = new URL(req.url);
+  const spaceId = z.string().parse(searchParams.get("spaceId"));
   const { userId } = auth();
+
   if (!userId) {
-    return new Response("Unauthorized", { status: 401 });
+    return NextResponse.json({});
   }
   console.log("Processing push");
 
@@ -42,9 +46,6 @@ export async function POST(req: Request, res: Response) {
     solution: false,
     post: false,
   };
-  const { searchParams } = new URL(req.url);
-
-  const spaceId = z.string().parse(searchParams.get("spaceId"));
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const json = await req.json();
@@ -260,7 +261,8 @@ const processMutation = async ({
     const t1 = Date.now();
     // For each possible mutation, run the server-side logic to apply the
     // mutation.
-    await WorkspaceMutations({ tx, mutation, spaceId });
+
+    await WorkspaceMutations({ tx, mutation, spaceId, userId });
     console.log("Processed mutation in", Date.now() - t1);
 
     console.log("----------------------------------------------------");

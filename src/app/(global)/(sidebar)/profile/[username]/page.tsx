@@ -7,7 +7,7 @@ import { User } from "~/types/types";
 import { Button } from "~/ui/Button";
 import { Card, CardContent, CardHeader } from "~/ui/Card";
 const newDate = new Date().toISOString();
-export const user: User = {
+const user: User = {
   id: "user1",
   balance: 0,
   createdAt: newDate,

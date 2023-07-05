@@ -13,7 +13,6 @@ import {
 import { useSubscribe } from "replicache-react";
 import { toast } from "sonner";
 import * as Y from "yjs";
-import { contentKey } from "~/repl/mutators";
 import { Content } from "~/types/types";
 import { useUploadThing } from "~/utils/useUploadThing";
 import { WorkspaceStore } from "~/zustand/workspace";

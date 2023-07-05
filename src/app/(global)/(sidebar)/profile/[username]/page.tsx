@@ -6,20 +6,8 @@ import UserTopics from "~/components/Profile/Topics";
 import { User } from "~/types/types";
 import { Button } from "~/ui/Button";
 import { Card, CardContent, CardHeader } from "~/ui/Card";
+import { user } from "~/utils/constants";
 const newDate = new Date().toISOString();
-const user: User = {
-  id: "user1",
-  balance: 0,
-  createdAt: newDate,
-  email: "ajdw",
-  experience: 0,
-  level: 0,
-  role: "ADMIN" as const,
-  type: "USER" as const,
-  username: "Pachimari",
-  verified: false,
-  version: 1,
-};
 export default function ProfilePage({
   params,
 }: {

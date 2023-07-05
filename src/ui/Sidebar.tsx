@@ -3,11 +3,11 @@ import { Button } from "./Button";
 import { Switch } from "./Switch";
 import { useAuth, useClerk } from "@clerk/nextjs";
 import Link from "next/link";
-import { user } from "~/app/(global)/(sidebar)/profile/[username]/page";
 import { Badge } from "./Badge";
 import { cn } from "~/utils/cn";
 import { Menu } from "lucide-react";
 import { ScrollArea } from "./ScrollArea";
+import { user } from "~/utils/constants";
 
 export default function Sidebar({
   showSidebar,

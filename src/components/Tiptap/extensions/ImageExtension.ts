@@ -7,7 +7,7 @@ import { EditorState, Plugin, PluginKey, Transaction } from "@tiptap/pm/state";
 import { Schema } from "@tiptap/pm/model";
 import { ReplaceStep, Step, StepMap } from "@tiptap/pm/transform";
 export default Node.create({
-  name: "imageComponent",
+  name: "Imagecomponent",
 
   group: "block",
   draggable: true,
@@ -34,13 +34,13 @@ export default Node.create({
   parseHTML() {
     return [
       {
-        tag: "imageComponent",
+        tag: "Imagecomponent",
       },
     ];
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["imageComponent", mergeAttributes(HTMLAttributes)];
+    return ["Imagecomponent", mergeAttributes(HTMLAttributes)];
   },
 
   addNodeView() {

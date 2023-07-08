@@ -216,7 +216,7 @@ export function NotificationsForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="bg-blue-9 hover:bg-blue-10">
+        <Button type="submit" className="bg-blue-9 text-white hover:bg-blue-10">
           Update notifications
         </Button>
       </form>

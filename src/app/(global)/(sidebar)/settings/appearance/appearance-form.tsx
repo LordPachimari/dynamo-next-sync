@@ -121,7 +121,10 @@ export function AppearanceForm() {
           )}
         />
 
-        <Button type="submit" className=":hover:bg-blue-10 bg-blue-9">
+        <Button
+          type="submit"
+          className=":hover:bg-blue-10 bg-blue-9 text-white"
+        >
           Update preferences
         </Button>
       </form>

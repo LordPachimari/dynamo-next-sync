@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 "server-only";
 import { GetCommand, GetCommandInput } from "@aws-sdk/lib-dynamodb";
 import { serialize } from "next-mdx-remote/serialize";
@@ -5,7 +6,7 @@ import { dynamoClient } from "~/clients/dynamodb";
 import { env } from "~/env.mjs";
 import { contentKey } from "~/repl/client/mutators/workspace";
 import { PublishedContent } from "~/types/types";
-
+import { visit } from "unist-util-visit";
 export async function getPublishedContent(id: string) {
   const params: GetCommandInput = {
     TableName: env.MAIN_TABLE_NAME,
@@ -25,37 +26,21 @@ export async function getPublishedContent(id: string) {
 }
 export async function getMdxSource(markdown: string) {
   // Serialize the content string into MDX
-  const mdxSource = await serialize(markdown);
+  const mdxSource = await serialize(markdown, {
+    mdxOptions: {
+      remarkPlugins: [replaceCustomeNodeNames],
+    },
+  });
 
   return mdxSource;
 }
-// export function replaceExamples() {
-//   return (tree: any) =>
-//     new Promise<void>(async (resolve, reject) => {
-//       const nodesToChange = new Array();
-
-//       visit(tree, "mdxJsxFlowElement", (node: any) => {
-//         if (node.name == "Examples") {
-//           nodesToChange.push({
-//             node,
-//           });
-//         }
-//       });
-//       for (const { node } of nodesToChange) {
-//         try {
-//           const data = await getExamples(node, prisma);
-//           node.attributes = [
-//             {
-//               type: "mdxJsxAttribute",
-//               name: "data",
-//               value: data,
-//             },
-//           ];
-//         } catch (e) {
-//           return reject(e);
-//         }
-//       }
-
-//       resolve();
-//     });
-// }
+export function replaceCustomeNodeNames() {
+  return (tree: any) => {
+    visit(tree, "mdxJsxFlowElement", (node: any) => {
+      console.log(node);
+      if (node.name == "imagecomponent") {
+        node.name = "ImageComponent";
+      }
+    });
+  };
+}

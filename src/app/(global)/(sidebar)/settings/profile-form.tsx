@@ -106,11 +106,11 @@ export function ProfileForm() {
               <FormLabel>Email</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-slate-3">
                     <SelectValue placeholder="Select a verified email to display" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent className="border-slate-6">
                   <SelectItem value="m@example.com">m@example.com</SelectItem>
                   <SelectItem value="m@google.com">m@google.com</SelectItem>
                   <SelectItem value="m@support.com">m@support.com</SelectItem>
@@ -174,7 +174,7 @@ export function ProfileForm() {
             Add URL
           </Button>
         </div>
-        <Button type="submit" className="bg-blue-9 hover:bg-blue-10">
+        <Button type="submit" className="bg-blue-9 text-white hover:bg-blue-10">
           Update profile
         </Button>
       </form>

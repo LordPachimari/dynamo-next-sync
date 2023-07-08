@@ -33,7 +33,7 @@ export default function Sidebar({
     {
       page: "leaderboard",
       href: "/leaderboard",
-      finished: false,
+      finished: true,
       public: true,
     },
     { page: "chat", href: "/chat", finished: false, public: false },
@@ -62,7 +62,7 @@ export default function Sidebar({
       </div>
       {isSignedIn && (
         <Link href={`/profile/${user.username}`}>
-          <div className="flex h-64 w-full items-center justify-center rounded-md border-[1px] bg-blue-50 shadow-inner"></div>
+          <div className="flex h-64 w-full items-center justify-center rounded-md border-[1px] bg-blue-2 shadow-inner dark:border-none dark:shadow-blue-6"></div>
           <div className="flex flex-col items-center p-2">
             <Badge className="bg-red-500">{user.level} lvl</Badge>
             <p className="font-bold">{user.username}</p>
@@ -134,7 +134,7 @@ export default function Sidebar({
       {isSignedIn && (
         <div className="mb-2 mt-5 flex justify-center">
           {" "}
-          <Button className="bg-blue-9 hover:bg-blue-10">
+          <Button className="bg-blue-9 hover:bg-blue-10 dark:text-white">
             <p>Sign out</p>
           </Button>
         </div>

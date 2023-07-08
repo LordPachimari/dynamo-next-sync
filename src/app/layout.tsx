@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <ClerkProvider>
       <html lang="en">
         <body className={cn("font-cal", cal.variable, inter.variable)}>
-          <NextTopLoader color="#3b82f6" />
+          <NextTopLoader color="#3b82f6" showSpinner={false} />
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             {children}
           </ThemeProvider>

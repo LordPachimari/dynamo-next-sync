@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -41,6 +42,7 @@ import Publish from "./Publish";
 import { useAuth } from "@clerk/nextjs";
 import { contentKey, workKey } from "~/repl/client/mutators/workspace";
 import NonEditableContent from "./NonEditableContent";
+import { toast } from "sonner";
 
 const Editor = ({ id }: { id: string }) => {
   const { userId } = useAuth();
@@ -88,10 +90,17 @@ const Editor = ({ id }: { id: string }) => {
   );
 
   const router = useRouter();
+  const handleUnpublish = async () => {
+    if (rep) {
+      await rep.mutate.unpublishWork({ id, type: work.type });
+
+      toast.success("Successfully unpublished!");
+    }
+  };
 
   return (
-    <div className="mb-20 mt-10 flex flex-col items-center justify-center">
-      <div className="w-5/6 max-w-2xl rounded-md border-[1px] bg-white p-4 dark:bg-slate-2 ">
+    <div className="mb-20 mt-10 flex flex-col items-center justify-center ">
+      <div className="w-5/6 max-w-2xl rounded-md border-[1px] bg-white p-4 dark:border-slate-6 dark:bg-slate-2 ">
         {work && work.published && work.type === "QUEST" ? (
           <NonEditableQuestAttributes quest={work} />
         ) : work && work.type === "QUEST" ? (
@@ -121,11 +130,11 @@ const Editor = ({ id }: { id: string }) => {
             <>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button className="w-32 bg-red-500 hover:bg-red-600">
+                  <Button className="w-32 bg-red-9 text-white hover:bg-red-10">
                     Unpublish
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className="dark:border-slate-6">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirm your action</AlertDialogTitle>
                     <AlertDialogDescription>
@@ -135,7 +144,10 @@ const Editor = ({ id }: { id: string }) => {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction asChild>
-                      <Button className="w-32 bg-red-500 hover:bg-red-600">
+                      <Button
+                        className="w-32 bg-red-9 text-white hover:bg-red-10"
+                        onClick={handleUnpublish}
+                      >
                         Unpublish
                       </Button>
                     </AlertDialogAction>
@@ -146,7 +158,7 @@ const Editor = ({ id }: { id: string }) => {
           )}
 
           <Button
-            className="w-44 bg-green-500 hover:bg-green-600"
+            className="w-44 bg-green-500 text-white hover:bg-green-10"
             onClick={() => {
               if (work) void router.push(`/quests/${work.id}`);
             }}

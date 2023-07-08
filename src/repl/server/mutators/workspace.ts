@@ -153,6 +153,8 @@ export const WorkspaceMutators = async ({
       key: workKey({ id: params.id, type: params.type }),
       value: {
         ...params,
+        publisherUsername: user.username,
+        publisherProfile: user.profile || "profile",
         textContent: params.textContent,
         ...((params.type === "QUEST" || params.type === "SOLUTION") && {
           publishedQuestKey: params.id,

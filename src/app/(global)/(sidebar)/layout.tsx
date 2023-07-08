@@ -40,13 +40,14 @@ export default function SidebarLayout({
       >
         {!showSidebar ? (
           <Button
-            className="fixed z-30 m-2 bg-blue-100 hover:bg-blue-200"
+            className="fixed z-50 m-2 bg-blue-4 hover:bg-blue-5"
+            size="icon"
             onClick={() => toggleShowSidebar()}
           >
-            <Menu className="text-blue-500" />
+            <Menu className="text-blue-9" />
           </Button>
         ) : null}
-        <div className="fixed z-10 z-50 h-14 w-full border-b-[1px]  bg-white dark:border-slate-8 dark:bg-slate-1">
+        <div className="fixed z-40 h-14 w-full border-b-[1px] bg-white dark:border-slate-8 dark:bg-slate-950">
           {/* <GlobalSearch /> */}
         </div>
         {children}

@@ -10,7 +10,12 @@ import {
 
 import { auth } from "@clerk/nextjs";
 import { ClientID, PatchOperation } from "replicache";
-import { PUBLISHED_QUESTS, USER, WORKSPACE } from "~/utils/constants";
+import {
+  LEADERBOARD,
+  PUBLISHED_QUESTS,
+  USER,
+  WORKSPACE,
+} from "~/utils/constants";
 
 export type PullResponse = {
   cookie: string;
@@ -21,6 +26,7 @@ const cookieSchema = z.object({
   PUBLISHED_QUESTS_CVR: z.optional(z.string()),
   WORKSPACE_CVR: z.optional(z.string()),
   USER_CVR: z.optional(z.string()),
+  LEADERBOARD_CVR: z.optional(z.string()),
 
   lastMutationIdsCVRKey: z.optional(z.string()),
 });
@@ -45,7 +51,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
   const { userId } = auth();
 
   if (!userId) {
-    if (spaceId !== PUBLISHED_QUESTS) {
+    if (spaceId !== PUBLISHED_QUESTS && spaceId !== LEADERBOARD) {
       return {
         cookie: "",
         lastMutationIDChanges: {},
@@ -82,6 +88,8 @@ export async function POST(req: NextRequest, res: NextResponse) {
             ? requestCookie.PUBLISHED_QUESTS_CVR
             : requestCookie && spaceId === USER
             ? requestCookie.USER_CVR
+            : requestCookie && spaceId === LEADERBOARD
+            ? requestCookie.LEADERBOARD_CVR
             : undefined,
       }),
       getPrevCVR({
@@ -121,6 +129,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
       ...(spaceId === USER && { USER_CVR: nextCVR.id }),
       ...(spaceId === WORKSPACE && { WORKSPACE_CVR: nextCVR.id }),
       ...(spaceId === PUBLISHED_QUESTS && { PUBLISHED_QUESTS_CVR: nextCVR.id }),
+      ...(spaceId === LEADERBOARD && { LEADERBOARD_CVR: nextCVR.id }),
       ...(nextLastMutationIdsCVR && {
         lastMutationIdsCVRKey: nextLastMutationIdsCVR.id,
       }),

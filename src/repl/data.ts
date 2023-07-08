@@ -36,7 +36,12 @@ import {
   SpaceVersion,
 } from "~/types/types";
 import { rocksetClient } from "~/clients/rockset";
-import { PUBLISHED_QUESTS, USER, WORKSPACE } from "~/utils/constants";
+import {
+  LEADERBOARD,
+  PUBLISHED_QUESTS,
+  USER,
+  WORKSPACE,
+} from "~/utils/constants";
 import { CacheGet, CacheSet } from "@gomomento/sdk";
 import { momento } from "~/clients/momento";
 import { nanoid } from "nanoid";
@@ -75,6 +80,8 @@ export const getPatch = async ({
       ? await getPublishedQuestsCVR()
       : spaceId.startsWith(USER)
       ? await getUserCVR({ spaceId })
+      : spaceId === LEADERBOARD
+      ? await getLeaderboardCVR()
       : [];
   try {
     const nextCVR = makeCVR({
@@ -97,6 +104,10 @@ export const getPatch = async ({
     }
     const fullItems = await getFullItems({
       keys: putKeys,
+      ...(spaceId === LEADERBOARD && {
+        ProjectionExpression:
+          "id, SK, username, #level, profile, rewarded, questsSolved",
+      }),
     });
     // console.log("prev CVR ", JSON.stringify(prevCVR));
     // console.log("new CVR", JSON.stringify(nextCVR));
@@ -263,6 +274,42 @@ const getWorkspaceCVR = async ({
     throw new Error("Failed to get workspace CVR");
   }
 };
+const getLeaderboardCVR = async () => {
+  try {
+    const [leadersByReward, leadersByQuests] = await Promise.all([
+      rocksetClient.queryLambdas.executeQueryLambda(
+        "commons",
+        "LeaderByReard",
+        "bf9b00f53513466d",
+        undefined
+      ),
+      rocksetClient.queryLambdas.executeQueryLambda(
+        "commons",
+        "LeaderByQuests",
+        "ebf8fc9954d19b29",
+        undefined
+      ),
+    ]);
+    if (leadersByQuests.results && leadersByReward.results) {
+      return [
+        ...(leadersByQuests.results as {
+          PK: string;
+          SK: string;
+          version: number;
+        }[]),
+        ...(leadersByReward.results as {
+          PK: string;
+          SK: string;
+          version: number;
+        }[]),
+      ];
+    }
+    return [];
+  } catch (error) {
+    console.log(error);
+    throw new Error("failed to retrieve leaders");
+  }
+};
 const getPublishedQuestsCVR = async () => {
   const scanParams: ScanCommandInput = {
     TableName: env.MAIN_TABLE_NAME,
@@ -301,6 +348,8 @@ const getResetPatch = async ({
       ? await getPublishedQuestItems()
       : spaceId.startsWith(USER)
       ? await getUserItems({ spaceId })
+      : spaceId === LEADERBOARD
+      ? await getLeaderboardItems()
       : [];
   const cvr = makeCVR({ items });
   const patch: PatchOperation[] = [
@@ -403,6 +452,15 @@ export const getPublishedQuestItems = async () => {
   const fullItems = await getFullItems({ keys });
   return fullItems as (Record<string, any> & { SK: string; version: number })[];
 };
+export const getLeaderboardItems = async () => {
+  const keys = await getLeaderboardCVR();
+  const fullItems = await getFullItems({
+    keys,
+    ProjectionExpression:
+      "id, SK,  username, #level, profile, rewarded, questsSolved",
+  });
+  return fullItems as (Record<string, any> & { SK: string; version: number })[];
+};
 export const getUserItems = async ({ spaceId }: { spaceId: string }) => {
   const keys = await getUserCVR({ spaceId });
   const fullItems = await getFullItems({ keys });
@@ -411,7 +469,9 @@ export const getUserItems = async ({ spaceId }: { spaceId: string }) => {
 
 export const getFullItems = async ({
   keys,
+  ProjectionExpression,
 }: {
+  ProjectionExpression?: string;
   keys: { PK: string; SK: string }[];
 }) => {
   try {
@@ -438,6 +498,11 @@ export const getFullItems = async ({
 
       RequestItems[tableName] = {
         Keys,
+        ProjectionExpression,
+        ...(ProjectionExpression &&
+          ProjectionExpression.search("#level") >= 0 && {
+            ExpressionAttributeNames: { "#level": "level" },
+          }),
       };
 
       const params: BatchGetCommandInput = {

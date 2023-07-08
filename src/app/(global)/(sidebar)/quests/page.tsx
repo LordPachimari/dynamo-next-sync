@@ -43,7 +43,7 @@ export default function Quests() {
               <></>
             ) : (
               // <GlobalChat setShowChat={setShowChat} />
-              <Button className="w-25 fixed bottom-10 right-[50px] z-40 bg-blue-9 hover:bg-blue-10 ">
+              <Button className="w-25 fixed bottom-10 right-[50px] z-40 bg-blue-9 text-white hover:bg-blue-10">
                 <MessageCircle size={28} className="text-color-white pr-2" />
                 Global
               </Button>
@@ -56,7 +56,7 @@ export default function Quests() {
             // }}
             // value={topicState}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] bg-white dark:border-slate-6 dark:bg-slate-3 dark:outline-blue-6">
                 <SelectValue placeholder="Select topic" />
               </SelectTrigger>
               <SelectContent>
@@ -104,9 +104,7 @@ export default function Quests() {
               })} */}
           </div>
         </div>
-        <div className=" sticky top-20 hidden h-screen w-80 flex-col gap-10 pl-10 lg:flex">
-          <Leaderboard />
-        </div>
+        <div className=" sticky top-20 hidden h-screen w-80 flex-col gap-10 pl-10 lg:flex"></div>
       </div>
     </div>
   );

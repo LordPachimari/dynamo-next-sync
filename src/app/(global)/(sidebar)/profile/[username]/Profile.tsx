@@ -61,10 +61,10 @@ export default function Profile({
             )}
      */}
         <div className="mb-4 flex w-full flex-col items-center gap-4 md:w-[300px] ">
-          <Card className="flex w-full flex-col items-center justify-center rounded-xl py-4 drop-shadow-sm ">
+          <Card className="flex w-full flex-col items-center justify-center rounded-xl py-4 drop-shadow-sm dark:border-slate-6 ">
             <CardHeader className="w-full px-4 py-0">
-              <div className="flex h-[300px] w-full items-center justify-center rounded-md border-[1px] bg-blue-50 shadow-inner">
-                <Button className="  bg-blue-100 font-extrabold text-blue-700 hover:bg-blue-200">
+              <div className="flex h-[300px] w-full items-center justify-center rounded-md border-[1px] bg-blue-2 shadow-inner dark:border-none dark:shadow-blue-6">
+                <Button className="  bg-blue-4 font-extrabold text-blue-9 hover:bg-blue-6">
                   Create character
                 </Button>
               </div>
@@ -78,29 +78,30 @@ export default function Profile({
               <div className="flex w-full flex-col">
                 {"user1" !== "user1" ? (
                   <>
-                    <Button className=" mx-auto mt-5 w-full max-w-xs bg-blue-100 font-extrabold text-blue-700 hover:bg-blue-200 ">
+                    <Button className=" mx-auto mt-5 w-full max-w-xs bg-blue-6 font-extrabold text-blue-9 hover:bg-blue-7 ">
                       Send message
                     </Button>
 
-                    <Button className=" mx-auto mt-5 w-full max-w-xs bg-green-100 font-extrabold text-green-700 hover:bg-green-200 ">
+                    <Button className=" bg-green-4 text-green-9 hover:bg-green-6 mx-auto mt-5 w-full max-w-xs font-extrabold ">
                       Follow
                     </Button>
                   </>
                 ) : (
-                  <Button className=" mx-auto mt-5 w-full max-w-xs bg-green-100 font-extrabold text-green-700 hover:bg-green-200 ">
+                  <Button className=" bg-green-4 text-green-9 hover:bg-green-6 mx-auto mt-5 w-full max-w-xs font-extrabold ">
                     Edit profile
                   </Button>
                 )}
               </div>
             </CardContent>
           </Card>
-          <Card className="flex w-full flex-col items-center justify-center rounded-xl  py-2 drop-shadow-md">
+          <Card className="flex w-full flex-col items-center justify-center rounded-xl  py-2 drop-shadow-md  dark:border-slate-6">
             <CardHeader className="w-full justify-center px-4 py-0">
               <h2 className="text-center">GUILD</h2>
-              <div className="flex h-[200px] w-full items-center justify-center rounded-md border-[1px] bg-gray-50 ">
+
+              <div className="flex h-[200px] w-full items-center justify-center rounded-md border-[1px] bg-blue-2 shadow-inner dark:border-none dark:shadow-blue-6">
                 {"user1" === "user1" && (
-                  <Button className=" max-w-xs bg-blue-100 font-extrabold text-blue-700 hover:bg-blue-200 ">
-                    Search for a guild
+                  <Button className="  bg-blue-4 font-extrabold text-blue-9 hover:bg-blue-6">
+                    Search guild
                   </Button>
                 )}
               </div>

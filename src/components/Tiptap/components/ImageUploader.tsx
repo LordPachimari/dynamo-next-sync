@@ -39,8 +39,8 @@ export default function ImageUploader(props: {
             // .setImage({ src: `${imageUrl}` })
             .insertContent(
               i === res.length - 1
-                ? `<image-component src=${fileUrl} alt=${fileKey} title=${fileKey}></image-component><p></p>`
-                : `<image-component src=${fileUrl} alt=${fileKey} title=${fileKey}></image-component>`
+                ? `<Imagecomponent src=${fileUrl} alt=${fileKey} title=${fileKey}></Imagecomponent><p></p>`
+                : `<Imagecomponent src=${fileUrl} alt=${fileKey} title=${fileKey}></Imagecomponent>`
             )
 
             .run();

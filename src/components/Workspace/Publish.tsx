@@ -156,7 +156,7 @@ const Publish = ({
   return (
     <div className="flex items-center justify-center">
       <Button
-        className="mt-3 w-full bg-emerald-500 hover:bg-emerald-600"
+        className="mt-3 w-full bg-emerald-500 text-white hover:bg-emerald-600"
         onClick={() => {
           validate();
         }}

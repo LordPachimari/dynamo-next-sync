@@ -92,6 +92,7 @@
     "tippy.js": "^6.3.7",
     "tiptap-markdown": "^0.8.1",
     "ulid": "^2.3.0",
+    "unist-util-visit": "^5.0.0",
     "uploadthing": "^5.1.0",
     "y-prosemirror": "^1.2.1",
     "y-protocols": "^1.0.5",

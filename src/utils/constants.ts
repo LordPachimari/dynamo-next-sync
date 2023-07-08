@@ -3,7 +3,7 @@ import { User } from "~/types/types";
 export const WORKSPACE = "WORKSPACE";
 export const PUBLISHED_QUESTS = "PUBLISHED_QUESTS";
 export const GUILD = "GUILD";
-
+export const LEADERBOARD = "LEADERBOARD";
 export const USER = "USER";
 export const user: User = {
   id: "user1",

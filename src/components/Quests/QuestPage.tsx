@@ -170,7 +170,6 @@ export default function QuestPage({
   }, [id, user, quest, rep, userId]);
   const isSolver =
     solvers && solvers.some(([key, solver]) => solver.id === userId);
-  console.log("isSolver", isSolver);
 
   if (!quest) {
     return <div>No quest found</div>;
@@ -184,10 +183,12 @@ export default function QuestPage({
   return (
     <div className="mb-20 mt-2 flex w-full flex-col items-center justify-center md:flex-row">
       <div className="mt-16 w-11/12 flex-row-reverse gap-4 md:flex">
-        <div className="w-fill mb-2 flex h-fit flex-col items-center justify-center gap-2 md:w-3/12">
+        <div className="w-fill mb-4 flex h-fit flex-col items-center justify-center gap-4 md:w-3/12">
           <Publisher publisherId="user1" />
-          <div className="flex items-center justify-center">
-            <Button className="bg-blue-9 hover:bg-blue-10">MESSAGE</Button>
+          <div className=" flex items-center justify-center">
+            <Button className="bg-blue-9 text-white hover:bg-blue-10">
+              MESSAGE
+            </Button>
           </div>
 
           {quest.winnerId && <Winner winnerId="user1" />}
@@ -233,7 +234,7 @@ export default function QuestPage({
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
-                  className="w-20 bg-green-500 hover:bg-green-600 "
+                  className="w-20 bg-green-500 text-white hover:bg-green-500 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                   disabled={
                     !isSignedIn || isSolver || quest.slots === solversCount
                   }
@@ -268,7 +269,7 @@ export default function QuestPage({
 
           <h2 className="my-5 text-center text-lg">Solution statuses</h2>
 
-          <div className="mb-5 flex flex-wrap justify-center gap-3 rounded-md border-2 border-blue-200 p-2">
+          <div className="mb-5 flex flex-wrap justify-center gap-3 rounded-md border-2 border-blue-4 p-2">
             {SolutionStatus.map((status, i) => (
               <div className="flex gap-2" key={i}>
                 <div
@@ -276,13 +277,15 @@ export default function QuestPage({
                     "flex w-[25px] items-center justify-center rounded-[50%] text-white",
                     {
                       "bg-yellow-400": status === "POSTED SOLUTION",
-                      "bg-green-400":
+                      "bg-green-400 dark:bg-emerald-400":
                         status === "ACCEPTED" || status === "ACKNOWLEDGED",
-                      "bg-red-400": status === "REJECTED",
+                      "bg-red-400 dark:bg-red-500": status === "REJECTED",
                     }
                   )}
                 >
-                  {status === "ACCEPTED" && <Check className="text-white" />}
+                  {status === "ACCEPTED" && (
+                    <Check className="font-extrabold text-white" />
+                  )}
                 </div>
                 <p>{status}</p>
               </div>
@@ -317,12 +320,12 @@ const Publisher = ({ publisherId }: { publisherId: string }) => {
   // }
 
   return (
-    <Card className="h-fit w-full max-w-[250px] rounded-xl drop-shadow-sm">
+    <Card className="h-fit w-full max-w-[250px] rounded-xl drop-shadow-sm dark:border-[1px] dark:border-slate-6 dark:bg-slate-3">
       <CardHeader className="flex justify-center p-2 text-center text-xl font-bold">
         Publisher
       </CardHeader>
       <CardContent className="p-2">
-        <div className="flex h-60 w-full items-center justify-center rounded-md border-[1px] bg-blue-50 shadow-inner"></div>
+        <div className="flex h-60 w-full items-center justify-center rounded-md border-[1px] bg-blue-2 shadow-inner dark:border-none dark:shadow-blue-6"></div>
         <div className="flex flex-col items-center p-2">
           <Badge className="bg-blue-9">1 LVL</Badge>
           <h3>Pachimari</h3>
@@ -334,18 +337,17 @@ const Publisher = ({ publisherId }: { publisherId: string }) => {
 const EmptySlot = () => {
   return (
     <div className="flex gap-2">
-      <div className="flex h-14 w-36 items-center justify-center rounded-xl border-2 border-blue-300 bg-blue-100 ">
-        <UserPlus className="text-blue-500" />
+      <div className="flex h-14 w-36 items-center justify-center rounded-xl border-2 border-blue-4 bg-blue-2 ">
+        <UserPlus className="text-blue-9" />
       </div>
 
       <div className="flex h-14 items-center justify-center">
         <TooltipProvider>
-          {" "}
           <Tooltip>
             <TooltipTrigger asChild>
               <div
                 className={cn(
-                  "flex h-[25px] w-[25px] cursor-pointer items-center justify-center rounded-[50%] border-[1px] border-blue-400 text-white"
+                  "flex h-[25px] w-[25px] cursor-pointer items-center justify-center rounded-[50%] border-[1px] border-blue-6 text-white"
                 )}
               ></div>
             </TooltipTrigger>
@@ -375,7 +377,7 @@ const Winner = ({ winnerId }: { winnerId: string }) => {
   //     );
   //   }
   return (
-    <Card className="h-fit w-full max-w-[250px] rounded-xl drop-shadow-sm">
+    <Card className="h-fit w-full max-w-[250px] rounded-xl drop-shadow-sm dark:border-blue-4 dark:bg-slate-3">
       <CardHeader className="flex justify-center p-2 text-center text-xl font-bold">
         Winner
       </CardHeader>
@@ -397,7 +399,7 @@ const QuestComponent = ({
   mdxSource: MDXRemoteProps | null;
 }) => {
   return (
-    <Card className="rounded-xl drop-shadow-sm">
+    <Card className="rounded-xl drop-shadow-sm dark:border-slate-6 dark:bg-slate-3">
       <CardHeader>
         <NonEditableQuestAttributes quest={quest} />
       </CardHeader>

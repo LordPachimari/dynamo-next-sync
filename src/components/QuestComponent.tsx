@@ -15,9 +15,10 @@ export default function QuestComponent({
   includeContent: boolean;
   includeDetails: boolean;
 }) {
-  console.log(TopicColor({ topic: quest.topic }));
+  console.log("qust username", quest);
+
   return (
-    <Card className="h-fit w-full rounded-xl bg-white drop-shadow-sm dark:bg-slate-1">
+    <Card className="h-fit w-full rounded-xl bg-white drop-shadow-sm dark:border-[1px] dark:border-slate-6 dark:bg-slate-3">
       <CardHeader className="flex w-full p-2">
         <div className="flex w-full justify-between gap-5">
           <div className="flex w-full items-center gap-4">
@@ -80,15 +81,16 @@ export default function QuestComponent({
       </Link>
 
       {includeDetails && (
-        <CardFooter className="flex  gap-2 border-t-2 px-3 pb-2  pt-2">
+        <CardFooter className="flex gap-2 border-t-2 px-3 pb-2 pt-2  dark:border-slate-6">
           <span className="flex gap-2">
-            <Gem className="text-purple-500" size={20} />
+            <Gem className="text-purple-9" size={20} />
 
-            <p className="text-purple-500">{quest.reward}</p>
+            <p className="text-purple-9">{quest.reward}</p>
           </span>
+
           <span className="flex gap-2">
-            <Users2 className="text-gray-500" size={22} />
-            <p className="text-gray-500">{`${quest.solversCount}/${quest.slots}`}</p>
+            <Users2 className="text-slate-500 dark:text-slate-100" size={22} />
+            <p className="text-slate-500 dark:text-slate-100">{`${quest.solversCount}/${quest.slots}`}</p>
           </span>
         </CardFooter>
       )}

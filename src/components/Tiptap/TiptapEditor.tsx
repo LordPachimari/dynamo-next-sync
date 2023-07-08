@@ -102,7 +102,7 @@ const TiptapEditor = (props: {
                       const { fileKey, fileUrl } = res[i]!;
                       view.dispatch(
                         view.state.tr.replaceSelectionWith(
-                          view.state.schema.nodes.imageComponent!.create({
+                          view.state.schema.nodes.Imagecomponent!.create({
                             src: fileUrl,
                             alt: fileKey,
                             title: fileKey,
@@ -139,7 +139,7 @@ const TiptapEditor = (props: {
                         top: event.clientY,
                       });
 
-                      const node = schema.nodes.imageComponent!.create({
+                      const node = schema.nodes.Imagecomponent!.create({
                         src: fileUrl,
                         alt: fileKey,
                         title: fileKey,
@@ -183,7 +183,7 @@ const TiptapEditor = (props: {
         }
       },
     },
-    [id]
+    [id, work.published]
   );
   useEffect(() => {
     if (isUploading) {
@@ -202,6 +202,7 @@ const TiptapEditor = (props: {
         <>
           <EditorContent
             editor={editor}
+            contentEditable={!work.published}
             id="editor"
             className="min-h-[500px] font-default"
           />

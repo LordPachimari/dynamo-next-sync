@@ -75,8 +75,8 @@ const Slots = ({
 }) => {
   return (
     <div className="flex gap-2" id="slots">
-      <Users2 className="text-gray-500" />
-      <p className="font-bold text-gray-500">
+      <Users2 className="text-gray-500 dark:text-slate-100" />
+      <p className="font-bold text-slate-500 dark:text-slate-100">
         {slots ? `${solversCount || 0}/${slots}` : slots}
       </p>
     </div>

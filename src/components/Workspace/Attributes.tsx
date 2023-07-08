@@ -35,6 +35,8 @@ import SingleValue from "react-select/dist/declarations/src/components/SingleVal
 import { produce } from "immer";
 import { AttributeError } from "~/zustand/workspace";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { useTheme } from "next-themes";
+import { basename } from "path";
 export const Title = ({
   title,
   placeholder,
@@ -107,7 +109,7 @@ export const TopicSelect = ({
         }}
         value={topicState}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-[180px] dark:border-[1px] dark:border-slate-6 dark:bg-slate-2 dark:outline-white">
           <SelectValue placeholder="Select topic" />
         </SelectTrigger>
         <SelectContent>
@@ -183,12 +185,38 @@ export const Subtopic = ({
 }) => {
   const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
   const [subtopicState, setSubtopicState] = useState<MultiValue<OptionType>>();
+  const { theme, setTheme } = useTheme();
   useEffect(() => {
     const multiVal = subtopic
       ? subtopic.map((v) => ({ value: v, label: v }))
       : [];
     setSubtopicState(multiVal as MultiValue<OptionType>);
   }, [subtopic]);
+  const customStyles: StylesConfig = {
+    control: (base, state) => ({
+      ...base,
+      background: theme === "dark" ? "hsla(181, 98.9%, 91.8%, 0.026)" : "#fff",
+      // You can also add transition on hover
+      // "&:hover": {
+      //   background: state.isFocused ? "#666" : "transparent",
+      // },
+      color: "white",
+    }),
+    // singleValue: (base, state) => ({
+    //   ...base,
+    //   color: "white",
+    // }),
+    // container: (base, props) => ({
+    //   ...base,
+    //   color: "red",
+    // }),
+    menu: (base) => ({
+      ...base,
+      background: theme === "dark" ? "black" : "#fff",
+      // override color for the items
+      color: "white",
+    }),
+  };
   const options = SubtopicSuggestion.map((topic) => ({
     value: topic,
     label: topic.toLocaleLowerCase(),
@@ -209,15 +237,16 @@ export const Subtopic = ({
         value={subtopicState}
         placeholder="Select subtopic"
         closeMenuOnSelect={false}
-        // styles={customStyles}
+        styles={customStyles}
         classNames={{
           control: (state) => (state.isFocused ? "#f97316" : "border-grey-100"),
         }}
-        onChange={async (val) => {
+        onChange={async (_val) => {
+          const val = _val as MultiValue<OptionType>;
           await handleSubtopicChange({
             subtopics: val,
           }),
-            setSubtopicState((old) => val);
+            setSubtopicState(val);
         }}
       />
       {error.error && (
@@ -350,7 +379,7 @@ export const DatePicker = ({
           <Button
             variant={"outline"}
             className={cn(
-              "w-full justify-start text-left font-normal md:w-[280px]",
+              "w-full justify-start text-left font-normal dark:border-[1px] dark:border-slate-6 dark:bg-slate-2 md:w-[280px]",
               !dateState && "text-muted-foreground"
             )}
           >
@@ -362,7 +391,7 @@ export const DatePicker = ({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0">
+        <PopoverContent className="w-auto p-0 dark:border-slate-6 ">
           <Calendar
             mode="single"
             selected={dateState}

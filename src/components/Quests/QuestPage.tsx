@@ -109,10 +109,6 @@ export default function QuestPage({
     null,
     [id]
   );
-  console.log("user", user);
-
-  console.log("quest", quest);
-  console.log("solvers", solvers);
   const handleJoinQuest = useCallback(async () => {
     if (!userId) {
       toast.message("Please sign in to join!");
@@ -144,9 +140,7 @@ export default function QuestPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quest, id, user, rep, userId]);
   const handleLeaveQuest = useCallback(async () => {
-    console.log("hello", rep);
     if (rep && userId && user && quest) {
-      console.log("hello", rep);
       await undoManagerRef.current.add({
         execute: () =>
           rep.mutate.leaveQuest({
@@ -456,7 +450,6 @@ const Solver = ({
   isAuthorised: boolean;
   questId: string;
 }) => {
-  console.log(solver);
   return (
     <div>
       <div className="flex gap-2">

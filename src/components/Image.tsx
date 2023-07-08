@@ -7,7 +7,6 @@ export default function ImageComponent(props: {
   alt: string;
   title: string;
 }) {
-  console.log("IMAGE PROPS FROM MDX", props);
   const imageLoader = ({ src, width, quality }: ImageLoaderProps) => {
     return `${src}?w=${width}&q=${quality || 75}`;
   };

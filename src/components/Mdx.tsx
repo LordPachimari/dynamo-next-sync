@@ -8,8 +8,6 @@ export default function MDX({ source }: { source: MDXRemoteProps }) {
     a: replaceLinks,
     ImageComponent,
   };
-  console.log(source);
-
   return (
     <article
       className="prose-md prose prose-stone w-full dark:prose-invert sm:prose-lg sm:w-3/4"

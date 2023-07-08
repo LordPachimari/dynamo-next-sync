@@ -61,7 +61,7 @@ export default function Profile({
             )}
      */}
         <div className="mb-4 flex w-full flex-col items-center gap-4 md:w-[300px] ">
-          <Card className="flex w-full flex-col items-center justify-center rounded-xl py-4 drop-shadow-sm dark:border-slate-6 ">
+          <Card className="flex w-full flex-col items-center justify-center rounded-xl py-4 drop-shadow-sm dark:border-slate-6 dark:bg-slate-3">
             <CardHeader className="w-full px-4 py-0">
               <div className="flex h-[300px] w-full items-center justify-center rounded-md border-[1px] bg-blue-2 shadow-inner dark:border-none dark:shadow-blue-6">
                 <Button className="  bg-blue-4 font-extrabold text-blue-9 hover:bg-blue-6">
@@ -82,19 +82,19 @@ export default function Profile({
                       Send message
                     </Button>
 
-                    <Button className=" bg-green-4 text-green-9 hover:bg-green-6 mx-auto mt-5 w-full max-w-xs font-extrabold ">
+                    <Button className=" mx-auto mt-5 w-full max-w-xs bg-green-4 font-extrabold text-green-9 hover:bg-green-6 ">
                       Follow
                     </Button>
                   </>
                 ) : (
-                  <Button className=" bg-green-4 text-green-9 hover:bg-green-6 mx-auto mt-5 w-full max-w-xs font-extrabold ">
+                  <Button className=" mx-auto mt-5 w-full max-w-xs bg-green-100 font-extrabold text-emerald-600 hover:bg-green-6 dark:bg-green-4 ">
                     Edit profile
                   </Button>
                 )}
               </div>
             </CardContent>
           </Card>
-          <Card className="flex w-full flex-col items-center justify-center rounded-xl  py-2 drop-shadow-md  dark:border-slate-6">
+          <Card className="flex w-full flex-col items-center justify-center rounded-xl  py-2 drop-shadow-md  dark:border-slate-6 dark:bg-slate-3">
             <CardHeader className="w-full justify-center px-4 py-0">
               <h2 className="text-center">GUILD</h2>
 

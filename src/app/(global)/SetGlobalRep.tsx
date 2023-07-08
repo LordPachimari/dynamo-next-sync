@@ -22,7 +22,7 @@ export default function SetGlobalRep() {
     }
 
     const r = new Replicache({
-      name: userId ? `${USER}#${userId}` : USER,
+      name: `${USER}#${userId}`,
       licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
       pushURL: `/api/replicache-push?spaceId=${USER}`,
       pullURL: `/api/replicache-pull?spaceId=${USER}`,

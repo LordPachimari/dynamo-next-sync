@@ -32,7 +32,17 @@ export default function Quests() {
     },
     null,
     []
-  ) as [key: string, value: PublishedQuest][] | null;
+  ) as [key: string, value: PublishedQuest & { SK: string }][] | null;
+  if (quests) {
+    quests.sort(([key, val], [key2, val2]) => {
+      if (val.SK > val2.SK) {
+        return -1;
+      } else if (val.SK < val2.SK) {
+        return 1;
+      }
+      return 0;
+    });
+  }
   return (
     <div className="top-0 mb-20 mt-20 flex w-full justify-center ">
       <div className="flex w-11/12 justify-center">

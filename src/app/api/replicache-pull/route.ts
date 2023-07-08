@@ -52,6 +52,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
   if (!userId) {
     if (spaceId !== PUBLISHED_QUESTS && spaceId !== LEADERBOARD) {
+      console.log("hello stranger");
       return {
         cookie: "",
         lastMutationIDChanges: {},

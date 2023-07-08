@@ -17,6 +17,9 @@ export default function SetGlobalRep() {
     if (rep) {
       return;
     }
+    if (!userId) {
+      return;
+    }
 
     const r = new Replicache({
       name: userId ? `${USER}#${userId}` : USER,

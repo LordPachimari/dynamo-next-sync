@@ -13,7 +13,7 @@ import {
 } from "../types/types";
 import { z } from "zod";
 import { Replicache } from "replicache";
-import { M } from "~/repl/mutators";
+import { WorkspaceMutators } from "~/repl/client/mutators/workspace";
 enableMapSet();
 
 const AttributeErrorZod = z.object({
@@ -43,8 +43,8 @@ type AttributeErrors = {
 };
 type UpdateAttributeErrors = z.infer<typeof UpdateAttributeErrorsZod>;
 interface WorkspaceState {
-  rep: Replicache<M> | null;
-  setRep: (rep: Replicache<M> | null) => void;
+  rep: Replicache<WorkspaceMutators> | null;
+  setRep: (rep: Replicache<WorkspaceMutators> | null) => void;
   updateQueue: UpdateQueue;
   addUpdate: (props: { id: string; value: WorkUpdates }) => void;
   clearQueue: () => void;

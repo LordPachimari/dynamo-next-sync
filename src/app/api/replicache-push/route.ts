@@ -1,16 +1,24 @@
 import { NextResponse } from "next/server";
 
 import { z } from "zod";
-import { MutationNamesZod, QuestZod, WorkTypeEnum } from "~/types/types";
+import {
+  MutationNamesZod,
+  PublishWorkParamsZod,
+  QuestZod,
+  WorkTypeEnum,
+} from "~/types/types";
 import { jsonSchema } from "~/utils/json";
 
 import { auth } from "@clerk/nextjs";
 import Pusher from "pusher";
 import { env } from "~/env.mjs";
 import { getLastMutationIds, setLastMutationIds } from "~/repl/data";
-import { WorkspaceMutations } from "~/repl/server/mutations/workspace";
+import { WorkspaceMutators } from "~/repl/server/mutators/workspace";
 import { ReplicacheTransaction } from "~/repl/transaction";
-import { PUBLISHED_QUESTS, WORKSPACE } from "~/utils/constants";
+import { PUBLISHED_QUESTS, USER, WORKSPACE } from "~/utils/constants";
+import { QuestMutators } from "~/repl/server/mutators/quest";
+import { UserMutators } from "~/repl/server/mutators/user";
+import { User } from "@clerk/nextjs/dist/types/server";
 
 // See notes in bug: https://github.com/rocicorp/replidraw/issues/47
 const mutationSchema = z.object({
@@ -52,7 +60,9 @@ export async function POST(req: Request, res: Response) {
   const adjustedSpaceId =
     //if the space is workspace list or
     //if the space is a work - quest/solution/post in workspace make it private by adding userId.
-    spaceId === WORKSPACE ? `${spaceId}#${userId}` : spaceId;
+    spaceId === WORKSPACE || spaceId === USER
+      ? `${spaceId}#${userId}`
+      : spaceId;
 
   console.log("json", json);
   const push = pushRequestSchema.parse(json);
@@ -62,7 +72,7 @@ export async function POST(req: Request, res: Response) {
   }
   const t0 = Date.now();
 
-  const processMutations = async () => {
+  const processMutators = async () => {
     const clientIDs = [...new Set(push.mutations.map((m) => m.clientID))];
 
     const lastMutationIds = await getLastMutationIds({
@@ -81,12 +91,8 @@ export async function POST(req: Request, res: Response) {
 
       const lastMutationId = lastMutationIds[mutation.clientID] || 0;
       if (mutation.name === "publishWork") {
-        const params = z
-          .object({
-            id: z.string(),
-            type: z.enum(WorkTypeEnum),
-            publishedAt: z.string(),
-          })
+        const { params } = z
+          .object({ params: PublishWorkParamsZod })
           .parse(mutation.args);
         if (params.type === "QUEST") {
           published.quests = true;
@@ -98,7 +104,6 @@ export async function POST(req: Request, res: Response) {
           published.solution = true;
         }
       }
-      // try {
       const nextMutationId = await processMutation({
         tx,
         lastMutationId,
@@ -110,24 +115,6 @@ export async function POST(req: Request, res: Response) {
       if (nextMutationId > lastMutationId) {
         updated = true;
       }
-      // } catch (error) {
-      //   if (error instanceof Error) {
-      //     if (error.message === "UNAUTHORIZED") {
-      //       throw new Error("UNAUTHORISED");
-      //     }
-      //   }
-      //   const nextMutationId = processMutation({
-      //     tx,
-      //     lastMutationId,
-      //     mutation,
-      //     error,
-      //     userId,
-      //   });
-
-      //   lastMutationIds[mutation.clientID] = nextMutationId
-      //     ? nextMutationId
-      //     : lastMutationId;
-      // }
     }
     if (updated) {
       await Promise.all([
@@ -143,7 +130,7 @@ export async function POST(req: Request, res: Response) {
     }
   };
   try {
-    await processMutations();
+    await processMutators();
     if (
       env.PUSHER_APP_ID &&
       env.PUSHER_SECRET &&
@@ -164,11 +151,11 @@ export async function POST(req: Request, res: Response) {
       if (spaceId === WORKSPACE) {
         if (published.quests) {
           await Promise.allSettled([
-            pusher.trigger(PUBLISHED_QUESTS, "poke", {}),
-            pusher.trigger(WORKSPACE, "poke", {}),
+            pusher.trigger(PUBLISHED_QUESTS, "poke", userId),
+            pusher.trigger(WORKSPACE, "poke", userId),
           ]);
         } else {
-          await pusher.trigger(WORKSPACE, "poke", {});
+          await pusher.trigger(WORKSPACE, "poke", userId);
         }
         // if (published.quests) {
         //   const result = await momentoTopic.publish(
@@ -199,7 +186,7 @@ export async function POST(req: Request, res: Response) {
         // }
       }
       if (spaceId === PUBLISHED_QUESTS) {
-        await pusher.trigger(PUBLISHED_QUESTS, "poke", {});
+        await pusher.trigger(PUBLISHED_QUESTS, "poke", userId);
         // const result = await momentoTopic.publish(
         //   env.NEXT_PUBLIC_MOMENTO_CACHE_NAME,
         //   PUBLISHED_QUESTS,
@@ -212,6 +199,9 @@ export async function POST(req: Request, res: Response) {
         //     `An error occurred while attempting to publish to the topic 'test-topic' in cache 'test-cache': ${result.errorCode()}: ${result.toString()}`
         //   );
         // }
+      }
+      if (spaceId === USER) {
+        await pusher.trigger(USER, "poke", userId);
       }
       console.log("Poke took", Date.now() - startPoke);
     } else {
@@ -262,7 +252,12 @@ const processMutation = async ({
     // For each possible mutation, run the server-side logic to apply the
     // mutation.
 
-    await WorkspaceMutations({ tx, mutation, spaceId, userId });
+    await Promise.all([
+      WorkspaceMutators({ tx, mutation, spaceId, userId }),
+      QuestMutators({ tx, mutation, spaceId, userId }),
+      UserMutators({ tx, mutation, spaceId, userId }),
+    ]);
+
     console.log("Processed mutation in", Date.now() - t1);
 
     console.log("----------------------------------------------------");

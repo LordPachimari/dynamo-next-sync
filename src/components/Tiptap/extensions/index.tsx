@@ -14,6 +14,7 @@ import { Color } from "@tiptap/extension-color";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import ImageUploaderExtension from "./ImageUploaderExtension";
+import { Markdown } from "tiptap-markdown";
 
 export const TiptapExtensions = [
   StarterKit.configure({
@@ -104,22 +105,10 @@ export const TiptapExtensions = [
     },
     includeChildren: true,
   }),
-  // Image,
-  // Image.configure({
-  //   // inline: true,
-  //   HTMLAttributes: {
-  //     class: styles.imageContainer,
-  //   },
-  // }),
+
   ImageExtension,
   FileExtension,
   ImageUploaderExtension,
-
-  // TitleExtension,
-  // SelectExtension,
-  // SubtopicExtension,
-  // RewardExtension,
-  // DatePickerExtension,
 
   SlashCommand,
   TiptapUnderline,
@@ -134,5 +123,10 @@ export const TiptapExtensions = [
     HTMLAttributes: {
       class: "flex items-start mb-4",
     },
+  }),
+  Markdown.configure({
+    linkify: true,
+    transformCopiedText: true,
+    transformPastedText: true,
   }),
 ];

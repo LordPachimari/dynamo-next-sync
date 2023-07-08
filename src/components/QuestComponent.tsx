@@ -17,7 +17,7 @@ export default function QuestComponent({
 }) {
   console.log(TopicColor({ topic: quest.topic }));
   return (
-    <Card className="h-fit w-full rounded-xl drop-shadow-sm">
+    <Card className="h-fit w-full rounded-xl bg-white drop-shadow-sm dark:bg-slate-1">
       <CardHeader className="flex w-full p-2">
         <div className="flex w-full justify-between gap-5">
           <div className="flex w-full items-center gap-4">
@@ -32,7 +32,7 @@ export default function QuestComponent({
 
             <div className="w-full">
               <div className="flex w-full items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className=" flex flex-wrap items-center gap-2">
                   <p className="text-lg font-extrabold">
                     {quest.publisherUsername}
                   </p>
@@ -54,7 +54,7 @@ export default function QuestComponent({
                 </div>
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
-                <Badge className={`${TopicColor({ topic: quest.topic })}`}>
+                <Badge className={TopicColor({ topic: quest.topic })}>
                   {quest.topic}
                 </Badge>
                 {quest.subtopic.map((subtopic, i) => (
@@ -70,8 +70,12 @@ export default function QuestComponent({
 
       <Link href={`/quests/${quest.id}`}>
         <CardContent className="md:16 h-30 max-h-[200px] min-h-[100px] overflow-x-hidden text-ellipsis whitespace-nowrap p-3">
-          <h3 className="text-xl font-extrabold">{quest.title}</h3>
-          {includeContent && <p>{quest.textContent}</p>}
+          <h3 className="font-default  text-xl font-bold dark:text-white">
+            {quest.title}
+          </h3>
+          {includeContent && (
+            <p className="font-default ">{quest.textContent}</p>
+          )}
         </CardContent>
       </Link>
 
@@ -84,7 +88,7 @@ export default function QuestComponent({
           </span>
           <span className="flex gap-2">
             <Users2 className="text-gray-500" size={22} />
-            <p className="text-gray-500">{`${quest.slots}`}</p>
+            <p className="text-gray-500">{`${quest.solversCount}/${quest.slots}`}</p>
           </span>
         </CardFooter>
       )}

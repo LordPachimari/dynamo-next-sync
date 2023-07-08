@@ -46,7 +46,7 @@ export default function SidebarLayout({
             <Menu className="text-blue-500" />
           </Button>
         ) : null}
-        <div className="border-black-500 fixed z-10 h-14 w-full border bg-white">
+        <div className="fixed z-10 z-50 h-14 w-full border-b-[1px]  bg-white dark:border-slate-8 dark:bg-slate-1">
           {/* <GlobalSearch /> */}
         </div>
         {children}

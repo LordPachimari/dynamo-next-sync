@@ -34,13 +34,13 @@ export default Node.create({
   parseHTML() {
     return [
       {
-        tag: "image-component",
+        tag: "imageComponent",
       },
     ];
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["image-component", mergeAttributes(HTMLAttributes)];
+    return ["imageComponent", mergeAttributes(HTMLAttributes)];
   },
 
   addNodeView() {

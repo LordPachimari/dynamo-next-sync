@@ -10,7 +10,7 @@ import {
 
 import { auth } from "@clerk/nextjs";
 import { ClientID, PatchOperation } from "replicache";
-import { PUBLISHED_QUESTS, WORKSPACE } from "~/utils/constants";
+import { PUBLISHED_QUESTS, USER, WORKSPACE } from "~/utils/constants";
 
 export type PullResponse = {
   cookie: string;
@@ -20,6 +20,7 @@ export type PullResponse = {
 const cookieSchema = z.object({
   PUBLISHED_QUESTS_CVR: z.optional(z.string()),
   WORKSPACE_CVR: z.optional(z.string()),
+  USER_CVR: z.optional(z.string()),
 
   lastMutationIdsCVRKey: z.optional(z.string()),
 });
@@ -57,7 +58,9 @@ export async function POST(req: NextRequest, res: NextResponse) {
   console.log("Processing mutation pull:", JSON.stringify(json, null, ""));
   const adjustedSpaceId =
     //if the space is workspace list  -- make it private by adding userId.
-    spaceId === WORKSPACE && userId ? `${spaceId}#${userId}` : spaceId;
+    userId && (spaceId === WORKSPACE || spaceId === USER)
+      ? `${spaceId}#${userId}`
+      : spaceId;
   console.log("spaceId", adjustedSpaceId);
   const pull = pullRequestSchema.parse(json);
   const requestCookie = pull.cookie
@@ -77,6 +80,8 @@ export async function POST(req: NextRequest, res: NextResponse) {
             ? requestCookie.WORKSPACE_CVR
             : requestCookie && spaceId === PUBLISHED_QUESTS
             ? requestCookie.PUBLISHED_QUESTS_CVR
+            : requestCookie && spaceId === USER
+            ? requestCookie.USER_CVR
             : undefined,
       }),
       getPrevCVR({
@@ -113,6 +118,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
     cookie: JSON.stringify({
       ...requestCookie,
 
+      ...(spaceId === USER && { USER_CVR: nextCVR.id }),
       ...(spaceId === WORKSPACE && { WORKSPACE_CVR: nextCVR.id }),
       ...(spaceId === PUBLISHED_QUESTS && { PUBLISHED_QUESTS_CVR: nextCVR.id }),
       ...(nextLastMutationIdsCVR && {
@@ -122,7 +128,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
     patch,
   };
   console.log("patch", resp);
-  console.log("clientgrou[ id", pull.clientGroupID);
   try {
     if (nextLastMutationIdsCVR) {
       await Promise.allSettled([

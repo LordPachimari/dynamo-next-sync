@@ -1,13 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
-import ListComponent from "./ListComponent";
-
-// const Editor = dynamic(
-//   () => import("../../../../components/Workspace/Editor"),
-//   {
-//     loading: () => <p>Loading...</p>,
-//     ssr: false,
-//   }
-// );
+import { type ReactNode } from "react";
+import ListComponent from "../../../../components/Workspace/ListComponent";
 
 export default function WorkspaceLayout({
   children, // will be a page or nested layout

@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    --white: white;
     --background: 0 0% 100%;
     --foreground: 222.2 47.4% 11.2%;
 
@@ -47,6 +48,7 @@
   }
 
   .dark {
+    --white: hsla(0, 0%, 0%, 0);
     --background: 224 71% 4%;
     --foreground: 213 31% 91%;
 
@@ -102,17 +104,17 @@
   z-index: 100;
   left: -500px;
   position: fixed;
-  /* overflow-y: auto; */
+  overflow-y: auto;
   width: 80%;
   height: 100vh;
-  background: white;
+  background: var(--white);
   box-shadow: 0px 0px 4px 0.5px rgba(72, 72, 72, 0.25);
   border-right: 1px solid var(--border);
   transition: all 0.1s ease-in-out;
   backdrop-filter: blur(4px);
 }
 .listContainer {
-  background: white;
+  background: var(--white);
   margin-top: 28px;
   height: calc(100vh - 56px);
   left: -560px;
@@ -125,8 +127,9 @@
 
   z-index: 42; /* Stay on top */
   transition: all 0.1s ease-in-out;
-  border-right: 1px solid #cbd5e0;
   border-top: none;
+  box-shadow: 0px 0px 4px 0.5px rgba(72, 72, 72, 0.25);
+  border-right: 1px solid var(--border);
 }
 .show {
   left: 0;
@@ -267,6 +270,9 @@ ul[data-type="taskList"] li > label {
     margin-right: 0.5rem;
   }
 }
+p {
+  margin: 0;
+}
 
 ul[data-type="taskList"] li > label input[type="checkbox"] {
   -webkit-appearance: none;
@@ -314,14 +320,14 @@ ul[data-type="taskList"] li[data-checked="true"] > div > p {
 }
 
 h1 {
-  font-weight: 600;
+  font-weight: 900;
   font-size: xx-large;
 }
 h2 {
-  font-weight: 600;
+  font-weight: 800;
   font-size: x-large;
 }
 h3 {
-  font-weight: 600;
+  font-weight: 800;
   font-size: large;
 }

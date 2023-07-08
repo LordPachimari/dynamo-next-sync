@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import SettingRep from "./SettingRep";
+import SettingRep from "./SetQuestsRep";
 
 // const Editor = dynamic(
 //   () => import("../../../../components/Workspace/Editor"),

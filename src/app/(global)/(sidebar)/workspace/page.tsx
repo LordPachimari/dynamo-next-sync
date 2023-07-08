@@ -1,6 +1,6 @@
 "use client";
 
-import Actions from "./Actions";
+import Actions from "../../../../components/Workspace/Actions";
 
 export default function Workspace() {
   return (

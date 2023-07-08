@@ -4,6 +4,7 @@ export const WORKSPACE = "WORKSPACE";
 export const PUBLISHED_QUESTS = "PUBLISHED_QUESTS";
 export const GUILD = "GUILD";
 
+export const USER = "USER";
 export const user: User = {
   id: "user1",
   balance: 0,

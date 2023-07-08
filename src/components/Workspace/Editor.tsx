@@ -4,15 +4,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   Content,
-  MergedWorkType,
-  PublishedContent,
+  MergedWork,
+  PublishedMergedWork,
   WorkType,
 } from "~/types/types";
 import {
-  NonEditableContent,
   NonEditableQuestAttributes,
   NonEditableSolutionAttributes,
-} from "./NonEditable";
+} from "./NonEditableAttributes";
 
 import dynamic from "next/dynamic";
 import { useSubscribe } from "replicache-react";
@@ -40,7 +39,8 @@ const TiptapEditor = dynamic(() => import("../Tiptap/TiptapEditor"), {
 import * as Y from "yjs";
 import Publish from "./Publish";
 import { useAuth } from "@clerk/nextjs";
-import { contentKey, workKey } from "~/repl/mutators/workspace";
+import { contentKey, workKey } from "~/repl/client/mutators/workspace";
+import NonEditableContent from "./NonEditableContent";
 
 const Editor = ({ id }: { id: string }) => {
   const { userId } = useAuth();
@@ -57,14 +57,13 @@ const Editor = ({ id }: { id: string }) => {
     rep,
     async (tx) => {
       const editor = (await tx.get(workKey({ id, type }))) || null;
-      console.log("editor", editor);
 
       return editor;
     },
 
     null,
     [id]
-  ) as MergedWorkType;
+  ) as MergedWork;
 
   const ydocRef = useRef(new Y.Doc());
   const ydoc = ydocRef.current;
@@ -74,9 +73,6 @@ const Editor = ({ id }: { id: string }) => {
       const content = (await tx.get(contentKey(id))) as Content;
       console.log(content);
       if (content && content.Ydoc) {
-        if (content.textContent) {
-          console.log("text", content.textContent);
-        }
         console.log("ydoc from subscribe", content.Ydoc);
         if (ydoc) {
           console.log("updating yjs");
@@ -90,26 +86,12 @@ const Editor = ({ id }: { id: string }) => {
     null,
     [id]
   );
-  const publishedContent = useSubscribe(
-    rep,
-    async (tx) => {
-      const content = (await tx.get(
-        `PUBLISHED#${contentKey(id)}`
-      )) as PublishedContent;
-      if (content) {
-        return content.content;
-      }
 
-      return null;
-    },
-    null,
-    [id]
-  );
   const router = useRouter();
 
   return (
     <div className="mb-20 mt-10 flex flex-col items-center justify-center">
-      <div className="w-5/6 max-w-2xl rounded-md border-[1px] bg-white p-4 ">
+      <div className="w-5/6 max-w-2xl rounded-md border-[1px] bg-white p-4 dark:bg-slate-2 ">
         {work && work.published && work.type === "QUEST" ? (
           <NonEditableQuestAttributes quest={work} />
         ) : work && work.type === "QUEST" ? (
@@ -121,22 +103,17 @@ const Editor = ({ id }: { id: string }) => {
         ) : (
           <div className="h-[250px]"></div>
         )}
-        {work && work.published && publishedContent ? (
-          <NonEditableContent content={publishedContent} />
-        ) : work && !work.published ? (
+        {work && (
           <TiptapEditor
             id={id}
             ydoc={ydoc}
             setRenderCount={setRenderCount}
             renderCount={renderCount}
+            isCreator={userId === work.creatorId}
+            work={work}
           />
-        ) : (
-          <></>
         )}
       </div>
-      {work && !work.published && ydoc && userId === work.creatorId && (
-        <Publish work={work} ydoc={ydoc} />
-      )}
 
       {work && work.published && (
         <div className="mt-3 flex gap-5">

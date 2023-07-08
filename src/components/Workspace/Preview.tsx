@@ -1,25 +1,24 @@
 import { yDocToProsemirrorJSON } from "y-prosemirror";
 import * as Y from "yjs";
-import { MergedWorkType, Quest, Solution, WorkType } from "~/types/types";
+import { MergedWork, Quest, Solution, WorkType } from "~/types/types";
 import {
-  NonEditableContent,
   NonEditableQuestAttributes,
   NonEditableSolutionAttributes,
-} from "./NonEditable";
+} from "./NonEditableAttributes";
+import NonEditableContent from "./NonEditableContent";
+import { MDXRemoteProps } from "next-mdx-remote";
 export const Preview = ({
   work,
-  ydoc,
+  mdxSource,
 }: {
-  work: MergedWorkType;
-  ydoc: Y.Doc;
+  work: MergedWork;
+  mdxSource: MDXRemoteProps;
 }) => {
-  const contentJSON = yDocToProsemirrorJSON(ydoc, "content");
-
   if (work.type === "QUEST") {
     return (
       <>
         <NonEditableQuestAttributes quest={work as Quest} />
-        {contentJSON && <NonEditableContent content={contentJSON} />}
+        <NonEditableContent mdxSource={mdxSource} />
       </>
     );
   }
@@ -27,7 +26,7 @@ export const Preview = ({
     return (
       <>
         <NonEditableSolutionAttributes solution={work as Solution} />
-        {contentJSON && <NonEditableContent content={contentJSON} />}
+        <NonEditableContent mdxSource={mdxSource} />
       </>
     );
   }

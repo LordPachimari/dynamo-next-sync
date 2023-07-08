@@ -46,6 +46,7 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
         | typeof UPDATE
         | typeof RESTORE;
       value?: JSONObject;
+      PK?: string;
     }
   > = new Map();
   private readonly _userId: string;
@@ -55,11 +56,11 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
     this._userId = userId;
   }
 
-  put({ key, value }: { PK?: string; key: string; value: JSONObject }) {
-    this._cache.set(key, { method: PUT, value });
+  put({ key, value, PK }: { PK?: string; key: string; value: JSONObject }) {
+    this._cache.set(key, { method: PUT, value, ...(PK && { PK }) });
   }
-  update({ key, value }: { PK?: string; key: string; value: JSONObject }) {
-    this._cache.set(key, { method: UPDATE, value });
+  update({ key, value, PK }: { PK?: string; key: string; value: JSONObject }) {
+    this._cache.set(key, { method: UPDATE, value, ...(PK && { PK }) });
   }
   del({ key }: { key: string }) {
     this._cache.set(key, { method: DELETE });
@@ -88,18 +89,26 @@ export class ReplicacheTransaction implements CustomWriteTransaction {
       return;
     }
 
-    const itemsToPut: { key: string; value: JSONObject }[] = [];
-    const itemsToUpdate: { key: string; value: JSONObject }[] = [];
+    const itemsToPut: { PK?: string; key: string; value: JSONObject }[] = [];
+    const itemsToUpdate: { PK?: string; key: string; value: JSONObject }[] = [];
     const keysToDel: string[] = [];
     const keysToPermDelete: string[] = [];
     const keysToRestore: string[] = [];
     for (const item of items) {
       if (item[1].method === PUT && item[1].value) {
-        itemsToPut.push({ key: item[0], value: item[1].value });
+        itemsToPut.push({
+          key: item[0],
+          value: item[1].value,
+          ...(item[1].PK && { PK: item[1].PK }),
+        });
       } else if (item[1].method === DELETE) {
         keysToDel.push(item[0]);
       } else if (item[1].method === UPDATE && item[1].value) {
-        itemsToUpdate.push({ key: item[0], value: item[1].value });
+        itemsToUpdate.push({
+          key: item[0],
+          value: item[1].value,
+          ...(item[1].PK && { PK: item[1].PK }),
+        });
       } else if (item[1].method === PERM_DELETE) {
         keysToPermDelete.push(item[0]);
       } else if (item[1].method === RESTORE) {

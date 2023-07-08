@@ -10,7 +10,7 @@ import {
 } from "react";
 import { format } from "date-fns";
 import TextareaAutosize from "react-textarea-autosize";
-import { SubtopicSuggestion, Topics, TopicsType } from "~/types/types";
+import { SubtopicSuggestion, Topic, Topics } from "~/types/types";
 import { Badge } from "~/ui/Badge";
 import { Button } from "~/ui/Button";
 import { Calendar } from "~/ui/Calendar";
@@ -53,7 +53,7 @@ export const Title = ({
   }, [title]);
   return (
     <div
-      className="prose prose-stone dark:prose-invert mx-auto w-full border-red-100 "
+      className="prose prose-stone mx-auto w-full border-red-100 dark:prose-invert "
       ref={parent}
     >
       <TextareaAutosize
@@ -65,7 +65,7 @@ export const Title = ({
         onInput={(e) => handleTitleChange(e.currentTarget.value)}
         className={cn(
           "w-full resize-none appearance-none overflow-hidden rounded-md bg-transparent text-4xl font-bold focus:outline-none",
-          { "border-[1px]": error.error, "border-red-500": error.error }
+          { "rounded-md border-[1px] border-red-500": error.error }
         )}
         // {...register("title")}
       />
@@ -83,15 +83,13 @@ export const TopicSelect = ({
   topic,
   error,
 }: {
-  topic?: TopicsType;
-  handleTopicChange: (topic: TopicsType) => Promise<void>;
+  topic?: Topic;
+  handleTopicChange: (topic: Topic) => Promise<void>;
 
   error: AttributeError;
 }) => {
   const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
-  const [topicState, setTopicState] = useState<TopicsType | undefined>(
-    undefined
-  );
+  const [topicState, setTopicState] = useState<Topic | undefined>(undefined);
   useEffect(() => {
     setTopicState(topic);
   }, [topic]);
@@ -99,14 +97,13 @@ export const TopicSelect = ({
     <div
       ref={parent}
       className={cn("my-1 w-fit ", {
-        "border-[1px]": error.error,
-        "border-red-500": error.error,
+        "rounded-md border-[1px] border-red-500": error.error,
       })}
     >
       <MySelect
         onValueChange={async (value) => {
-          await handleTopicChange(value as TopicsType);
-          setTopicState(value as TopicsType);
+          await handleTopicChange(value as Topic);
+          setTopicState(value as Topic);
         }}
         value={topicState}
       >
@@ -140,7 +137,7 @@ interface BadgeProps {
 const CustomBadge: React.FC<BadgeProps> = ({ text, id, removeBadge }) => (
   <span
     onClick={() => removeBadge(id)}
-    className="mr-2 inline-block w-10 cursor-pointer rounded-full bg-blue-500 px-3 py-1 text-sm font-semibold text-white"
+    className="bg-blue-9x-3 mr-2 inline-block w-10 cursor-pointer rounded-full py-1 text-sm font-semibold text-white"
   >
     {text}
   </span>
@@ -201,8 +198,7 @@ export const Subtopic = ({
     <div
       ref={parent}
       className={cn("my-1 w-fit", {
-        "border-[1px]": error.error,
-        "border-red-500": error.error,
+        "rounded-md border-[1px] border-red-500": error.error,
       })}
     >
       {" "}
@@ -296,8 +292,7 @@ export const Slots = ({
       <Users2 className="text-gray-500" />
       <Input
         className={cn("w-40 p-2 ", {
-          "border-[1px]": error.error,
-          "border-red-500": error.error,
+          "border-[1px] border-red-500": error.error,
         })}
         placeholder="Enter amount"
         value={stateSlots}
@@ -347,8 +342,7 @@ export const DatePicker = ({
     <div
       ref={parent}
       className={cn("centerDivVertically my-1 w-fit", {
-        "border-[1px]": error.error,
-        "border-red-500": error.error,
+        "rounded-md border-[1px] border-red-500": error.error,
       })}
     >
       <Popover>

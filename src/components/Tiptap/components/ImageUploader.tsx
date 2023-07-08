@@ -83,9 +83,9 @@ export default function ImageUploader(props: {
           className="hidden"
           ref={imageInputRef}
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
-          onChange={(event) => {
+          onChange={async (event) => {
             if (event.target.files?.length) {
-              void startUpload(Array.from(event.target.files));
+              await startUpload(Array.from(event.target.files));
             }
           }}
         />

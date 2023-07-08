@@ -1,16 +1,10 @@
-import React, { Dispatch, SetStateAction, useRef, useState } from "react";
-import { z } from "zod";
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { UndoManager } from "@rocicorp/undo";
-import {
-  ContentZod,
-  EntityType,
-  MergedWorkType,
-  Post,
-  Quest,
-  QuestZod,
-  Solution,
-} from "~/types/types";
-import { Button } from "~/ui/Button";
+import { useRef, useState } from "react";
+import { z } from "zod";
+import { MergedWork, Quest } from "~/types/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,8 +14,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "~/ui/AlertDialog";
+import { Button } from "~/ui/Button";
 import {
   Dialog,
   DialogContent,
@@ -30,12 +24,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/ui/Dialog";
-import Preview from "./Preview";
 import { UpdateAttributeErrorsZod, WorkspaceStore } from "~/zustand/workspace";
+import Preview from "./Preview";
 
-import * as Y from "yjs";
+import { Editor } from "@tiptap/react";
 import { toast } from "sonner";
-const Publish = ({ work, ydoc }: { work: MergedWorkType; ydoc: Y.Doc }) => {
+import * as Y from "yjs";
+const Publish = ({
+  work,
+  editor,
+  ydoc,
+}: {
+  work: MergedWork;
+  editor: Editor;
+  ydoc: Y.Doc;
+}) => {
   const [isValid, setIsValid] = useState(false);
   const rep = WorkspaceStore((state) => state.rep);
   const setAttributeErrors = WorkspaceStore(
@@ -115,22 +118,38 @@ const Publish = ({ work, ydoc }: { work: MergedWorkType; ydoc: Y.Doc }) => {
 
   const handleQuestPublish = async () => {
     const publishedAt = new Date().toISOString();
+    console.log("HELLO", {
+      params: {
+        id: work.id,
+        publishedAt,
+        published: true,
+        status: "OPEN",
+        type: "QUEST",
+        solversCount: 0,
+        textContent: editor.getText(),
+      },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+      markdown: editor.storage.markdown.getMarkdown(),
+    });
     if (rep) {
       await undoManagerRef.current.add({
         execute: () =>
           rep.mutate.publishWork({
-            id: work.id,
-            publishedAt,
-            published: true,
-            publisherUsername: "Pachimari",
-            publisherProfile: "hello",
-            status: "OPEN",
-            type: "QUEST",
+            params: {
+              id: work.id,
+              publishedAt,
+              published: true,
+              status: "OPEN",
+              type: "QUEST",
+              solversCount: 0,
+              textContent: editor.getText(),
+            },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            markdown: editor.storage.markdown.getMarkdown(),
           }),
-
         undo: () => rep.mutate.unpublishWork({ id: work.id, type: work.type }),
       });
-      toast.success("Successfully published quest");
+      toast.success("Successfully published quest!");
     }
   };
 
@@ -173,21 +192,6 @@ const Publish = ({ work, ydoc }: { work: MergedWorkType; ydoc: Y.Doc }) => {
             <AlertDialogCancel onClick={() => setIsValid((old) => !old)}>
               Cancel
             </AlertDialogCancel>
-            <Dialog>
-              <DialogTrigger>
-                <Button className="mt-3 w-full bg-amber-400 hover:bg-amber-500">
-                  Preview
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Preview</DialogTitle>
-                  <DialogDescription>
-                    <Preview work={work} ydoc={ydoc} />
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
 
             <AlertDialogAction
               className="bg-emerald-500 hover:bg-emerald-600"

@@ -4,7 +4,7 @@ import { useState } from "react";
 
 export const TiptapEditorProps: EditorProps = {
   attributes: {
-    class: "prose-lg prose-headings:font-sans focus:outline-none",
+    class: "prose-headings:font-sans focus:outline-none",
   },
   handleDOMEvents: {
     keydown: (_view, event) => {

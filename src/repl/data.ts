@@ -28,7 +28,7 @@ import {
   ClientViewRecord,
   Content,
   LastMutationId,
-  MergedWorkType,
+  MergedWork,
   Post,
   PublishedQuest,
   Quest,
@@ -36,12 +36,12 @@ import {
   SpaceVersion,
 } from "~/types/types";
 import { rocksetClient } from "~/clients/rockset";
-import { PUBLISHED_QUESTS, WORKSPACE } from "~/utils/constants";
+import { PUBLISHED_QUESTS, USER, WORKSPACE } from "~/utils/constants";
 import { CacheGet, CacheSet } from "@gomomento/sdk";
 import { momento } from "~/clients/momento";
 import { nanoid } from "nanoid";
 import { ulid } from "ulid";
-import { contentKey } from "./mutators/workspace";
+import { contentKey } from "./client/mutators/workspace";
 export const makeCVR = ({
   items,
 }: {
@@ -73,6 +73,8 @@ export const getPatch = async ({
       ? await getWorkspaceCVR({ spaceId, userId })
       : spaceId === PUBLISHED_QUESTS
       ? await getPublishedQuestsCVR()
+      : spaceId.startsWith(USER)
+      ? await getUserCVR({ spaceId })
       : [];
   try {
     const nextCVR = makeCVR({
@@ -93,10 +95,6 @@ export const getPatch = async ({
         delKeys.push(key);
       }
     }
-    console.log("prev CVR keys", prevCVR);
-
-    console.log("next CVR keys", nextCVR);
-    console.log("put keys", putKeys);
     const fullItems = await getFullItems({
       keys: putKeys,
     });
@@ -180,6 +178,29 @@ const getVersionsFromDynamoDb = async ({
   }
 
   return allResults; // Return all results
+};
+const getUserCVR = async ({ spaceId }: { spaceId: string }) => {
+  const params: QueryCommandInput = {
+    TableName: env.MAIN_TABLE_NAME,
+    IndexName: env.CVR_INDEX_NAME,
+    KeyConditionExpression: "PK = :PK",
+    ExpressionAttributeValues: { ":PK": spaceId },
+  };
+
+  try {
+    const userCVR = await dynamoClient.send(new QueryCommand(params));
+    if (userCVR.Items && userCVR.Items.length > 0) {
+      return userCVR.Items as {
+        PK: string;
+        SK: string;
+        version: number;
+      }[];
+    }
+    return [];
+  } catch (error) {
+    console.log(error);
+    throw new Error("failed to get UserCVR");
+  }
 };
 const getWorkspaceCVR = async ({
   spaceId,
@@ -278,6 +299,8 @@ const getResetPatch = async ({
       ? await getWorkspaceItems({ spaceId, userId })
       : spaceId === PUBLISHED_QUESTS
       ? await getPublishedQuestItems()
+      : spaceId.startsWith(USER)
+      ? await getUserItems({ spaceId })
       : [];
   const cvr = makeCVR({ items });
   const patch: PatchOperation[] = [
@@ -363,11 +386,11 @@ const getWorkspaceItems = async ({
           keys.push({ PK, SK });
         }
         const collborativeItems = await getFullItems({ keys });
-        return [...workspaceItems, ...collborativeItems] as (MergedWorkType & {
+        return [...workspaceItems, ...collborativeItems] as (MergedWork & {
           SK: string;
         })[];
       }
-      return workspaceItems as (MergedWorkType & { SK: string })[];
+      return workspaceItems as (MergedWork & { SK: string })[];
     }
     return [];
   } catch (error) {
@@ -378,7 +401,12 @@ const getWorkspaceItems = async ({
 export const getPublishedQuestItems = async () => {
   const keys = await getPublishedQuestsCVR();
   const fullItems = await getFullItems({ keys });
-  return fullItems as (PublishedQuest & { SK: string })[];
+  return fullItems as (Record<string, any> & { SK: string; version: number })[];
+};
+export const getUserItems = async ({ spaceId }: { spaceId: string }) => {
+  const keys = await getUserCVR({ spaceId });
+  const fullItems = await getFullItems({ keys });
+  return fullItems as Record<string, any> & { SK: string; version: number }[];
 };
 
 export const getFullItems = async ({
@@ -528,6 +556,10 @@ export const updateItems = async ({
     };
   }[] = [];
   for (const { key, value, PK } of items) {
+    const solversCountAttribute = Object.keys(value).some(
+      (attr) => attr === "solversCount"
+    );
+
     const attributes = Object.keys(value).map((attribute) => {
       return `#${attribute} = :${attribute}`;
     });
@@ -536,9 +568,6 @@ export const updateItems = async ({
     )}, #version = #version + :inc`;
     const ExpressionAttributeValues: Record<string, JSONValue | undefined> = {};
     Object.entries(value).forEach(([attr, val]) => {
-      if (attr === "textContent" && !val) {
-        return (ExpressionAttributeValues[`:${attr}`] = "");
-      }
       ExpressionAttributeValues[`:${attr}`] = val;
     });
     const ExpressionAttributeNames: Record<string, JSONValue | undefined> = {};
@@ -547,6 +576,7 @@ export const updateItems = async ({
     });
 
     updateItems.push({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       Update: {
         TableName: env.MAIN_TABLE_NAME,
         Key: {
@@ -556,12 +586,19 @@ export const updateItems = async ({
 
         ExpressionAttributeNames: {
           "#version": "version",
+
           ...ExpressionAttributeNames,
         },
+        ...(solversCountAttribute && {
+          ConditionExpression:
+            "slots >= :solversCount AND :solversCount>=:zero",
+        }),
+
         UpdateExpression,
         ExpressionAttributeValues: {
           ":inc": 1,
           ...ExpressionAttributeValues,
+          ...(solversCountAttribute && { ":zero": 0 }),
         },
       },
     });

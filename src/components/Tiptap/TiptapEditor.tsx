@@ -14,15 +14,19 @@ import { toast } from "sonner";
 import * as Y from "yjs";
 import { useUploadThing } from "~/utils/useUploadThing";
 import { WorkspaceStore } from "~/zustand/workspace";
-import { EditorBubbleMenu } from "./components/EditorBubleMenu";
+import { EditorBubbleMenu } from "./components/BubleMenu";
 import { TiptapExtensions } from "./extensions";
+import { MergedWork } from "~/types/types";
+import Publish from "../Workspace/Publish";
 const TiptapEditor = (props: {
   id: string;
   ydoc: Y.Doc;
+  work: MergedWork;
   setRenderCount: Dispatch<SetStateAction<number>>;
   renderCount: number;
+  isCreator: boolean;
 }) => {
-  const { id, setRenderCount, renderCount, ydoc } = props;
+  const { id, setRenderCount, renderCount, ydoc, isCreator, work } = props;
   const rep = WorkspaceStore((state) => state.rep);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -46,7 +50,7 @@ const TiptapEditor = (props: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const updateContent = useCallback(
     debounce(async (textContent?: string) => {
-      console.log("update", ydoc, rep);
+      console.log("updating content", ydoc, rep);
       if (ydoc) {
         const update = Y.encodeStateAsUpdateV2(ydoc);
         if (rep) {
@@ -70,7 +74,7 @@ const TiptapEditor = (props: {
     {
       editorProps: {
         attributes: {
-          class: "prose-lg prose-headings:font-sans focus:outline-none",
+          class: "prose-headings:font-sans focus:outline-none",
         },
         handleDOMEvents: {
           keydown: (_view, event) => {
@@ -91,28 +95,26 @@ const TiptapEditor = (props: {
             event.preventDefault();
             //   return handleImageUpload(file, view, event);
             if (event.clipboardData.files?.length) {
-              if (event.clipboardData.files?.length) {
-                startUpload(Array.from(event.clipboardData.files))
-                  .then((res) => {
-                    if (res) {
-                      for (let i = 0; i < res.length; i++) {
-                        const { fileKey, fileUrl } = res[i]!;
-                        view.dispatch(
-                          view.state.tr.replaceSelectionWith(
-                            view.state.schema.nodes.imageComponent!.create({
-                              src: fileUrl,
-                              alt: fileKey,
-                              title: fileKey,
-                            })
-                          )
-                        );
-                      }
+              startUpload(Array.from(event.clipboardData.files))
+                .then((res) => {
+                  if (res) {
+                    for (let i = 0; i < res.length; i++) {
+                      const { fileKey, fileUrl } = res[i]!;
+                      view.dispatch(
+                        view.state.tr.replaceSelectionWith(
+                          view.state.schema.nodes.imageComponent!.create({
+                            src: fileUrl,
+                            alt: fileKey,
+                            title: fileKey,
+                          })
+                        )
+                      );
                     }
+                  }
 
-                    toast.success("Image successfully uploaded");
-                  })
-                  .catch((err) => console.log(err));
-              }
+                  toast.success("Image successfully uploaded");
+                })
+                .catch((err) => console.log(err));
             }
           }
         },
@@ -120,8 +122,10 @@ const TiptapEditor = (props: {
           if (renderCount < 3) {
             void updateContent();
           }
+
           if (!moved && event.dataTransfer && event.dataTransfer.files) {
             event.preventDefault();
+
             if (event.dataTransfer.files?.length) {
               startUpload(Array.from(event.dataTransfer.files))
                 .then((res) => {
@@ -164,18 +168,18 @@ const TiptapEditor = (props: {
           field: "content",
         }),
       ],
+      editable: !work.published,
 
-      autofocus: "end",
-      // onCreate: () => {
-      //   console.log("create");
-      // },
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       onUpdate: async ({ editor, transaction }) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        console.log("markdown", editor.storage.markdown.getMarkdown());
         if (renderCount < 3) {
           setRenderCount((old) => old + 1);
         } else {
-          await updateContent(editor.getText());
-          console.log("ur ugly");
+          if (!work.published) {
+            await updateContent(editor.getText());
+          }
         }
       },
     },
@@ -192,16 +196,21 @@ const TiptapEditor = (props: {
       onClick={() => {
         editor?.chain().focus().run();
       }}
-      className="s relative min-h-[500px] w-full  max-w-screen-lg  p-1"
+      className=" relative h-fit w-full  max-w-screen-lg  p-1"
     >
-      <EditorContent editor={editor} />
-      {editor ? (
+      {editor && (
         <>
-          <EditorContent editor={editor} id="editor" />
-          <EditorBubbleMenu editor={editor} />
+          <EditorContent
+            editor={editor}
+            id="editor"
+            className="min-h-[500px] font-default"
+          />
+          {editor.isEditable && <EditorBubbleMenu editor={editor} />}
         </>
-      ) : (
-        <></>
+      )}
+
+      {isCreator && editor && !work.published && (
+        <Publish work={work} ydoc={ydoc} editor={editor} />
       )}
     </div>
   );

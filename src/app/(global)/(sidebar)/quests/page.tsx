@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useSubscribe } from "replicache-react";
 import { classNames } from "uploadthing/client";
 import QuestComponent from "~/components/QuestComponent";
+import Leaderboard from "~/components/Quests/Leaderboard";
 import { PublishedQuest, Quest } from "~/types/types";
 import { Button } from "~/ui/Button";
 import {
@@ -15,30 +16,6 @@ import {
   SelectValue,
 } from "~/ui/Select";
 import { ReplicacheInstancesStore } from "~/zustand/rep";
-const date = new Date().toISOString();
-
-// const quests: PublishedQuest[] = [
-//   {
-//     id: "quest1",
-//     creatorId: "user1",
-//     deadline: date,
-//     lastUpdated: date,
-//     published: true,
-//     publishedAt: date,
-//     publisherUsername: "pachimari",
-//     reward: 10,
-//     slots: 10,
-//     solverCount: 0,
-//     status: "OPEN",
-//     subtopic: ["LOGO"],
-//     textContent: "Hello world",
-//     title: "Hello world",
-//     topic: "BUSINESS",
-//     type: "QUEST",
-//     version: 1,
-//     collaborators: [],
-//   },
-// ];
 export default function Quests() {
   const [showChat, setShowChat] = useState(false);
   const rep = ReplicacheInstancesStore((state) => state.publishedQuestsRep);
@@ -60,22 +37,22 @@ export default function Quests() {
   return (
     <div className="top-0 mb-20 mt-20 flex w-full justify-center ">
       <div className="flex w-11/12 justify-center">
-        <div className="flex w-full flex-col gap-3 lg:w-3/6 ">
+        <div className="flex w-full max-w-3xl flex-col gap-3 lg:w-7/12">
           <div className="flex w-full flex-row-reverse">
             {showChat ? (
               <></>
             ) : (
               // <GlobalChat setShowChat={setShowChat} />
-              <Button className="w-25 fixed bottom-10 right-[150px] z-40 bg-blue-500 hover:bg-blue-600 ">
-                {/* <MessageCircle size={28} className="text-color-white pr-2" /> */}
-                Global chat
+              <Button className="w-25 fixed bottom-10 right-[50px] z-40 bg-blue-9 hover:bg-blue-10 ">
+                <MessageCircle size={28} className="text-color-white pr-2" />
+                Global
               </Button>
             )}
 
             <Select
             // onValueChange={async (value) => {
-            //   await handleTopicChange(value as TopicsType);
-            //   setTopicState(value as TopicsType);
+            //   await handleTopicChange(value as Topic);
+            //   setTopicState(value as Topic);
             // }}
             // value={topicState}
             >
@@ -128,7 +105,7 @@ export default function Quests() {
           </div>
         </div>
         <div className=" sticky top-20 hidden h-screen w-80 flex-col gap-10 pl-10 lg:flex">
-          {/* <Leaderboard /> */}
+          <Leaderboard />
         </div>
       </div>
     </div>

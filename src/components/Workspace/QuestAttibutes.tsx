@@ -1,5 +1,5 @@
-import { ChangeEvent, useCallback } from "react";
-import { Quest, TopicsType, WorkType } from "../../types/types";
+import { ChangeEvent, useCallback, useEffect } from "react";
+import { Quest, Topic, WorkType } from "../../types/types";
 
 import debounce from "lodash.debounce";
 import { MultiValue } from "react-select";
@@ -19,7 +19,12 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
   const setAttributeErrors = WorkspaceStore(
     (state) => state.setAttributeErrors
   );
+  const resetAttributeErrors = WorkspaceStore((state) => state.resetErrors);
   const rep = WorkspaceStore((state) => state.rep);
+  useEffect(() => {
+    resetAttributeErrors();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quest]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleTitleChange = useCallback(
@@ -35,7 +40,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
     }, 1000),
     []
   );
-  const handleTopicChange = async (topic: TopicsType) => {
+  const handleTopicChange = async (topic: Topic) => {
     setAttributeErrors({ topic: { error: false } });
     if (rep) {
       await rep.mutate.updateWork({

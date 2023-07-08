@@ -202,7 +202,6 @@ const TiptapEditor = (props: {
         <>
           <EditorContent
             editor={editor}
-            contentEditable={!work.published}
             id="editor"
             className="min-h-[500px] font-default"
           />

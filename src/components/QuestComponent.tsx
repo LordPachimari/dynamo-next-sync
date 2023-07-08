@@ -54,7 +54,7 @@ export default function QuestComponent({
                   </div>
                 </div>
               </div>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-1 flex flex-wrap gap-2">
                 <Badge className={TopicColor({ topic: quest.topic })}>
                   {quest.topic}
                 </Badge>

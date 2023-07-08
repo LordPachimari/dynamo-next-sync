@@ -151,7 +151,7 @@ export default function Sidebar({
                 <p>Sign out</p>
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="border-slate-6">
               <AlertDialogHeader>
                 <AlertDialogTitle>Confirm your action</AlertDialogTitle>
                 <AlertDialogDescription>

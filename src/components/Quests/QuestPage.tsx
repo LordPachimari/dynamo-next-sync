@@ -201,7 +201,7 @@ export default function QuestPage({
                     LEAVE
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className="border-slate-6">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirm your action</AlertDialogTitle>
                     <AlertDialogDescription>
@@ -236,7 +236,7 @@ export default function QuestPage({
                   JOIN
                 </Button>
               </AlertDialogTrigger>{" "}
-              <AlertDialogContent>
+              <AlertDialogContent className="border-slate-6">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirm your action</AlertDialogTitle>
                   <AlertDialogDescription>Let win this!</AlertDialogDescription>

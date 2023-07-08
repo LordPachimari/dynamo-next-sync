@@ -167,7 +167,7 @@ const Publish = ({
         {/* <AlertDialogTrigger asChild> */}
 
         {/* </AlertDialogTrigger> */}
-        <AlertDialogContent>
+        <AlertDialogContent className="border-slate-6">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm publish</AlertDialogTitle>
             {work.type === "QUEST" ? (

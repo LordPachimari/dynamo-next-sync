@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useSubscribe } from "replicache-react";
 import { classNames } from "uploadthing/client";
 import QuestComponent from "~/components/QuestComponent";
-import Leaderboard from "~/components/Quests/Leaderboard";
 import { PublishedQuest, Quest } from "~/types/types";
 import { Button } from "~/ui/Button";
 import {

@@ -183,7 +183,7 @@ const TiptapEditor = (props: {
         }
       },
     },
-    [id, work.published]
+    [id]
   );
   useEffect(() => {
     if (isUploading) {

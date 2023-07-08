@@ -9,6 +9,18 @@ import { Menu } from "lucide-react";
 import { ScrollArea } from "./ScrollArea";
 import { user } from "~/utils/constants";
 import { ThemeToggle } from "~/components/theme-toggle";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./AlertDialog";
+import { useState } from "react";
 
 export default function Sidebar({
   showSidebar,
@@ -21,9 +33,8 @@ export default function Sidebar({
 
   const segment = useSelectedLayoutSegment();
   console.log("segment", segment);
-  const { userId, isSignedIn, isLoaded } = useAuth();
-
-  const { signOut } = useClerk();
+  const { userId, isSignedIn, isLoaded, signOut } = useAuth();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const links = [
     { page: "workspace", href: "/workspace", finished: true, public: false },
@@ -134,9 +145,41 @@ export default function Sidebar({
       {isSignedIn && (
         <div className="mb-2 mt-5 flex justify-center">
           {" "}
-          <Button className="bg-blue-9 hover:bg-blue-10 dark:text-white">
-            <p>Sign out</p>
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button className="bg-red-9 hover:bg-red-10 dark:text-white">
+                <p>Sign out</p>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirm your action</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure? Please dont. Just kidding, do whatever you want.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction asChild>
+                  <Button
+                    className="bg-red-9 hover:bg-red-10 dark:text-white"
+                    onClick={() => {
+                      setIsSigningOut(true);
+
+                      signOut()
+                        .then(() => {
+                          void router.push("/");
+                        })
+                        .catch((err) => console.log("error logging out", err))
+                        .finally(() => setIsSigningOut(false));
+                    }}
+                  >
+                    <p>Sign out</p>
+                  </Button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
     </div>

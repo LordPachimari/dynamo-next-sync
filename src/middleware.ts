@@ -9,6 +9,7 @@ export default authMiddleware({
     "/api/uploadthing",
     "/api/replicache-pull",
     "/api/replicache-push",
+    "/leaderboard",
   ],
   afterAuth(auth, req, evt) {
     const isAuthPage =

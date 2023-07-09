@@ -8,6 +8,7 @@ import { cal, inter } from "../styles/fonts";
 import { cn } from "~/utils/cn";
 import NextTopLoader from "nextjs-toploader";
 import { ThemeProvider } from "./ThemeProvider";
+import { Analytics } from "@vercel/analytics/react";
 
 // const CabinFont = Cabin({
 //   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             {children}
           </ThemeProvider>
+          <Analytics />
           <Toaster richColors position="bottom-center" />
         </body>
       </html>

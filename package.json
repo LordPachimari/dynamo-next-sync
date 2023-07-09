@@ -55,6 +55,7 @@
     "@tiptap/react": "^2.0.3",
     "@tiptap/starter-kit": "^2.0.3",
     "@tiptap/suggestion": "^2.0.3",
+    "@vercel/analytics": "^1.0.1",
     "add": "^2.0.6",
     "aws-crt": "^1.15.18",
     "base64-js": "^1.5.1",

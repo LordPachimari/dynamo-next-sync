@@ -18,7 +18,12 @@ import { cn } from "~/utils/cn";
 import { globalSearch } from "~/app/_actions/global-search";
 import { Avatar, AvatarFallback, AvatarImage } from "~/ui/Avatar";
 import Link from "next/link";
-import { PublishedMergedWork, User } from "~/types/types";
+import {
+  PublishedMergedWork,
+  PublishedQuest,
+  User,
+  PublishedPost,
+} from "~/types/types";
 import { TopicColor } from "~/utils/topicsColor";
 
 export default function GlobalSearch() {
@@ -122,7 +127,7 @@ export default function GlobalSearch() {
                 );
               }
               if (_item.type === "QUEST" || _item.type === "POST") {
-                const item = _item as PublishedMergedWork;
+                const item = _item as PublishedQuest & PublishedPost;
                 return (
                   <div
                     className="flex h-14 w-full cursor-pointer items-center gap-2 p-2 hover:bg-slate-4"

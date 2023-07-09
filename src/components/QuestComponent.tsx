@@ -18,7 +18,7 @@ export default function QuestComponent({
   console.log("qust username", quest);
 
   return (
-    <Card className="h-fit w-full rounded-xl bg-white drop-shadow-sm dark:border-[1px] dark:border-slate-6 dark:bg-slate-3">
+    <Card className="h-fit w-full rounded-xl bg-white drop-shadow-md dark:border-[1px] dark:border-slate-6 dark:bg-slate-3">
       <CardHeader className="flex w-full p-2">
         <div className="flex w-full justify-between gap-5">
           <div className="flex w-full items-center gap-4">

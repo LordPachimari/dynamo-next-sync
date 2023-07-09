@@ -197,7 +197,7 @@ export default function QuestPage({
             {isSolver && userId && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button className="w-20 bg-red-500 hover:bg-red-600 ">
+                  <Button className="w-20 bg-red-500 text-white hover:bg-red-600">
                     LEAVE
                   </Button>
                 </AlertDialogTrigger>
@@ -213,7 +213,7 @@ export default function QuestPage({
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction asChild>
                       <Button
-                        className="w-20 bg-red-500 hover:bg-red-600"
+                        className="w-20 bg-red-500 text-white hover:bg-red-600"
                         // eslint-disable-next-line @typescript-eslint/no-misused-promises
                         onClick={handleLeaveQuest}
                       >
@@ -454,7 +454,7 @@ const Solver = ({
     <div>
       <div className="flex gap-2">
         <Link href={`/profile/${solver.username}`}>
-          <Card className="flex h-14 w-36 flex-row items-center gap-2 rounded-xl pl-2">
+          <Card className="flex h-14 w-36 flex-row items-center gap-2 rounded-xl pl-2 drop-shadow-md dark:border-slate-6 dark:bg-slate-3">
             {/* <Circle size="40px" ml={2}></Circle> */}
 
             <Avatar>
@@ -478,7 +478,7 @@ const Solver = ({
                 <TooltipTrigger asChild>
                   <div
                     className={cn(
-                      "flex w-[25px] items-center justify-center rounded-[50%] border-[1px] border-blue-400 text-white",
+                      "flex w-[25px] items-center justify-center rounded-[50%] border-[1px] border-blue-400 text-white dark:border-slate-6",
                       {
                         "bg-yellow-400": solver.status === "POSTED SOLUTION",
                         "bg-green-400":
@@ -504,7 +504,7 @@ const Solver = ({
                 <TooltipTrigger asChild>
                   <div
                     className={cn(
-                      "flex h-[25px] w-[25px] cursor-pointer items-center justify-center rounded-[50%] border-[1px] border-slate-300 text-white"
+                      "flex h-[25px] w-[25px] cursor-pointer items-center justify-center rounded-[50%] border-[1px] border-slate-300 text-white dark:border-slate-6"
                     )}
                   ></div>
                 </TooltipTrigger>

@@ -8,6 +8,7 @@
 import { cache } from "react";
 // import { dynamoClient } from "~/clients/dynamodb";
 import { rocksetClient } from "~/clients/rockset";
+import { User } from "~/types/types";
 // import { env } from "~/env.mjs";
 // import { userKey } from "~/repl/client/mutators/user";
 // import { User, UserComponent } from "~/types/types";
@@ -42,7 +43,7 @@ export const userByUsername = cache(
         }
       );
       if (user.results && user.results.length > 0) {
-        return user.results[0];
+        return user.results[0] as User;
       }
       return null;
     } catch (error) {

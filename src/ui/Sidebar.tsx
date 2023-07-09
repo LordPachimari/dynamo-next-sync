@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "./AlertDialog";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function Sidebar({
   showSidebar,
@@ -121,6 +122,7 @@ export default function Sidebar({
             return (
               <span
                 key={l.page}
+                onClick={() => toast("the page is still in development")}
                 className={cn(
                   "my-1 flex h-9 cursor-pointer items-center rounded-md p-2  hover:bg-blue-4 hover:text-blue-9 ",
                   {
@@ -135,6 +137,7 @@ export default function Sidebar({
           return (
             <span
               key={l.page}
+              onClick={() => toast("Please sign in")}
               className={cn(
                 "my-1 flex h-9 cursor-pointer items-center rounded-md p-2 hover:bg-blue-4 hover:text-blue-9 ",
                 {

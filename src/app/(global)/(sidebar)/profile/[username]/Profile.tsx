@@ -63,7 +63,7 @@ export default function Profile({
             )}
      */}
         <div className="mb-4 flex w-full flex-col items-center gap-4 md:w-[300px] ">
-          <Card className="flex w-full flex-col items-center justify-center rounded-xl py-4 drop-shadow-sm dark:border-slate-6 dark:bg-slate-3">
+          <Card className="flex w-full flex-col items-center justify-center rounded-xl py-4 drop-shadow-md dark:border-slate-6 dark:bg-slate-3">
             <CardHeader className="w-full px-4 py-0">
               <div className="flex h-[300px] w-full items-center justify-center rounded-md border-[1px] bg-blue-2 shadow-inner dark:border-none dark:shadow-blue-6">
                 <Button className="  bg-blue-4 font-extrabold text-blue-9 hover:bg-blue-6">

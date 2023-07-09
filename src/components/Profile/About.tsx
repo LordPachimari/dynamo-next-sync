@@ -23,7 +23,7 @@ export default function AboutUser({
   isEditable: boolean;
 }) {
   return (
-    <Card className="relative h-[350px] w-full rounded-xl p-0 drop-shadow-sm  dark:border-slate-6 dark:bg-slate-3">
+    <Card className="relative h-[350px] w-full rounded-xl p-0 drop-shadow-md  dark:border-slate-6 dark:bg-slate-3">
       <CardContent className="h-fit p-5">
         <div className="flex  items-center justify-between gap-2">
           <Badge className="w-16 bg-red-500 text-sm">{level} lvl</Badge>

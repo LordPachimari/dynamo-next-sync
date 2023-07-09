@@ -1,5 +1,6 @@
 "use client";
 import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { useSubscribe } from "replicache-react";
 import AboutUser from "~/components/Profile/About";
 import Achievements from "~/components/Profile/Achiements";
@@ -22,6 +23,7 @@ export default function Profile({
   userId: string | null;
 }) {
   // const { userId } = useAuth();
+  const router = useRouter();
   const rep = ReplicacheInstancesStore((state) => state.globalRep);
   let currentUser: User | null = user;
   const localUser = useSubscribe(
@@ -87,7 +89,10 @@ export default function Profile({
                     </Button>
                   </>
                 ) : (
-                  <Button className=" mx-auto mt-5 w-full max-w-xs bg-green-100 font-extrabold text-emerald-600 hover:bg-green-6 dark:bg-green-4 ">
+                  <Button
+                    onClick={() => router.push("/settings/profile")}
+                    className=" mx-auto mt-5 w-full max-w-xs bg-green-100 font-extrabold text-emerald-600 hover:bg-green-6 dark:bg-green-4 "
+                  >
                     Edit profile
                   </Button>
                 )}

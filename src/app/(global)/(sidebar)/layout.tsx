@@ -2,6 +2,7 @@
 
 import { Menu } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import GlobalSearch from "~/components/GlobalSearch";
 import { Button } from "~/ui/Button";
 import Sidebar from "~/ui/Sidebar";
 
@@ -47,8 +48,8 @@ export default function SidebarLayout({
             <Menu className="text-blue-9" />
           </Button>
         ) : null}
-        <div className="fixed z-40 h-14 w-full border-b-[1px] bg-white dark:border-slate-8 dark:bg-slate-3">
-          {/* <GlobalSearch /> */}
+        <div className="fixed z-40 flex h-14 w-full items-center justify-center border-b-[1px] bg-white backdrop-blur-sm dark:border-slate-8 dark:bg-slate-3">
+          <GlobalSearch />
         </div>
         {children}
       </div>

@@ -1,9 +1,9 @@
-import { User } from "@clerk/nextjs/dist/types/server";
 import { z } from "zod";
 import { Mutation } from "~/app/api/replicache-push/route";
 import { userKey } from "~/repl/client/mutators/user";
+import { getItem } from "~/repl/data";
 import { ReplicacheTransaction } from "~/repl/transaction";
-import { UpdateUserAttributesZod, UserZod } from "~/types/types";
+import { UpdateUserAttributesZod, User, UserZod } from "~/types/types";
 
 export const UserMutators = async ({
   tx,
@@ -41,9 +41,29 @@ export const UserMutators = async ({
   }
   if (mutation.name === "updateUser") {
     const args = UpdateUserAttributesZod.parse(mutation.args);
-    tx.update({
-      key: userKey(userId),
-      value: args,
-    });
+    if (args.links && args.links.length > 0) {
+      const user = (await getItem({
+        PK: `USER#${userId}`,
+        key: `USER#${userId}`,
+        spaceId,
+      })) as User | undefined;
+      if (user) {
+        tx.update({
+          key: userKey(userId),
+          value: {
+            ...args,
+            ...(args.links &&
+              args.links.length > 0 && {
+                links: user.links ? [...user.links, ...args.links] : args.links,
+              }),
+          },
+        });
+      }
+    } else {
+      tx.update({
+        key: userKey(userId),
+        value: args,
+      });
+    }
   }
 };

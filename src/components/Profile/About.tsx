@@ -1,3 +1,4 @@
+import { TwitterIcon } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { UpdateUserAttributesZod, getEntries } from "~/types/types";
@@ -18,12 +19,12 @@ export default function AboutUser({
   about: string | undefined;
   level: number;
   experience: number;
-  links: { twitter: string; discord: string } | undefined;
+  links: { value: string }[] | undefined;
   isEditable: boolean;
 }) {
   return (
-    <Card className="h-[350px] w-full rounded-xl p-0 drop-shadow-sm  dark:border-slate-6 dark:bg-slate-3">
-      <CardContent className="h-[300px] p-5">
+    <Card className="relative h-[350px] w-full rounded-xl p-0 drop-shadow-sm  dark:border-slate-6 dark:bg-slate-3">
+      <CardContent className="h-fit p-5">
         <div className="flex  items-center justify-between gap-2">
           <Badge className="w-16 bg-red-500 text-sm">{level} lvl</Badge>
           <div className="w-10/12">
@@ -67,23 +68,12 @@ export default function AboutUser({
         <h2 className="my-2 font-bold">{username}</h2>
         <p>{about && about}</p>
       </CardContent>
-      <CardFooter className="flex h-[50px] flex-wrap px-5 pb-5">
-        <div>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            width="24"
-            height="24"
-          >
-            <path fill="none" d="M0 0h24v24H0z" />
-            <path
-              d="M15.3 5.55a2.9 2.9 0 0 0-2.9 2.847l-.028 1.575a.6.6 0 0 1-.68.583l-1.561-.212c-2.054-.28-4.022-1.226-5.91-2.799-.598 3.31.57 5.603 3.383 7.372l1.747 1.098a.6.6 0 0 1 .034.993L7.793 18.17c.947.059 1.846.017 2.592-.131 4.718-.942 7.855-4.492 7.855-10.348 0-.478-1.012-2.141-2.94-2.141zm-4.9 2.81a4.9 4.9 0 0 1 8.385-3.355c.711-.005 1.316.175 2.669-.645-.335 1.64-.5 2.352-1.214 3.331 0 7.642-4.697 11.358-9.463 12.309-3.268.652-8.02-.419-9.382-1.841.694-.054 3.514-.357 5.144-1.55C5.16 15.7-.329 12.47 3.278 3.786c1.693 1.977 3.41 3.323 5.15 4.037 1.158.475 1.442.465 1.973.538z"
-              fill="rgba(50,152,219,1)"
-            />
-          </svg>
-          <p className="text-blue-400 ">{links?.twitter}</p>
+      <CardFooter className="absolute bottom-0 flex h-fit flex-col items-start px-5 pb-2">
+        <div className="flex gap-2">
+          <TwitterIcon className="text-blue-9" size={20} />
+          <p className="text-blue-9 ">{links && links[0]?.value}</p>
         </div>
-        <div className="ml-5">
+        <div>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -96,8 +86,7 @@ export default function AboutUser({
               fill="rgba(128,90,213,1)"
             />
           </svg>
-
-          <div className="text-purple-500">{links?.discord}</div>
+          <div className="text-purple-9"></div>
         </div>
       </CardFooter>
     </Card>

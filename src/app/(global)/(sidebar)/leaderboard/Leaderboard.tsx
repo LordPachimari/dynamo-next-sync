@@ -31,12 +31,12 @@ const UserComponent = ({
   rewarded,
 }: LeaderboardType) => {
   return (
-    <Card className="m-2 h-16 w-full flex-row items-center gap-2 rounded-sm p-2 shadow-md dark:border-slate-6 dark:bg-slate-3">
+    <Card className="h-16 w-full flex-row items-center gap-2 rounded-sm p-2 shadow-md dark:border-slate-6 dark:bg-slate-3">
       <Link
         href={`/profile/${username}`}
         className="relative flex items-center gap-2"
       >
-        <div className="flex h-12 w-4 items-center justify-center text-blue-9">
+        <div className="flex h-12 w-4 items-center justify-center text-slate-11">
           <p className="font-bold">{position}</p>
         </div>
 
@@ -50,11 +50,11 @@ const UserComponent = ({
             {username}
           </p>
         </div>
-        <div className="absolute right-5 mr-1 flex items-center gap-2">
+        <div className="absolute right-1 mr-1 flex items-center gap-2 sm:right-5">
           <BookOpenCheck className="text-blue-9" />
           <p className="font-bold text-blue-9">{questsSolved || 0}</p>
         </div>
-        <div className="absolute right-20 mr-1 flex items-center gap-2">
+        <div className="absolute right-14 mr-1 flex items-center gap-2 sm:right-20">
           <Gem className="text-purple-9" />
           <p className="font-bold text-purple-9">{rewarded}</p>
         </div>
@@ -123,10 +123,10 @@ export default function Leaderboard() {
 
   return (
     <div className="mt-28 flex min-h-screen w-full justify-center">
-      <div className="w:11/12 flex flex-col items-center lg:w-3/6">
+      <div className="flex w-11/12 flex-col items-center lg:w-3/6">
         <h2>Leaderboard</h2>
 
-        <div className="my-5 flex w-full justify-around">
+        <div className="my-5 flex w-full  justify-around">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

@@ -28,23 +28,26 @@ import { cn } from "~/utils/cn";
 import { Button } from "~/ui/Button";
 import { Label } from "~/ui/label";
 import { Twitter } from "lucide-react";
+import { ReplicacheInstancesStore } from "~/zustand/rep";
+import { userKey } from "~/repl/client/mutators/user";
+import { useAuth } from "@clerk/nextjs";
+import { useSubscribe } from "replicache-react";
+import { User } from "~/types/types";
 
 const profileFormSchema = z.object({
-  username: z
-    .string()
-    .min(2, {
-      message: "Username must be at least 2 characters.",
-    })
-    .max(30, {
-      message: "Username must not be longer than 30 characters.",
-    }),
-  email: z
-    .string({
-      required_error: "Please select an email to display.",
-    })
-    .email(),
-  bio: z.string().max(160).min(4),
-  urls: z
+  username: z.optional(
+    z
+      .string()
+      .min(2, {
+        message: "Username must be at least 2 characters.",
+      })
+      .max(30, {
+        message: "Username must not be longer than 30 characters.",
+      })
+  ),
+
+  about: z.string().max(160).min(4),
+  links: z
     .array(
       z.object({
         value: z.string().url({ message: "Please enter a valid URL." }),
@@ -56,12 +59,29 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 // This can come from your database or API.
-const defaultValues: Partial<ProfileFormValues> = {
-  bio: "",
-  urls: [],
-};
 
 export function ProfileForm() {
+  const rep = ReplicacheInstancesStore((state) => state.globalRep);
+  const { userId } = useAuth();
+  const user = useSubscribe(
+    rep,
+    async (tx) => {
+      if (userId) {
+        const user = (await tx.get(userKey(userId))) as User | null;
+
+        if (user) {
+          return user;
+        }
+      }
+      return null;
+    },
+    null,
+    []
+  );
+  const defaultValues: Partial<ProfileFormValues> = {
+    about: user && user.about ? user.about : "",
+    links: [],
+  };
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues,
@@ -69,13 +89,23 @@ export function ProfileForm() {
   });
 
   const { fields, append } = useFieldArray({
-    name: "urls",
+    name: "links",
     control: form.control,
   });
 
-  function onSubmit(data: ProfileFormValues) {
+  async function onSubmit(data: ProfileFormValues) {
     console.log("data", data);
-    toast.success("Successfully updated the profile!");
+    if (userId && rep && user) {
+      if (data.about !== user.about)
+        await rep.mutate.updateUser({
+          ...(data.username && { username: data.username }),
+          ...(data.about && { about: data.about }),
+          ...(data.links && data.links?.length > 0 && { links: data.links }),
+          userId,
+        });
+
+      toast.success("Successfully updated the profile!");
+    }
   }
 
   return (
@@ -88,7 +118,11 @@ export function ProfileForm() {
             <FormItem>
               <FormLabel>Username</FormLabel>
               <FormControl>
-                <Input placeholder="shadcn" {...field} />
+                <Input
+                  disabled
+                  placeholder={user ? user.username : ""}
+                  {...field}
+                />
               </FormControl>
               <FormDescription>
                 This is your public display name. It can be your real name or a
@@ -98,41 +132,20 @@ export function ProfileForm() {
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
-          name="email"
+          name="about"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger className="bg-slate-3">
-                    <SelectValue placeholder="Select a verified email to display" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="border-slate-6">
-                  <SelectItem value="m@example.com">m@example.com</SelectItem>
-                  <SelectItem value="m@google.com">m@google.com</SelectItem>
-                  <SelectItem value="m@support.com">m@support.com</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                You can manage verified email addresses in your{" "}
-                <Link href="/examples/forms">email settings</Link>.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="bio"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Bio</FormLabel>
+              <FormLabel>About</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Tell us a little bit about yourself"
+                  placeholder={
+                    user && user.about
+                      ? user.about
+                      : "Tell us a little bit about yourself"
+                  }
                   className="resize-none"
                   {...field}
                 />
@@ -147,7 +160,7 @@ export function ProfileForm() {
             <FormField
               control={form.control}
               key={field.id}
-              name={`urls.${index}.value`}
+              name={`links.${index}.value`}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className={cn(index !== 0 && "sr-only")}>

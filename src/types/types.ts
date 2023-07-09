@@ -91,7 +91,7 @@ export const UserZod = z.object({
   type: z.enum(Entity),
   questsSolved: z.optional(z.number()),
   rewarded: z.optional(z.number()),
-  links: z.optional(z.object({ twitter: z.string(), discord: z.string() })),
+  links: z.optional(z.array(z.object({ value: z.string() }))),
   version: z.number(),
 });
 export type User = z.infer<typeof UserZod>;
@@ -320,6 +320,7 @@ export const PostZod = PostZodPartial.required({
   inTrash: true,
   lastUpdated: true,
   version: true,
+
 });
 export const PublishedPostZod = PostZodPartial.required()
   .extend({
@@ -400,6 +401,7 @@ export type MergedWork = (Post & Quest & Solution) & {
 };
 export interface PublishedMergedWork extends MergedWork {
   textContent: string;
+  destination?:"FORUM"|"TALENT"
 }
 
 const basePublishWorkSchema = z.object({

@@ -82,7 +82,12 @@ export default function Sidebar({
       )}
       {!isSignedIn && (
         <div className="flex h-64 w-full items-center justify-center rounded-md border-[1px] bg-blue-2 shadow-inner dark:border-none dark:shadow-blue-6">
-          <Button className="bg-blue-9 hover:bg-blue-10">Sign in</Button>
+          <Button
+            className="bg-blue-9 hover:bg-blue-10"
+            onClick={() => router.push("/")}
+          >
+            Sign in
+          </Button>
         </div>
       )}
 

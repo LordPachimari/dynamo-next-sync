@@ -10,7 +10,6 @@ export default async function Page({
   const { username } = params;
   const user = await userByUsername({ username });
   const { userId } = auth();
-  console.log("use from the server", user);
   if (!user) {
     return <></>;
   }

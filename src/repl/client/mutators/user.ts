@@ -42,7 +42,13 @@ export const userMutators = {
   ) => {
     const updateUserAttrs = UpdateUserAttributesZod.parse(props);
     const user = (await tx.get(userKey(props.userId))) as User | null;
-
-    await tx.put(userKey(props.userId), { ...user, ...updateUserAttrs });
+    if (user) {
+      await tx.put(userKey(props.userId), {
+        ...user,
+        ...updateUserAttrs,
+        ...(updateUserAttrs.links &&
+          updateUserAttrs.links.length > 0 && { links: user?.links }),
+      });
+    }
   },
 };

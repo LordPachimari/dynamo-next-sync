@@ -1,4 +1,4 @@
-# Next js app router with Replicache real-time sync.
+# Next js 13 app router with Replicache real-time sync.
  
 
 - [Next.js](https://nextjs.org)

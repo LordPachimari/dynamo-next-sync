@@ -347,7 +347,9 @@ const ListComponent = ({
               // item.disabled && "cursor-not-allowed opacity-80",
             )}
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
-            onClick={async () => await handleCreateQuest()}
+            onClick={async () => {
+              if (type === "QUEST") await handleCreateQuest();
+            }}
           >
             <Plus size={20} />
             <span>Add {type}</span>

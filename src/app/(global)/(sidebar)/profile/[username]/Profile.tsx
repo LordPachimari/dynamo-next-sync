@@ -10,7 +10,6 @@ import { userKey } from "~/repl/client/mutators/user";
 import { User } from "~/types/types";
 import { Button } from "~/ui/Button";
 import { Card, CardContent, CardHeader } from "~/ui/Card";
-import { user } from "~/utils/constants";
 import { ReplicacheInstancesStore } from "~/zustand/rep";
 const newDate = new Date().toISOString();
 export default function Profile({

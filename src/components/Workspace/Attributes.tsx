@@ -4,6 +4,7 @@ import {
   ChangeEvent,
   FormEvent,
   KeyboardEvent,
+  startTransition,
   useEffect,
   useRef,
   useState,
@@ -23,20 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/ui/Select";
-import Select, {
-  MultiValue,
-  OptionProps,
-  StylesConfig,
-  components,
-} from "react-select";
-import makeAnimated from "react-select/animated";
 import { cn } from "~/utils/cn";
-import SingleValue from "react-select/dist/declarations/src/components/SingleValue";
 import { produce } from "immer";
 import { AttributeError } from "~/zustand/workspace";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useTheme } from "next-themes";
 import { basename } from "path";
+import { MultiSelect } from "~/ui/MultiSelect";
 export const Title = ({
   title,
   placeholder,
@@ -48,11 +42,8 @@ export const Title = ({
   handleTitleChange: (title: string) => Promise<void> | undefined;
   error: AttributeError;
 }) => {
-  const [titleState, setTitleState] = useState("");
   const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
-  useEffect(() => {
-    setTitleState(title || "");
-  }, [title]);
+
   return (
     <div
       className="prose prose-stone mx-auto w-full border-red-100 dark:prose-invert "
@@ -61,7 +52,7 @@ export const Title = ({
       <TextareaAutosize
         autoFocus
         id="title"
-        defaultValue={titleState}
+        defaultValue={title}
         placeholder={placeholder}
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         onInput={(e) => handleTitleChange(e.currentTarget.value)}
@@ -91,10 +82,7 @@ export const TopicSelect = ({
   error: AttributeError;
 }) => {
   const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
-  const [topicState, setTopicState] = useState<Topic | undefined>(undefined);
-  useEffect(() => {
-    setTopicState(topic);
-  }, [topic]);
+
   return (
     <div
       ref={parent}
@@ -105,11 +93,10 @@ export const TopicSelect = ({
       <MySelect
         onValueChange={async (value) => {
           await handleTopicChange(value as Topic);
-          setTopicState(value as Topic);
         }}
-        value={topicState}
+        value={topic}
       >
-        <SelectTrigger className="w-[180px] dark:border-[1px] dark:border-slate-6 dark:bg-slate-2 dark:outline-white">
+        <SelectTrigger className="w-[180px] dark:border-[1px] dark:border-slate-6 dark:bg-slate-3 dark:outline-white">
           <SelectValue placeholder="Select topic" />
         </SelectTrigger>
         <SelectContent>
@@ -145,30 +132,12 @@ const CustomBadge: React.FC<BadgeProps> = ({ text, id, removeBadge }) => (
   </span>
 );
 
-const animatedComponents = makeAnimated();
 export interface OptionType {
   value: string;
   label: string;
   badge?: string;
 }
 
-const customStyles: StylesConfig<OptionType, false> = {
-  control: (base, state) => ({
-    ...base,
-    borderColor: state.isFocused ? "orange" : base.borderColor,
-    boxShadow: state.isFocused ? "0 0 0 0.2px orange" : base.boxShadow,
-    "&:hover": {
-      borderColor: state.isFocused ? "orange" : base.borderColor,
-    },
-  }),
-  option: (styles, { data, isDisabled, isFocused, isSelected }) => {
-    return {
-      ...styles,
-      backgroundColor: isFocused ? "whitesmoke" : "",
-      color: "black",
-    };
-  },
-};
 export const Subtopic = ({
   subtopic,
   handleSubtopicChange,
@@ -180,47 +149,50 @@ export const Subtopic = ({
   handleSubtopicChange: ({
     subtopics,
   }: {
-    subtopics: MultiValue<OptionType>;
+    subtopics: OptionType[];
   }) => Promise<void>;
 }) => {
   const [parent, enableAnimations] = useAutoAnimate(/* optional config */);
-  const [subtopicState, setSubtopicState] = useState<MultiValue<OptionType>>();
-  const { theme, setTheme } = useTheme();
-  useEffect(() => {
-    const multiVal = subtopic
-      ? subtopic.map((v) => ({ value: v, label: v }))
-      : [];
-    setSubtopicState(multiVal as MultiValue<OptionType>);
-  }, [subtopic]);
-  const customStyles: StylesConfig = {
-    control: (base, state) => ({
-      ...base,
-      background: theme === "dark" ? "hsla(181, 98.9%, 91.8%, 0.026)" : "#fff",
-      // You can also add transition on hover
-      // "&:hover": {
-      //   background: state.isFocused ? "#666" : "transparent",
-      // },
-      color: "white",
-    }),
-    // singleValue: (base, state) => ({
-    //   ...base,
-    //   color: "white",
-    // }),
-    // container: (base, props) => ({
-    //   ...base,
-    //   color: "red",
-    // }),
-    menu: (base) => ({
-      ...base,
-      background: theme === "dark" ? "black" : "#fff",
-      // override color for the items
-      color: "white",
-    }),
-  };
+  const [subtopicState, setSubtopicState] = useState<OptionType[] | null>(
+    subtopic ? subtopic.map((v) => ({ value: v, label: v })) : []
+  );
+  function arraysEqual(a: string[], b: string[]) {
+    if (a.length !== b.length) return false;
+
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+
+    return true;
+  }
+
+  // const hasChanged =
+
   const options = SubtopicSuggestion.map((topic) => ({
     value: topic,
     label: topic.toLocaleLowerCase(),
   }));
+  useEffect(() => {
+    startTransition(() => {
+      if (!subtopicState && !subtopic) return;
+      if (
+        subtopic &&
+        subtopicState &&
+        arraysEqual(
+          subtopic,
+          subtopicState.map((val) => val.value)
+        )
+      )
+        return;
+      if (subtopicState) {
+        console.log("mutating");
+        handleSubtopicChange({ subtopics: subtopicState }).catch((error) =>
+          console.log(error)
+        );
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtopicState]);
 
   return (
     <div
@@ -229,25 +201,10 @@ export const Subtopic = ({
         "rounded-md border-[1px] border-red-500": error.error,
       })}
     >
-      {" "}
-      <Select
+      <MultiSelect
         options={options}
-        components={animatedComponents}
-        isMulti
-        value={subtopicState}
-        placeholder="Select subtopic"
-        closeMenuOnSelect={false}
-        styles={customStyles}
-        classNames={{
-          control: (state) => (state.isFocused ? "#f97316" : "border-grey-100"),
-        }}
-        onChange={async (_val) => {
-          const val = _val as MultiValue<OptionType>;
-          await handleSubtopicChange({
-            subtopics: val,
-          }),
-            setSubtopicState(val);
-        }}
+        selected={subtopicState}
+        setSelected={setSubtopicState}
       />
       {error.error && (
         <div className="top-25 absolute left-[-140px] mt-[-35px] rounded border border-red-500 bg-white px-3 py-2 text-xs text-red-500 shadow">
@@ -379,7 +336,7 @@ export const DatePicker = ({
           <Button
             variant={"outline"}
             className={cn(
-              "w-full justify-start text-left font-normal dark:border-[1px] dark:border-slate-6 dark:bg-slate-2 md:w-[280px]",
+              "w-full justify-start text-left font-normal dark:border-[1px] dark:border-slate-6 dark:bg-slate-3 md:w-[280px]",
               !dateState && "text-muted-foreground"
             )}
           >

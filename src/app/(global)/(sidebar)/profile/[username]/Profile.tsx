@@ -25,6 +25,7 @@ export default function Profile({
   // const { userId } = useAuth();
   const router = useRouter();
   const rep = ReplicacheInstancesStore((state) => state.globalRep);
+  console.log("user", user);
   let currentUser: User | null = user;
   const localUser = useSubscribe(
     rep,

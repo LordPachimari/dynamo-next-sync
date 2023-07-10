@@ -44,3 +44,37 @@ export function replaceCustomeNodeNames() {
     });
   };
 }
+
+// function replaceLinksMdx() {
+//   return (tree: any) =>
+//     new Promise<void>((resolve, reject) => {
+//       const nodesToChange: any[] = [];
+
+//       visit(tree, "text", (node) => {
+//         if (node.value.match(/<([^>]*)>/g)) {
+//           nodesToChange.push({
+//             node,
+//           });
+//         }
+//       });
+
+//       for (const { node } of nodesToChange) {
+//         try {
+//           const regex = /<([^>]*)>/gm;
+//           const matches = regex.exec(node.value);
+//           if (!matches) throw new Error(`Failed to parse URL: ${node.value}`);
+
+//           const url = matches[1];
+
+//           node.type = "link";
+//           node.url = url;
+//           node.children = [{ type: "text", value: "Link" }];
+//         } catch (e) {
+//           console.log("ERROR", e);
+//           return reject(e);
+//         }
+//       }
+
+//       resolve();
+//     });
+// }

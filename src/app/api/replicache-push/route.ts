@@ -151,7 +151,7 @@ export async function POST(req: Request, res: Response) {
       if (spaceId === WORKSPACE) {
         if (published.quests) {
           await Promise.allSettled([
-            pusher.trigger(PUBLISHED_QUESTS, "poke", userId),
+            pusher.trigger(PUBLISHED_QUESTS, "poke", {}),
             pusher.trigger(WORKSPACE, "poke", userId),
           ]);
         } else {

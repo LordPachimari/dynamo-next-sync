@@ -76,11 +76,13 @@ export default function GlobalSearch() {
         className="relative h-9 w-20 bg-blue-2 p-0 dark:bg-slate-6 lg:w-[300px] xl:justify-start xl:px-3 xl:py-2"
         onClick={() => setIsOpen(true)}
       >
-        <Search className="h-4 w-4 xl:mr-2" aria-hidden="true" />
-        <span className="hidden xl:inline-flex">Global search...</span>
+        <Search className="h-4 w-4 text-blue-9 xl:mr-2" aria-hidden="true" />
+        <span className="hidden text-blue-9 xl:inline-flex">
+          Global search...
+        </span>
         <span className="sr-only">Search products</span>
-        <kbd className="pointer-events-none absolute right-1.5  hidden h-6 select-none items-center gap-1 rounded bg-slate-6 px-1.5 font-mono text-[10px] font-medium opacity-100 xl:flex">
-          <span className="text-xs">Ctrl</span>K
+        <kbd className="pointer-events-none absolute right-1.5 hidden  h-6 select-none items-center gap-1 rounded bg-slate-6 px-1.5 font-mono text-[10px] font-medium text-blue-9 opacity-100 xl:flex">
+          <span className="text-xs text-blue-9">Ctrl</span>K
         </kbd>
       </Button>
       <CommandDialog open={isOpen} onOpenChange={setIsOpen}>

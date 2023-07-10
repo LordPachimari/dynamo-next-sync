@@ -47,14 +47,10 @@ import { toast } from "sonner";
 const Editor = ({ id }: { id: string }) => {
   const { userId } = useAuth();
   const searchParams = useSearchParams();
-
   const type = searchParams.get("type") as WorkType;
-
   const rep = WorkspaceStore((state) => state.rep);
-  const resetAttributeErrors = WorkspaceStore((state) => state.resetErrors);
-
   const [renderCount, setRenderCount] = useState(0);
-
+  
   const work = useSubscribe(
     rep,
     async (tx) => {
@@ -73,11 +69,8 @@ const Editor = ({ id }: { id: string }) => {
     rep,
     async (tx) => {
       const content = (await tx.get(contentKey(id))) as Content;
-      console.log(content);
       if (content && content.Ydoc) {
-        console.log("ydoc from subscribe", content.Ydoc);
         if (ydoc) {
-          console.log("updating yjs");
           const update = base64.toByteArray(content.Ydoc);
           Y.applyUpdateV2(ydoc, update);
         }
@@ -158,7 +151,7 @@ const Editor = ({ id }: { id: string }) => {
           )}
 
           <Button
-            className="w-44 bg-green-500 text-white hover:bg-green-10"
+            className="w-44 bg-green-500 text-white hover:bg-green-600"
             onClick={() => {
               if (work) void router.push(`/quests/${work.id}`);
             }}

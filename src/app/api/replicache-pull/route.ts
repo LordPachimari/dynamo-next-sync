@@ -8,7 +8,7 @@ import {
   setCVR,
 } from "~/repl/data";
 
-import { auth } from "@clerk/nextjs";
+import { auth, currentUser } from "@clerk/nextjs";
 import { ClientID, PatchOperation } from "replicache";
 import {
   LEADERBOARD,

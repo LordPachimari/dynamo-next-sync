@@ -7,7 +7,6 @@ import { Badge } from "./Badge";
 import { cn } from "~/utils/cn";
 import { Menu } from "lucide-react";
 import { ScrollArea } from "./ScrollArea";
-import { user } from "~/utils/constants";
 import { ThemeToggle } from "~/components/theme-toggle";
 import {
   AlertDialog,
@@ -22,6 +21,10 @@ import {
 } from "./AlertDialog";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ReplicacheInstancesStore } from "~/zustand/rep";
+import { useSubscribe } from "replicache-react";
+import { userKey } from "~/repl/client/mutators/user";
+import { User } from "~/types/types";
 
 export default function Sidebar({
   showSidebar,
@@ -31,11 +34,25 @@ export default function Sidebar({
   toggleShowSidebar: () => void;
 }) {
   const router = useRouter();
+  const rep = ReplicacheInstancesStore((state) => state.globalRep);
 
   const segment = useSelectedLayoutSegment();
-  console.log("segment", segment);
   const { userId, isSignedIn, isLoaded, signOut } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const user = useSubscribe(
+    rep,
+    async (tx) => {
+      if (userId) {
+        const user = (await tx.get(userKey(userId))) || null;
+
+        return user;
+      }
+      return null;
+    },
+
+    null,
+    []
+  ) as User | null;
 
   const links = [
     { page: "workspace", href: "/workspace", finished: true, public: false },
@@ -72,7 +89,7 @@ export default function Sidebar({
           <Menu className="text-blue-9" />
         </Button>
       </div>
-      {isSignedIn && (
+      {isSignedIn && user && (
         <Link href={`/profile/${user.username}`}>
           <div className="flex h-64 w-full items-center justify-center rounded-md border-[1px] bg-blue-2 shadow-inner dark:border-none dark:shadow-blue-6"></div>
           <div className="flex flex-col items-center p-2">
@@ -175,9 +192,6 @@ export default function Sidebar({
                       setIsSigningOut(true);
 
                       signOut()
-                        .then(() => {
-                          void router.push("/");
-                        })
                         .catch((err) => console.log("error logging out", err))
                         .finally(() => setIsSigningOut(false));
                     }}

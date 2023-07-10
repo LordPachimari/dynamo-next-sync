@@ -2,7 +2,6 @@ import { ChangeEvent, useCallback, useEffect } from "react";
 import { Quest, Topic, WorkType } from "../../types/types";
 
 import debounce from "lodash.debounce";
-import { MultiValue } from "react-select";
 import { WorkspaceStore } from "../../zustand/workspace";
 import {
   DatePicker,
@@ -54,7 +53,7 @@ const QuestAttributes = ({ quest }: { quest: Quest }) => {
   const handleSubtopicChange = async ({
     subtopics,
   }: {
-    subtopics: MultiValue<OptionType>;
+    subtopics: OptionType[];
   }) => {
     setAttributeErrors({ subtopic: { error: false } });
     const strings = subtopics.map((val) => val.value);

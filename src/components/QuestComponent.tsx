@@ -15,8 +15,6 @@ export default function QuestComponent({
   includeContent: boolean;
   includeDetails: boolean;
 }) {
-  console.log("qust username", quest);
-
   return (
     <Card className="h-fit w-full rounded-xl bg-white drop-shadow-md dark:border-[1px] dark:border-slate-6 dark:bg-slate-3">
       <CardHeader className="flex w-full p-2">
@@ -70,7 +68,7 @@ export default function QuestComponent({
       </CardHeader>
 
       <Link href={`/quests/${quest.id}`}>
-        <CardContent className="md:16 h-30 max-h-[200px] min-h-[100px] overflow-x-hidden text-ellipsis whitespace-nowrap p-3">
+        <CardContent className="md:16 h-30 max-h-[300px] min-h-[100px] overflow-x-hidden text-ellipsis  p-3">
           <h3 className="font-default  text-xl font-bold dark:text-white">
             {quest.title}
           </h3>

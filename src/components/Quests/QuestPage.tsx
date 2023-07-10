@@ -314,7 +314,7 @@ const Publisher = ({ publisherId }: { publisherId: string }) => {
   // }
 
   return (
-    <Card className="h-fit w-full max-w-[250px] rounded-xl drop-shadow-sm dark:border-[1px] dark:border-slate-6 dark:bg-slate-3">
+    <Card className="h-fit w-full max-w-[250px] rounded-xl drop-shadow-md dark:border-[1px] dark:border-slate-6 dark:bg-slate-3">
       <CardHeader className="flex justify-center p-2 text-center text-xl font-bold">
         Publisher
       </CardHeader>
@@ -371,7 +371,7 @@ const Winner = ({ winnerId }: { winnerId: string }) => {
   //     );
   //   }
   return (
-    <Card className="h-fit w-full max-w-[250px] rounded-xl drop-shadow-sm dark:border-blue-4 dark:bg-slate-3">
+    <Card className="h-fit w-full max-w-[250px] rounded-xl drop-shadow-md dark:border-blue-4 dark:bg-slate-3">
       <CardHeader className="flex justify-center p-2 text-center text-xl font-bold">
         Winner
       </CardHeader>
@@ -393,7 +393,7 @@ const QuestComponent = ({
   mdxSource: MDXRemoteProps | null;
 }) => {
   return (
-    <Card className="rounded-xl drop-shadow-sm dark:border-slate-6 dark:bg-slate-3">
+    <Card className="rounded-xl drop-shadow-md dark:border-slate-6 dark:bg-slate-3">
       <CardHeader>
         <NonEditableQuestAttributes quest={quest} />
       </CardHeader>

@@ -183,7 +183,7 @@ export const WorkspaceMutators = async ({
       key: workKey({ id: params.id, type: params.type }),
       value: {
         published: false,
-        publishedKey: null,
+        publishedQuestKey: "",
         textContent: "",
         markdown: "",
       },

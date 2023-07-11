@@ -291,7 +291,7 @@ const ListComponent = ({
                     }}
                     key={work.id}
                     className={cn(
-                      "relative mx-1 my-1 flex cursor-pointer items-center  gap-2 rounded-md p-2 text-sm font-normal hover:bg-blue-4 hover:text-blue-9",
+                      "relative mx-1 my-1 flex w-[240px]  cursor-pointer items-center gap-2  rounded-md p-2 text-sm font-normal hover:bg-blue-4 hover:text-blue-9",
 
                       {
                         "bg-blue-4 text-blue-9": segment === work.id,
@@ -299,12 +299,15 @@ const ListComponent = ({
                     )}
                   >
                     <BookOpenCheck className="text-blue-9" size={20} />
-                    <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                    <p className="w-[180px] overflow-hidden text-ellipsis whitespace-nowrap">
                       {work.title || "Untitled"}
-                    </span>
+                    </p>
                     {/* <Button className="h-6 w-5 bg-blue-300 hover:bg-blue-400"> */}
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild className="absolute right-2">
+                      <DropdownMenuTrigger
+                        asChild
+                        className="absolute right-2 ml-2"
+                      >
                         <MoreVertical className=" text-blue-9" size={15} />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-30">

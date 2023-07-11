@@ -625,15 +625,24 @@ export const updateItems = async ({
       (attr) => attr === "solversCount"
     );
 
-    const attributes = Object.keys(value).map((attribute) => {
-      return `#${attribute} = :${attribute}`;
-    });
-    const UpdateExpression = `set ${attributes.join(
+    const attributes = Object.keys(value)
+      .map((attribute) => {
+        if (attribute === "publishedQuestKey") {
+          if (value[attribute] === null) return;
+        }
+        return `#${attribute} = :${attribute}`;
+      })
+      .filter(Boolean);
+    let UpdateExpression = `set ${attributes.join(
       ", "
     )}, #version = #version + :inc`;
     const ExpressionAttributeValues: Record<string, JSONValue | undefined> = {};
     Object.entries(value).forEach(([attr, val]) => {
-      ExpressionAttributeValues[`:${attr}`] = val;
+      if (val === null) {
+        UpdateExpression += ` REMOVE #${attr}`;
+      } else {
+        ExpressionAttributeValues[`:${attr}`] = val;
+      }
     });
     const ExpressionAttributeNames: Record<string, JSONValue | undefined> = {};
     Object.entries(value).forEach(([attr, val]) => {

@@ -21,7 +21,9 @@ export default function SidebarLayout({
     const showSidebar = JSON.parse(
       localStorage.getItem("sidebar") as string
     ) as boolean;
-    toggle(showSidebar);
+    if (showSidebar) {
+      toggle(showSidebar);
+    }
   }, []);
   return (
     <div className="flex">

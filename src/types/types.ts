@@ -320,7 +320,6 @@ export const PostZod = PostZodPartial.required({
   inTrash: true,
   lastUpdated: true,
   version: true,
-
 });
 export const PublishedPostZod = PostZodPartial.required()
   .extend({
@@ -336,7 +335,7 @@ export const PublishedPostZod = PostZodPartial.required()
     createdAt: true,
     allowUnpublish: true,
   });
-  export type PublishedPost = z.infer<typeof PublishedPostZod>
+export type PublishedPost = z.infer<typeof PublishedPostZod>;
 export type Post = z.infer<typeof PostZod>;
 export const PostListComponentZod = PostZod.pick({
   id: true,
@@ -402,6 +401,7 @@ export type MergedWork = (Post & Quest & Solution) & {
 };
 export interface PublishedMergedWork extends MergedWork {
   textContent: string;
+  publishedQuestKey?:string
 }
 
 const basePublishWorkSchema = z.object({

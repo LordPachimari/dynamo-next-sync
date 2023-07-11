@@ -9,6 +9,7 @@ import {
   Content,
   MergedWork,
   PublishWorkParamsZod,
+  PublishedMergedWork,
   PublishedPostZod,
   PublishedQuestZod,
   PublishedSolutionZod,
@@ -22,6 +23,7 @@ import {
 import { contentKey, workKey } from "~/repl/client/mutators/workspace";
 import { PUBLISHED_QUESTS } from "~/utils/constants";
 import { userKey } from "~/repl/client/mutators/user";
+import { JSONObject } from "replicache";
 const updateWorkArgsSchema = z.object({
   id: z.string(),
   type: z.enum(WorkTypeEnum),
@@ -76,16 +78,27 @@ export const WorkspaceMutators = async ({
       getItem({ key: workKey({ id, type }), spaceId }),
       getItem({ key: contentKey(id), spaceId }),
     ]);
+    const newWork: MergedWork = {
+      ...(result[0] as MergedWork),
+      id: newId,
+      lastUpdated,
+      createdAt,
+      collaborators: [],
+      version: 1,
+      published: false,
+    };
+    //check it is published, if it is then delete the publishedkey so that it wont appear in the secondary index table
+    if (
+      newWork.type === "QUEST" &&
+      newWork.published &&
+      (newWork as PublishedMergedWork).publishedQuestKey
+    ) {
+      delete (newWork as PublishedMergedWork).publishedQuestKey;
+    }
     if (result) {
       tx.put({
         key: workKey({ id: newId, type }),
-        value: {
-          ...result[0],
-          id: newId,
-          lastUpdated,
-          createdAt,
-          collaborators: [],
-        },
+        value: { ...newWork },
       });
       tx.put({
         key: contentKey(newId),
@@ -183,7 +196,7 @@ export const WorkspaceMutators = async ({
       key: workKey({ id: params.id, type: params.type }),
       value: {
         published: false,
-        publishedQuestKey: "",
+        publishedQuestKey: null,
         textContent: "",
         markdown: "",
       },

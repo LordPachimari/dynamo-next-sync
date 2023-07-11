@@ -23,7 +23,9 @@ export default function ListComponent({ children }: { children: ReactNode }) {
     const showList = JSON.parse(
       localStorage.getItem("workspaceList") as string
     ) as boolean;
-    toggleShowList(showList);
+    if (showList) {
+      toggleShowList(showList);
+    }
   }, []);
 
   const { userId } = useAuth();

@@ -118,19 +118,7 @@ const Publish = ({
 
   const handleQuestPublish = async () => {
     const publishedAt = new Date().toISOString();
-    console.log("HELLO", {
-      params: {
-        id: work.id,
-        publishedAt,
-        published: true,
-        status: "OPEN",
-        type: "QUEST",
-        solversCount: 0,
-        textContent: editor.getText(),
-      },
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-      markdown: editor.storage.markdown.getMarkdown(),
-    });
+
     if (rep) {
       await undoManagerRef.current.add({
         execute: () =>
@@ -141,6 +129,7 @@ const Publish = ({
               published: true,
               status: "OPEN",
               type: "QUEST",
+
               solversCount: 0,
               textContent: editor.getText(),
             },

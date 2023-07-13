@@ -16,6 +16,5 @@ export default async function Page({
 
   const isMyProfile = user.id === userId;
 
-  // const { userId } = useAuth();
   return <Profile isMyProfile={isMyProfile} user={user} userId={userId} />;
 }

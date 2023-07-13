@@ -36,9 +36,7 @@ export default function SettingRep() {
 
       const channel = pusher.subscribe(PUBLISHED_QUESTS);
       channel.bind("poke", (data: any) => {
-        if (!userId || (data && data !== userId)) {
-          r.pull();
-        }
+        r.pull();
       });
     }
     setRep(r);

@@ -36,9 +36,7 @@ export default function SetGlobalRep() {
       });
 
       const channel = pusher.subscribe(USER);
-      channel.bind("poke", () => {
-        r.pull();
-      });
+      r.pull();
     }
     setRep(r);
 

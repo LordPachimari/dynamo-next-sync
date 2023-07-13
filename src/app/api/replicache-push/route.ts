@@ -152,10 +152,10 @@ export async function POST(req: Request, res: Response) {
         if (published.quests) {
           await Promise.allSettled([
             pusher.trigger(PUBLISHED_QUESTS, "poke", {}),
-            pusher.trigger(WORKSPACE, "poke", userId),
+            pusher.trigger(WORKSPACE, "poke", {}),
           ]);
         } else {
-          await pusher.trigger(WORKSPACE, "poke", userId);
+          await pusher.trigger(WORKSPACE, "poke", {});
         }
         // if (published.quests) {
         //   const result = await momentoTopic.publish(
@@ -186,7 +186,7 @@ export async function POST(req: Request, res: Response) {
         // }
       }
       if (spaceId === PUBLISHED_QUESTS) {
-        await pusher.trigger(PUBLISHED_QUESTS, "poke", userId);
+        await pusher.trigger(PUBLISHED_QUESTS, "poke", {});
         // const result = await momentoTopic.publish(
         //   env.NEXT_PUBLIC_MOMENTO_CACHE_NAME,
         //   PUBLISHED_QUESTS,
@@ -201,7 +201,7 @@ export async function POST(req: Request, res: Response) {
         // }
       }
       if (spaceId === USER) {
-        await pusher.trigger(USER, "poke", userId);
+        await pusher.trigger(USER, "poke", {});
       }
       console.log("Poke took", Date.now() - startPoke);
     } else {

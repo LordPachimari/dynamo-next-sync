@@ -23,10 +23,32 @@ export type PullResponse = {
   patch: PatchOperation[];
 };
 const cookieSchema = z.object({
-  PUBLISHED_QUESTS_CVR: z.optional(z.string()),
-  WORKSPACE_CVR: z.optional(z.string()),
-  USER_CVR: z.optional(z.string()),
-  LEADERBOARD_CVR: z.optional(z.string()),
+  PUBLISHED_QUESTS_CVR: z.optional(
+    z.object({
+      key: z.string(),
+      page: z.union([z.number(), z.literal("ALL_SYNCED")]),
+    })
+  ),
+  WORKSPACE_CVR: z.optional(
+    z.object({
+      key: z.string(),
+
+      page: z.union([z.number(), z.literal("ALL_SYNCED")]),
+    })
+  ),
+  USER_CVR: z.optional(
+    z.object({
+      key: z.string(),
+      page: z.union([z.number(), z.literal("ALL_SYNCED")]),
+    })
+  ),
+  LEADERBOARD_CVR: z.optional(
+    z.object({
+      key: z.string(),
+
+      page: z.union([z.number(), z.literal("ALL_SYNCED")]),
+    })
+  ),
 
   lastMutationIdsCVRKey: z.optional(z.string()),
 });
@@ -83,14 +105,15 @@ export async function POST(req: NextRequest, res: NextResponse) {
     const [prevCVR, prevLastMutationIdsCVR] = await Promise.all([
       getPrevCVR({
         key:
-          requestCookie && spaceId === WORKSPACE
-            ? requestCookie.WORKSPACE_CVR
+          requestCookie && spaceId === WORKSPACE && requestCookie.WORKSPACE_CVR
+            ? requestCookie.WORKSPACE_CVR.key
             : requestCookie && spaceId === PUBLISHED_QUESTS
-            ? requestCookie.PUBLISHED_QUESTS_CVR
+            ? requestCookie.PUBLISHED_QUESTS_CVR &&
+              requestCookie.PUBLISHED_QUESTS_CVR.key
             : requestCookie && spaceId === USER
-            ? requestCookie.USER_CVR
+            ? requestCookie.USER_CVR && requestCookie.USER_CVR.key
             : requestCookie && spaceId === LEADERBOARD
-            ? requestCookie.LEADERBOARD_CVR
+            ? requestCookie.LEADERBOARD_CVR && requestCookie.LEADERBOARD_CVR.key
             : undefined,
       }),
       getPrevCVR({
@@ -103,6 +126,20 @@ export async function POST(req: NextRequest, res: NextResponse) {
       prevCVR,
       spaceId: adjustedSpaceId,
       userId,
+      page:
+        requestCookie && spaceId === WORKSPACE && requestCookie.WORKSPACE_CVR
+          ? requestCookie.WORKSPACE_CVR.page
+          : requestCookie &&
+            spaceId === PUBLISHED_QUESTS &&
+            requestCookie.PUBLISHED_QUESTS_CVR
+          ? requestCookie.PUBLISHED_QUESTS_CVR.page
+          : requestCookie && spaceId === USER && requestCookie.USER_CVR
+          ? requestCookie.USER_CVR.page
+          : requestCookie &&
+            spaceId === LEADERBOARD &&
+            requestCookie.LEADERBOARD_CVR
+          ? requestCookie.LEADERBOARD_CVR.page
+          : 0,
     });
 
     const lastMutationIDsPromise = getLastMutationIdsSince({
@@ -114,7 +151,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
   };
 
   const [
-    { cvr: nextCVR, patch },
+    { cvr: nextCVR, patch, page },
     { lastMutationIDChanges, nextLastMutationIdsCVR },
   ] = await processPull();
 
@@ -127,10 +164,16 @@ export async function POST(req: NextRequest, res: NextResponse) {
     cookie: JSON.stringify({
       ...requestCookie,
 
-      ...(spaceId === USER && { USER_CVR: nextCVR.id }),
-      ...(spaceId === WORKSPACE && { WORKSPACE_CVR: nextCVR.id }),
-      ...(spaceId === PUBLISHED_QUESTS && { PUBLISHED_QUESTS_CVR: nextCVR.id }),
-      ...(spaceId === LEADERBOARD && { LEADERBOARD_CVR: nextCVR.id }),
+      ...(spaceId === USER && { USER_CVR: { key: nextCVR.id, page } }),
+      ...(spaceId === WORKSPACE && {
+        WORKSPACE_CVR: { key: nextCVR.id, page },
+      }),
+      ...(spaceId === PUBLISHED_QUESTS && {
+        PUBLISHED_QUESTS_CVR: { key: nextCVR.id, page },
+      }),
+      ...(spaceId === LEADERBOARD && {
+        LEADERBOARD_CVR: { key: nextCVR.id, page },
+      }),
       ...(nextLastMutationIdsCVR && {
         lastMutationIdsCVRKey: nextLastMutationIdsCVR.id,
       }),

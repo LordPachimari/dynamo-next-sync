@@ -47,6 +47,7 @@ import { momento } from "~/clients/momento";
 import { nanoid } from "nanoid";
 import { ulid } from "ulid";
 import { contentKey } from "./client/mutators/workspace";
+type Page = number | "ALL_SYNCED";
 export const makeCVR = ({
   items,
 }: {
@@ -65,15 +66,17 @@ export const getPatch = async ({
   spaceId,
   prevCVR,
   userId,
+  page = 0,
 }: {
   spaceId: string;
   prevCVR: ClientViewRecord | undefined;
   userId: string | null;
+  page: Page;
 }) => {
   if (!prevCVR) {
-    return await getResetPatch({ spaceId, userId });
+    return await getResetPatch({ spaceId, userId, page });
   }
-  const items =
+  const cvr =
     spaceId.startsWith(WORKSPACE) && userId
       ? await getWorkspaceCVR({ spaceId, userId })
       : spaceId === PUBLISHED_QUESTS
@@ -85,12 +88,12 @@ export const getPatch = async ({
       : [];
   try {
     const nextCVR = makeCVR({
-      items,
+      items: cvr,
     });
 
     const putKeys: { PK: string; SK: string }[] = [];
     const delKeys = [];
-    for (const { PK, SK, version } of items) {
+    for (const { PK, SK, version } of cvr) {
       const prevVersion = prevCVR.keys[SK];
       if (prevVersion === undefined || prevVersion < version) {
         putKeys.push({ PK, SK });
@@ -102,17 +105,15 @@ export const getPatch = async ({
         delKeys.push(key);
       }
     }
-    const fullItems = await getFullItems({
+    const { items: fullItems, page: nextPage } = await getFullItems({
       keys: putKeys,
+      page,
       ...(spaceId === LEADERBOARD && {
         ProjectionExpression:
           "id, SK, username, #level, profile, rewarded, questsSolved",
       }),
     });
-    // console.log("prev CVR ", JSON.stringify(prevCVR));
-    // console.log("new CVR", JSON.stringify(nextCVR));
-    // console.log("put keys", JSON.stringify(fullItems));
-    // console.log("full items from dynamodb", JSON.stringify(fullItems));
+
     const patch: PatchOperation[] = [];
     for (const key of delKeys) {
       patch.push({
@@ -130,7 +131,7 @@ export const getPatch = async ({
       });
     }
 
-    return { patch, cvr: nextCVR };
+    return { patch, cvr: nextCVR, page: nextPage };
   } catch (error) {
     console.log(error);
     throw new Error("failed to get changed entries");
@@ -337,20 +338,22 @@ const getPublishedQuestsCVR = async () => {
 const getResetPatch = async ({
   spaceId,
   userId,
+  page,
 }: {
   spaceId: string;
   userId: string | null;
+  page: Page;
 }) => {
-  const items =
+  const { items, page: nextPage } =
     spaceId.startsWith(WORKSPACE) && userId
-      ? await getWorkspaceItems({ spaceId, userId })
+      ? await getWorkspaceItems({ spaceId, userId, page })
       : spaceId === PUBLISHED_QUESTS
-      ? await getPublishedQuestItems()
+      ? await getPublishedQuestItems({ page })
       : spaceId.startsWith(USER)
-      ? await getUserItems({ spaceId })
+      ? await getUserItems({ spaceId, page })
       : spaceId === LEADERBOARD
-      ? await getLeaderboardItems()
-      : [];
+      ? await getLeaderboardItems({ page })
+      : { items: [], page: 0 };
   const cvr = makeCVR({ items });
   const patch: PatchOperation[] = [
     {
@@ -362,7 +365,6 @@ const getResetPatch = async ({
     patch.push({
       op: "put",
       key: item.SK,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: item,
     });
   }
@@ -370,6 +372,7 @@ const getResetPatch = async ({
   return {
     patch,
     cvr,
+    page: nextPage,
   };
 };
 
@@ -391,10 +394,15 @@ const recursiveQuery = async (params: QueryCommandInput | ScanCommandInput) => {
 const getWorkspaceItems = async ({
   spaceId,
   userId,
+  page,
 }: {
   spaceId: string;
   userId: string;
-}) => {
+  page: Page;
+}): Promise<{
+  items: (Record<string, any> & { PK: string; SK: string; version: number })[];
+  page: Page;
+}> => {
   try {
     const params: QueryCommandInput = {
       TableName: env.MAIN_TABLE_NAME,
@@ -434,99 +442,151 @@ const getWorkspaceItems = async ({
         }[]) {
           keys.push({ PK, SK });
         }
-        const collborativeItems = await getFullItems({ keys });
-        return [...workspaceItems, ...collborativeItems] as (MergedWork & {
-          SK: string;
-        })[];
+        const { items, page: nextPage } = await getFullItems({ keys, page });
+        return {
+          items: [...workspaceItems, ...items] as (Record<string, any> & {
+            PK: string;
+            SK: string;
+            version: number;
+          })[],
+          page: nextPage,
+        };
       }
-      return workspaceItems as (MergedWork & { SK: string })[];
+      return {
+        items: workspaceItems as (Record<string, any> & {
+          PK: string;
+          SK: string;
+          version: number;
+        })[],
+        page: "ALL_SYNCED",
+      };
     }
-    return [];
+    return { items: [], page: "ALL_SYNCED" };
   } catch (error) {
     console.log(error);
     throw new Error("Failed to get workspace items");
   }
 };
-export const getPublishedQuestItems = async () => {
+export const getPublishedQuestItems = async ({
+  page,
+}: {
+  page: Page;
+}): Promise<{
+  items: (Record<string, any> & { PK: string; SK: string; version: number })[];
+  page: Page;
+}> => {
   const keys = await getPublishedQuestsCVR();
-  const fullItems = await getFullItems({ keys });
-  return fullItems as (Record<string, any> & { SK: string; version: number })[];
+  const fullItems = await getFullItems({ keys, page });
+  return fullItems;
 };
-export const getLeaderboardItems = async () => {
+export const getLeaderboardItems = async ({
+  page,
+}: {
+  page: Page;
+}): Promise<{
+  items: (Record<string, any> & {
+    PK: string;
+    SK: string;
+    version: number;
+  })[];
+  page: number | "ALL_SYNCED";
+}> => {
   const keys = await getLeaderboardCVR();
   const fullItems = await getFullItems({
     keys,
+    page,
     ProjectionExpression:
       "id, SK,  username, #level, profile, rewarded, questsSolved",
   });
-  return fullItems as (Record<string, any> & { SK: string; version: number })[];
+  return fullItems;
 };
-export const getUserItems = async ({ spaceId }: { spaceId: string }) => {
+export const getUserItems = async ({
+  spaceId,
+  page,
+}: {
+  spaceId: string;
+  page: Page;
+}): Promise<{
+  items: (Record<string, any> & {
+    PK: string;
+    SK: string;
+    version: number;
+  })[];
+  page: Page;
+}> => {
   const keys = await getUserCVR({ spaceId });
-  const fullItems = await getFullItems({ keys });
-  return fullItems as Record<string, any> & { SK: string; version: number }[];
+  const fullItems = await getFullItems({ keys, page });
+  return fullItems;
 };
 
 export const getFullItems = async ({
   keys,
   ProjectionExpression,
+  page,
 }: {
   ProjectionExpression?: string;
   keys: { PK: string; SK: string }[];
-}) => {
+  page: Page;
+}): Promise<{
+  items: Record<string, any> & { PK: string; SK: string; version: number }[];
+  page: Page;
+}> => {
   try {
     const tableName = env.MAIN_TABLE_NAME;
 
     // Divide keys into chunks of 100 (BatchGetCommand limit)
     const chunkSize = 100;
-    const promises = []; // Array to hold all promises
 
-    for (let i = 0; i < keys.length; i += chunkSize) {
-      const keysChunk = keys.slice(i, i + chunkSize); // Get chunk of keys
-      const Keys: Record<string, any>[] = [];
+    // Calculate start and end indexes for pagination
+    const startIndex = page === "ALL_SYNCED" ? 0 * chunkSize : page * chunkSize;
+    const endIndex = startIndex + chunkSize;
 
-      for (const { PK, SK } of keysChunk) {
-        Keys.push({ PK, SK });
-      }
+    // Create a slice for the current page
+    const keysSlice = keys.slice(startIndex, endIndex);
 
-      const RequestItems: Record<
-        string,
-        Omit<KeysAndAttributes, "Keys"> & {
-          Keys: Record<string, any>[] | undefined;
-        }
-      > = {};
+    const Keys: Record<string, any>[] = [];
 
-      RequestItems[tableName] = {
-        Keys,
-        ProjectionExpression,
-        ...(ProjectionExpression &&
-          ProjectionExpression.search("#level") >= 0 && {
-            ExpressionAttributeNames: { "#level": "level" },
-          }),
-      };
-
-      const params: BatchGetCommandInput = {
-        RequestItems,
-      };
-
-      promises.push(dynamoClient.send(new BatchGetCommand(params)));
+    for (const { PK, SK } of keysSlice) {
+      Keys.push({ PK, SK });
     }
 
-    // Wait for all promises to resolve
-    const responses = await Promise.all(promises);
-
-    const allResults: Record<string, any>[] = []; // Array to accumulate all results
-
-    for (const response of responses) {
-      if (response.Responses) {
-        const result = response.Responses[tableName];
-        if (result) {
-          allResults.push(...result); // Add the results of this call to the allResults array
-        }
+    const RequestItems: Record<
+      string,
+      Omit<KeysAndAttributes, "Keys"> & {
+        Keys: Record<string, any>[] | undefined;
       }
-    }
+    > = {};
 
-    return allResults; // Return all results
+    RequestItems[tableName] = {
+      Keys,
+      ProjectionExpression,
+      ...(ProjectionExpression &&
+        ProjectionExpression.search("#level") >= 0 && {
+          ExpressionAttributeNames: { "#level": "level" },
+        }),
+    };
+
+    const params: BatchGetCommandInput = {
+      RequestItems,
+    };
+
+    const result = await dynamoClient.send(new BatchGetCommand(params));
+    if (result.Responses && result.Responses[tableName]) {
+      return {
+        items: result.Responses[tableName] as (Record<string, any> & {
+          PK: string;
+          SK: string;
+          version: number;
+        })[],
+        page:
+          result.Responses[tableName]!.length > 100 && page !== "ALL_SYNCED"
+            ? page + 1
+            : result.Responses[tableName]!.length > 100 && page === "ALL_SYNCED"
+            ? 1
+            : ("ALL_SYNCED" as const),
+      };
+    }
+    return { items: [], page: "ALL_SYNCED" as const };
   } catch (error) {
     console.error(error);
     throw new Error("Failed to get workspace items");
@@ -624,12 +684,10 @@ export const updateItems = async ({
     const solversCountAttribute = Object.keys(value).some(
       (attr) => attr === "solversCount"
     );
-
+    //attributes that have null as a value are REMOVED
     const attributes = Object.keys(value)
       .map((attribute) => {
-        if (attribute === "publishedQuestKey") {
-          if (value[attribute] === null) return;
-        }
+        if (value[attribute] === null) return;
         return `#${attribute} = :${attribute}`;
       })
       .filter(Boolean);

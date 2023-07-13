@@ -52,9 +52,7 @@ export default function ListComponent({ children }: { children: ReactNode }) {
 
         const channel = pusher.subscribe(WORKSPACE);
         channel.bind("poke", (data: string) => {
-          if (data && data !== userId) {
-            r.pull();
-          }
+          r.pull();
         });
       }
     }

@@ -51,6 +51,7 @@ export const QuestMutators = async ({
             username: user.username,
             level: user.level,
             profile: user.profile,
+            version:1
           },
         });
 

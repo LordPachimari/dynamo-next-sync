@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { UndoManager } from "@rocicorp/undo";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { z } from "zod";
 import { MergedWork, Quest } from "~/types/types";
 import {
@@ -116,7 +116,7 @@ const Publish = ({
     }
   };
 
-  const handleQuestPublish = async () => {
+  const handleQuestPublish = useCallback(async () => {
     const publishedAt = new Date().toISOString();
 
     if (rep) {
@@ -140,7 +140,8 @@ const Publish = ({
       });
       toast.success("Successfully published quest!");
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex items-center justify-center">

@@ -37,7 +37,6 @@ export async function getMdxSource(markdown: string) {
 export function replaceCustomeNodeNames() {
   return (tree: any) => {
     visit(tree, "mdxJsxFlowElement", (node: any) => {
-      console.log(node);
       if (node.name == "imagecomponent") {
         node.name = "ImageComponent";
       }

@@ -171,7 +171,7 @@ export default function List({
   );
   return (
     <div className={`listContainer ${showList ? "showList" : ""}`}>
-      <div className="flex flex-row-reverse p-2">
+      <div className="relative flex flex-row-reverse p-2">
         <Button
           aria-label="close list"
           size="icon"
@@ -208,18 +208,18 @@ export default function List({
         segment={segment || ""}
       />
 
-      <ListSettings>
-        <span
-          className={cn(
-            " fixed bottom-1 mx-2 flex w-[240px] cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal text-blue-9 hover:bg-blue-4 hover:text-accent-foreground"
-            // path === item.href ? "bg-accent" : "transparent",
-            // item.disabled && "cursor-not-allowed opacity-80",
-          )}
-        >
-          <Trash className="text-blue-500" size={20} />
-          Trash
-        </span>
-      </ListSettings>
+      {/* <ListSettings> */}
+      <span
+        className={cn(
+          " mx-2 flex w-[240px] cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal text-blue-9 hover:bg-blue-4 hover:text-accent-foreground"
+          // path === item.href ? "bg-accent" : "transparent",
+          // item.disabled && "cursor-not-allowed opacity-80",
+        )}
+      >
+        <Trash className="text-blue-500" size={20} />
+        Trash
+      </span>
+      {/* </ListSettings> */}
     </div>
   );
 }

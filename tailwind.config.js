@@ -33,6 +33,7 @@ module.exports = {
     "src/ui/**/*.{ts,tsx}",
   ],
   theme: {
+         
     container: {
       center: true,
       padding: "2rem",
@@ -174,7 +175,12 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+     
+ 
       },
+   height:{
+          hero: "calc(100vh - 100px)"
+        },
       borderRadius: {
         lg: `var(--radius)`,
         md: `calc(var(--radius) - 2px)`,
@@ -204,7 +210,6 @@ module.exports = {
     },
   },
   plugins: [
-    require("tailwindcss-animate"),
     require("tailwindcss-animate"),
     require("@tailwindcss/typography"),
   ],

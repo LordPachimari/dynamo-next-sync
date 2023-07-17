@@ -70,7 +70,6 @@ export const wokrspaceMutators = {
     tx: WriteTransaction,
     props: { params: PublishWorkParams; markdown: string }
   ) => {
-    console.log("poppppps", props);
     const { params, markdown } = z
       .object({ params: PublishWorkParamsZod, markdown: z.string() })
       .parse(props);

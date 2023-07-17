@@ -56,6 +56,7 @@ export const makeCVR = ({
     id: ulid(),
     keys: {},
   };
+
   for (const i of items) {
     cvr.keys[i.SK] = i.version;
   }
@@ -109,10 +110,7 @@ export const getPatch = async ({
           "id, SK, username, #level, profile, rewarded, questsSolved",
       }),
     });
-    // console.log("prev CVR ", JSON.stringify(prevCVR));
-    // console.log("new CVR", JSON.stringify(nextCVR));
-    // console.log("put keys", JSON.stringify(fullItems));
-    // console.log("full items from dynamodb", JSON.stringify(fullItems));
+
     const patch: PatchOperation[] = [];
     for (const key of delKeys) {
       patch.push({

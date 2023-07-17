@@ -49,8 +49,7 @@ const Editor = ({ id }: { id: string }) => {
   const searchParams = useSearchParams();
   const type = searchParams.get("type") as WorkType;
   const rep = WorkspaceStore((state) => state.rep);
-  const [renderCount, setRenderCount] = useState(0);
-  
+
   const work = useSubscribe(
     rep,
     async (tx) => {
@@ -65,22 +64,22 @@ const Editor = ({ id }: { id: string }) => {
 
   const ydocRef = useRef(new Y.Doc());
   const ydoc = ydocRef.current;
-  const Ydoc = useSubscribe(
-    rep,
-    async (tx) => {
-      const content = (await tx.get(contentKey(id))) as Content;
-      if (content && content.Ydoc) {
-        if (ydoc) {
-          const update = base64.toByteArray(content.Ydoc);
-          Y.applyUpdateV2(ydoc, update);
-        }
-        return content.Ydoc;
-      }
-      return null;
-    },
-    null,
-    [id]
-  );
+  // const Ydoc = useSubscribe(
+  //   rep,
+  //   async (tx) => {
+  //     const content = (await tx.get(contentKey(id))) as Content;
+  //     if (content && content.Ydoc) {
+  //       if (ydoc) {
+  //         const update = base64.toByteArray(content.Ydoc);
+  //         Y.applyUpdateV2(ydoc, update);
+  //       }
+  //       return content.Ydoc;
+  //     }
+  //     return null;
+  //   },
+  //   null,
+  //   [id]
+  // );
 
   const router = useRouter();
   const handleUnpublish = async () => {
@@ -109,8 +108,6 @@ const Editor = ({ id }: { id: string }) => {
           <TiptapEditor
             id={id}
             ydoc={ydoc}
-            setRenderCount={setRenderCount}
-            renderCount={renderCount}
             isCreator={userId === work.creatorId}
             work={work}
           />

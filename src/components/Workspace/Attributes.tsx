@@ -1,21 +1,14 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { CalendarIcon, Gem, Users2 } from "lucide-react";
-import {
-  ChangeEvent,
-  FormEvent,
-  KeyboardEvent,
-  startTransition,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { format } from "date-fns";
+import { CalendarIcon, Gem, Users2 } from "lucide-react";
+import { ChangeEvent, startTransition, useEffect, useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { SubtopicSuggestion, Topic, Topics } from "~/types/types";
-import { Badge } from "~/ui/Badge";
 import { Button } from "~/ui/Button";
 import { Calendar } from "~/ui/Calendar";
 import { Input } from "~/ui/Input";
+import { MultiSelect } from "~/ui/MultiSelect";
 import { Popover, PopoverContent, PopoverTrigger } from "~/ui/Popover";
 import {
   Select as MySelect,
@@ -25,12 +18,7 @@ import {
   SelectValue,
 } from "~/ui/Select";
 import { cn } from "~/utils/cn";
-import { produce } from "immer";
 import { AttributeError } from "~/zustand/workspace";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { useTheme } from "next-themes";
-import { basename } from "path";
-import { MultiSelect } from "~/ui/MultiSelect";
 export const Title = ({
   title,
   placeholder,
@@ -46,7 +34,7 @@ export const Title = ({
 
   return (
     <div
-      className="prose prose-stone mx-auto w-full border-red-100 dark:prose-invert "
+      className="prose prose-stone  w-full border-red-100 dark:prose-invert "
       ref={parent}
     >
       <TextareaAutosize

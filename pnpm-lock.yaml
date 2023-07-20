@@ -5,7 +5,7 @@ specifiers:
   '@aws-sdk/lib-dynamodb': ^3.341.0
   '@clerk/nextjs': ^4.21.15
   '@formkit/auto-animate': 1.0.0-beta.6
-  '@gomomento/sdk': ^1.26.3
+  '@gomomento/sdk': ^1.28.0
   '@hookform/resolvers': ^3.1.1
   '@radix-ui/colors': ^1.0.0
   '@radix-ui/react-accordion': ^1.1.2
@@ -25,6 +25,7 @@ specifiers:
   '@radix-ui/react-separator': ^1.0.3
   '@radix-ui/react-slot': ^1.0.2
   '@radix-ui/react-switch': ^1.0.3
+  '@radix-ui/react-tabs': ^1.0.4
   '@radix-ui/react-toast': ^1.1.4
   '@radix-ui/react-toolbar': ^1.0.4
   '@radix-ui/react-tooltip': ^1.0.6
@@ -58,6 +59,7 @@ specifiers:
   '@types/react-dom': ^18.2.4
   '@typescript-eslint/eslint-plugin': ^5.59.6
   '@typescript-eslint/parser': ^5.59.6
+  '@upstash/redis': ^1.22.0
   '@vercel/analytics': ^1.0.1
   add: ^2.0.6
   autoprefixer: ^10.4.14
@@ -118,7 +120,7 @@ dependencies:
   '@aws-sdk/lib-dynamodb': 3.350.0_crdi6bedb6s5362cfjdpkkar6i
   '@clerk/nextjs': 4.21.15_hyjx7svporfhadhuakm5xolhha
   '@formkit/auto-animate': 1.0.0-beta.6
-  '@gomomento/sdk': 1.26.3
+  '@gomomento/sdk': 1.28.0
   '@hookform/resolvers': 3.1.1_react-hook-form@7.45.1
   '@radix-ui/colors': 1.0.0
   '@radix-ui/react-accordion': 1.1.2_2fqjbzovvz5uapwqa2nyejxcoq
@@ -138,6 +140,7 @@ dependencies:
   '@radix-ui/react-separator': 1.0.3_2fqjbzovvz5uapwqa2nyejxcoq
   '@radix-ui/react-slot': 1.0.2_j4swkgacdxrhexoapez3itylte
   '@radix-ui/react-switch': 1.0.3_2fqjbzovvz5uapwqa2nyejxcoq
+  '@radix-ui/react-tabs': 1.0.4_2fqjbzovvz5uapwqa2nyejxcoq
   '@radix-ui/react-toast': 1.1.4_2fqjbzovvz5uapwqa2nyejxcoq
   '@radix-ui/react-toolbar': 1.0.4_2fqjbzovvz5uapwqa2nyejxcoq
   '@radix-ui/react-tooltip': 1.0.6_2fqjbzovvz5uapwqa2nyejxcoq
@@ -162,6 +165,7 @@ dependencies:
   '@tiptap/react': 2.0.3_z5e47atshj3jlb5plbd4qpvzwi
   '@tiptap/starter-kit': 2.0.3_@tiptap+pm@2.0.3
   '@tiptap/suggestion': 2.0.3_7qxxgdyo6i4mk7xrbxa2xtsga4
+  '@upstash/redis': 1.22.0
   '@vercel/analytics': 1.0.1
   add: 2.0.6
   aws-crt: 1.15.18
@@ -1412,43 +1416,43 @@ packages:
     resolution: {integrity: sha512-PVDhLAlr+B4Xb7e+1wozBUWmXa6BFU8xUPR/W/E+TsQhPS1qkAdAsJ25keEnFrcePSnXHrOsh3tiFbEToOzV9w==}
     dev: false
 
-  /@gomomento/generated-types/0.62.1:
-    resolution: {integrity: sha512-EpF8X/+oTJQiXbHB8MDRSLlKaeBs9t0nw3nz2HdQ72oXDLsaVuJT3I/g3l6ZGlvVcInT+qUyg7cKPENtTHE4gg==}
+  /@gomomento/generated-types/0.68.0:
+    resolution: {integrity: sha512-2nBNCUQEREOglY/iGRh3AHZkEYUmxnQKD2N7eLDb+dApzQ8HKJ3kprIkEdcDNyfA/ZikpCWNIHRlOnXKV36uWg==}
     dependencies:
-      '@grpc/grpc-js': 1.8.14
+      '@grpc/grpc-js': 1.8.17
       '@types/google-protobuf': 3.15.6
       google-protobuf: 3.21.2
     dev: false
 
-  /@gomomento/sdk-core/1.26.3:
-    resolution: {integrity: sha512-8C1G8/YPBtV4JFafnaMDeyhNJ8UK5wcJmbAwbuc81z841EH388W1f//dpFxL9+pd/jDb3OE7F8yyoW7XfLM1zg==}
+  /@gomomento/sdk-core/1.28.0:
+    resolution: {integrity: sha512-wYwGRUuq/6GoQNbO5nBMNzqwjkLTHAhLmwF/vMPnP4vZ68HbgzZfs5yJU0Tpj2TKOtwsxV+tWU+kD6pCpUuJlg==}
     engines: {node: '>= 14'}
     dependencies:
       buffer: 6.0.3
       jwt-decode: 3.1.2
     dev: false
 
-  /@gomomento/sdk/1.26.3:
-    resolution: {integrity: sha512-JwKIVGyMdNVoYXnzG3XlEa2/J5iRAXPsX7OaYtwImLBTqP/48zStocC6NrPjCwLRx6qQo0XEc4Q/OAgyNETADw==}
+  /@gomomento/sdk/1.28.0:
+    resolution: {integrity: sha512-Xj9VckgHKpiJpsxa0Wstxw5GfsUh/aTtRSSTOUTDXlRR3ZucyQhXmIqpc8kJd6rINPkx9OFoCFjb8Xu0FPZhoQ==}
     engines: {node: '>= 14'}
     dependencies:
-      '@gomomento/generated-types': 0.62.1
-      '@gomomento/sdk-core': 1.26.3
-      '@grpc/grpc-js': 1.8.14
+      '@gomomento/generated-types': 0.68.0
+      '@gomomento/sdk-core': 1.28.0
+      '@grpc/grpc-js': 1.8.17
       google-protobuf: 3.21.2
       jwt-decode: 3.1.2
     dev: false
 
-  /@grpc/grpc-js/1.8.14:
-    resolution: {integrity: sha512-w84maJ6CKl5aApCMzFll0hxtFNT6or9WwMslobKaqWUEf1K+zhlL43bSQhFreyYWIWR+Z0xnVFC1KtLm4ZpM/A==}
+  /@grpc/grpc-js/1.8.17:
+    resolution: {integrity: sha512-DGuSbtMFbaRsyffMf+VEkVu8HkSXEUfO3UyGJNtqxW9ABdtTIA+2UXAJpwbJS+xfQxuwqLUeELmL6FuZkOqPxw==}
     engines: {node: ^8.13.0 || >=10.10.0}
     dependencies:
-      '@grpc/proto-loader': 0.7.7
+      '@grpc/proto-loader': 0.7.8
       '@types/node': 18.16.17
     dev: false
 
-  /@grpc/proto-loader/0.7.7:
-    resolution: {integrity: sha512-1TIeXOi8TuSCQprPItwoMymZXxWT0CPxUhkrkeCUH+D8U7QDwQ6b7SUz2MaLuWM2llT+J/TVFLmQI5KtML3BhQ==}
+  /@grpc/proto-loader/0.7.8:
+    resolution: {integrity: sha512-GU12e2c8dmdXb7XUlOgYWZ2o2i+z9/VeACkxTA/zzAe2IjclC5PnVL0lpgjhrqfpDYHzM8B1TF6pqWegMYAzlA==}
     engines: {node: '>=6'}
     hasBin: true
     dependencies:
@@ -2762,6 +2766,34 @@ packages:
       react-dom: 18.2.0_react@18.2.0
     dev: false
 
+  /@radix-ui/react-tabs/1.0.4_2fqjbzovvz5uapwqa2nyejxcoq:
+    resolution: {integrity: sha512-egZfYY/+wRNCflXNHx+dePvnz9FbmssDTJBtgRfDY7e8SE5oIo3Py2eCB1ckAbh1Q7cQ/6yJZThJ++sgbxibog==}
+    peerDependencies:
+      '@types/react': '*'
+      '@types/react-dom': '*'
+      react: ^16.8 || ^17.0 || ^18.0
+      react-dom: ^16.8 || ^17.0 || ^18.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+    dependencies:
+      '@babel/runtime': 7.22.5
+      '@radix-ui/primitive': 1.0.1
+      '@radix-ui/react-context': 1.0.1_j4swkgacdxrhexoapez3itylte
+      '@radix-ui/react-direction': 1.0.1_j4swkgacdxrhexoapez3itylte
+      '@radix-ui/react-id': 1.0.1_j4swkgacdxrhexoapez3itylte
+      '@radix-ui/react-presence': 1.0.1_2fqjbzovvz5uapwqa2nyejxcoq
+      '@radix-ui/react-primitive': 1.0.3_2fqjbzovvz5uapwqa2nyejxcoq
+      '@radix-ui/react-roving-focus': 1.0.4_2fqjbzovvz5uapwqa2nyejxcoq
+      '@radix-ui/react-use-controllable-state': 1.0.1_j4swkgacdxrhexoapez3itylte
+      '@types/react': 18.2.11
+      '@types/react-dom': 18.2.4
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+    dev: false
+
   /@radix-ui/react-toast/1.1.4_2fqjbzovvz5uapwqa2nyejxcoq:
     resolution: {integrity: sha512-wf+fc8DOywrpRK3jlPlWVe+ELYGHdKDaaARJZNuUTWyWYq7+ANCFLp4rTjZ/mcGkJJQ/vZ949Zis9xxEpfq9OA==}
     peerDependencies:
@@ -3991,6 +4023,14 @@ packages:
     dependencies:
       '@uploadthing/mime-types': 0.2.0
       zod: 3.21.4
+    dev: false
+
+  /@upstash/redis/1.22.0:
+    resolution: {integrity: sha512-sXoJDoEqqik0HbrNE7yRWckOySEFsoBxfRdCgOqkc0w6py19ZZG50SpGkDDEUXSnBqP8VgGYXhWAiBpqxrt5oA==}
+    dependencies:
+      isomorphic-fetch: 3.0.0
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@vercel/analytics/1.0.1:
@@ -6174,6 +6214,15 @@ packages:
   /isobject/3.0.1:
     resolution: {integrity: sha512-WhB9zCku7EGTj/HQQRz5aUQEUeoQZH2bWcltRErOpymJ4boYE6wL9Tbr23krRPSZ+C5zqNSrSw+Cc7sZZ4b7vg==}
     engines: {node: '>=0.10.0'}
+    dev: false
+
+  /isomorphic-fetch/3.0.0:
+    resolution: {integrity: sha512-qvUtwJ3j6qwsF3jLxkZ72qCgjMysPzDfeV240JHiGZsANBYd+EEuu35v7dfrJ9Up0Ak07D7GGSkGhCHTqg/5wA==}
+    dependencies:
+      node-fetch: 2.6.11
+      whatwg-fetch: 3.6.2
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /isomorphic-ws/4.0.1_ws@8.13.0:
@@ -9022,6 +9071,10 @@ packages:
 
   /webidl-conversions/3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
+    dev: false
+
+  /whatwg-fetch/3.6.2:
+    resolution: {integrity: sha512-bJlen0FcuU/0EMLrdbJ7zOnW6ITZLrZMIarMUVmdKtsGvZna8vxKYaexICWPfZ8qwf9fzNq+UEIZrnSaApt6RA==}
     dev: false
 
   /whatwg-url/5.0.0:

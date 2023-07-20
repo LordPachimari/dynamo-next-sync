@@ -100,9 +100,14 @@ export const wokrspaceMutators = {
     { id, type }: { id: string; type: WorkType }
   ) => {
     console.log("mutators, deleteWork");
+    const lastUpdated = new Date().toISOString();
     const work = (await getWork(tx, { id, type })) as MergedWork | undefined;
     if (work) {
-      await tx.put(workKey({ id, type }), { ...work, inTrash: true });
+      await tx.put(workKey({ id, type }), {
+        ...work,
+        inTrash: true,
+        lastUpdated,
+      });
     }
   },
   deleteWorkPermanently: async (
@@ -225,4 +230,7 @@ export function awarenessKeyPrefix(key: string): string {
 }
 export function contentKey(key: string): string {
   return `CONTENT#${key}`;
+}
+export function textKey(key: string): string {
+  return `TEXT#${key}`;
 }

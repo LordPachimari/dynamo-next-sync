@@ -35,8 +35,9 @@ export default function SettingRep() {
       });
 
       const channel = pusher.subscribe(PUBLISHED_QUESTS);
-      channel.bind("poke", (data: any) => {
-        r.pull();
+      channel.bind("poke", async (data: string) => {
+        const clientGroupId = await r.clientGroupID;
+        if (clientGroupId !== data) r.pull();
       });
     }
     setRep(r);

@@ -7,7 +7,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   const content = await getPublishedContent(id);
   let mdxSource: MDXRemoteProps | null = null;
   if (content) {
-    mdxSource = await getMdxSource(content.markdown);
+    mdxSource = await getMdxSource(content);
   }
 
   return <QuestPage id={id} mdxSource={mdxSource} />;

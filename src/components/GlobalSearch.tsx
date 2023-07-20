@@ -73,7 +73,7 @@ export default function GlobalSearch() {
     <>
       <Button
         variant="outline"
-        className="relative h-9 w-20 bg-blue-2 p-0 dark:bg-slate-6 lg:w-[300px] xl:justify-start xl:px-3 xl:py-2"
+        className="relative h-9 w-20 border-[1px] border-slate-200 bg-blue-2 p-0 dark:border-slate-6 dark:bg-slate-3 lg:w-[300px] xl:justify-start xl:px-3 xl:py-2"
         onClick={() => setIsOpen(true)}
       >
         <Search className="h-4 w-4 text-blue-9 xl:mr-2" aria-hidden="true" />

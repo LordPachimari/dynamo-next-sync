@@ -30,6 +30,8 @@ import { useAuth } from "@clerk/nextjs";
 import { userKey } from "~/repl/client/mutators/user";
 import { useSubscribe } from "replicache-react";
 import PartySocket from "partysocket";
+import { STRANGER } from "~/utils/constants";
+import { env } from "~/env.mjs";
 
 const TiptapEditor = (props: {
   id: string;
@@ -55,7 +57,7 @@ const TiptapEditor = (props: {
     []
   ) as User | null;
   const yProviderRef = useRef(
-    new YPartyKitProvider("localhost:1999", id, ydoc, {
+    new YPartyKitProvider(env.NEXT_PUBLIC_YJS_PARTYKIT_URL, id, ydoc, {
       connect: false,
     })
   );
@@ -157,7 +159,6 @@ const TiptapEditor = (props: {
                 .catch((err) => console.log(err));
             }
           }
-          // return false;
         },
       },
       extensions: [
@@ -225,8 +226,13 @@ const TiptapEditor = (props: {
         </>
       )}
 
-      {isCreator && editor && !work.published && (
-        <Publish work={work} ydoc={ydoc} editor={editor} />
+      {editor && !work.published && (
+        <Publish
+          isAuthorised={isCreator && userId !== STRANGER}
+          work={work}
+          ydoc={ydoc}
+          editor={editor}
+        />
       )}
     </main>
   );

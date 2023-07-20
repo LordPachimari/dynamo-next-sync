@@ -2,13 +2,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import {
-  Content,
-  MergedWork,
-  PublishedMergedWork,
-  WorkType,
-} from "~/types/types";
+import { useRef } from "react";
+import { MergedWork, WorkType } from "~/types/types";
 import {
   NonEditableQuestAttributes,
   NonEditableSolutionAttributes,
@@ -31,25 +26,21 @@ import {
 import { Button } from "../../ui/Button";
 import QuestAttributes from "./QuestAttibutes";
 import SolutionAttributes from "./SolutionAttributes";
-import * as base64 from "base64-js";
 const TiptapEditor = dynamic(() => import("../Tiptap/TiptapEditor"), {
   loading: () => <p>Loading...</p>,
   ssr: false,
 });
 
-import * as Y from "yjs";
-import Publish from "./Publish";
 import { useAuth } from "@clerk/nextjs";
-import { contentKey, workKey } from "~/repl/client/mutators/workspace";
-import NonEditableContent from "./NonEditableContent";
 import { toast } from "sonner";
+import * as Y from "yjs";
+import { workKey } from "~/repl/client/mutators/workspace";
 
 const Editor = ({ id }: { id: string }) => {
   const { userId } = useAuth();
   const searchParams = useSearchParams();
   const type = searchParams.get("type") as WorkType;
   const rep = WorkspaceStore((state) => state.rep);
-
   const work = useSubscribe(
     rep,
     async (tx) => {
@@ -64,24 +55,8 @@ const Editor = ({ id }: { id: string }) => {
 
   const ydocRef = useRef(new Y.Doc());
   const ydoc = ydocRef.current;
-  // const Ydoc = useSubscribe(
-  //   rep,
-  //   async (tx) => {
-  //     const content = (await tx.get(contentKey(id))) as Content;
-  //     if (content && content.Ydoc) {
-  //       if (ydoc) {
-  //         const update = base64.toByteArray(content.Ydoc);
-  //         Y.applyUpdateV2(ydoc, update);
-  //       }
-  //       return content.Ydoc;
-  //     }
-  //     return null;
-  //   },
-  //   null,
-  //   [id]
-  // );
-
   const router = useRouter();
+
   const handleUnpublish = async () => {
     if (rep) {
       await rep.mutate.unpublishWork({ id, type: work.type });
@@ -92,7 +67,7 @@ const Editor = ({ id }: { id: string }) => {
 
   return (
     <div className="mb-20 mt-10 flex flex-col items-center justify-center ">
-      <div className="w-5/6 max-w-2xl rounded-md border-[1px] bg-white p-4 dark:border-slate-6 dark:bg-slate-2 ">
+      <div className="w-11/12 max-w-3xl rounded-md border-[1px] bg-white p-4 dark:border-slate-6 dark:bg-slate-2 ">
         {work && work.published && work.type === "QUEST" ? (
           <NonEditableQuestAttributes quest={work} />
         ) : work && work.type === "QUEST" ? (
@@ -157,15 +132,6 @@ const Editor = ({ id }: { id: string }) => {
           </Button>
         </div>
       )}
-      {/* <Button
-        onClick={() =>
-          router.push("/workspace/works/work1", undefined, {
-            shallow: "true",
-          })
-        }
-      >
-        Check
-      </Button> */}
     </div>
   );
 };

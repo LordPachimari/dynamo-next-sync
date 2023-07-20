@@ -9,10 +9,11 @@ import {
 } from "~/repl/data";
 
 import { auth, currentUser } from "@clerk/nextjs";
-import { ClientID, PatchOperation } from "replicache";
+import type { ClientID, PatchOperation } from "replicache";
 import {
   LEADERBOARD,
   PUBLISHED_QUESTS,
+  STRANGER,
   USER,
   WORKSPACE,
 } from "~/utils/constants";
@@ -48,18 +49,17 @@ export async function POST(req: NextRequest, res: NextResponse) {
 
   const { searchParams } = new URL(req.url);
   const spaceId = z.string().parse(searchParams.get("spaceId"));
-  const { userId } = auth();
+  const userId: string = auth().userId ? (auth().userId as string) : STRANGER;
 
-  if (!userId) {
-    if (spaceId !== PUBLISHED_QUESTS && spaceId !== LEADERBOARD) {
-      console.log("hello stranger");
-      return {
-        cookie: "",
-        lastMutationIDChanges: {},
-        patch: [],
-      } satisfies PullResponse;
-    }
-  }
+  // if (!userId) {
+  //   if (spaceId !== PUBLISHED_QUESTS && spaceId !== LEADERBOARD) {
+  //     return {
+  //       cookie: "",
+  //       lastMutationIDChanges: {},
+  //       patch: [],
+  //     } satisfies PullResponse;
+  //   }
+  // }
   const json = (await req.json()) as PullRequestSchemaType;
 
   console.log("Processing mutation pull:", JSON.stringify(json, null, ""));
@@ -68,18 +68,12 @@ export async function POST(req: NextRequest, res: NextResponse) {
     userId && (spaceId === WORKSPACE || spaceId === USER)
       ? `${spaceId}#${userId}`
       : spaceId;
-  console.log("spaceId", adjustedSpaceId);
   const pull = pullRequestSchema.parse(json);
   const requestCookie = pull.cookie
     ? cookieSchema.parse(JSON.parse(pull.cookie))
     : undefined;
-
-  console.log("cooookie ", requestCookie);
-
   const startTransact = Date.now();
   const processPull = async () => {
-    // let items: any[] = [];
-    const getCVRstartTime = Date.now();
     const [prevCVR, prevLastMutationIdsCVR] = await Promise.all([
       getPrevCVR({
         key:
@@ -97,7 +91,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
         key: requestCookie ? requestCookie.lastMutationIdsCVRKey : undefined,
       }),
     ]);
-    console.log("Getting CVR time", Date.now() - getCVRstartTime);
+    console.log("Getting CVR time", Date.now() - startTransact);
 
     const patchPromise = getPatch({
       prevCVR,

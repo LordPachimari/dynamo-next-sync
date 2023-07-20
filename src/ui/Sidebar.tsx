@@ -119,7 +119,7 @@ export default function Sidebar({
           //     </Link>
           //   );
           // }
-          if ((isSignedIn && l.finished) || (l.public && l.finished)) {
+          if (l.finished) {
             return (
               <Link href={l.href} key={l.page}>
                 <span
@@ -135,28 +135,12 @@ export default function Sidebar({
               </Link>
             );
           }
-          if (isSignedIn && !l.finished) {
-            return (
-              <span
-                key={l.page}
-                onClick={() => toast("the page is still in development")}
-                className={cn(
-                  "my-1 flex h-9 cursor-pointer items-center rounded-md p-2  hover:bg-blue-4 hover:text-blue-9 ",
-                  {
-                    "bg-blue-4 text-blue-9": segment === l.page,
-                  }
-                )}
-              >
-                <p className="font-bold">{l.page.toUpperCase()}</p>
-              </span>
-            );
-          }
           return (
             <span
               key={l.page}
-              onClick={() => toast("Please sign in")}
+              onClick={() => toast("the page is still in development")}
               className={cn(
-                "my-1 flex h-9 cursor-pointer items-center rounded-md p-2 hover:bg-blue-4 hover:text-blue-9 ",
+                "my-1 flex h-9 cursor-pointer items-center rounded-md p-2  hover:bg-blue-4 hover:text-blue-9 ",
                 {
                   "bg-blue-4 text-blue-9": segment === l.page,
                 }
@@ -169,7 +153,6 @@ export default function Sidebar({
       </ScrollArea>
       {isSignedIn && (
         <div className="mb-2 mt-5 flex justify-center">
-          {" "}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button className="bg-red-9 hover:bg-red-10 dark:text-white">

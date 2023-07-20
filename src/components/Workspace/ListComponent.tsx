@@ -6,7 +6,7 @@ import { Replicache } from "replicache";
 import { env } from "~/env.mjs";
 import { wokrspaceMutators } from "~/repl/client/mutators/workspace";
 import { Button } from "~/ui/Button";
-import { WORKSPACE } from "~/utils/constants";
+import { STRANGER, WORKSPACE } from "~/utils/constants";
 import { WorkspaceStore } from "~/zustand/workspace";
 import List from "./List";
 import { ArrowBigRightDash } from "lucide-react";
@@ -22,8 +22,8 @@ export default function ListComponent({ children }: { children: ReactNode }) {
   useEffect(() => {
     const showList = JSON.parse(
       localStorage.getItem("workspaceList") as string
-    ) as boolean;
-    if (showList) {
+    ) as boolean | undefined | null;
+    if (showList !== null && showList !== undefined) {
       toggleShowList(showList);
     }
   }, []);
@@ -34,40 +34,40 @@ export default function ListComponent({ children }: { children: ReactNode }) {
     if (rep) {
       return;
     }
-    if (userId) {
-      const r = new Replicache({
-        name: `${WORKSPACE}#${userId}`,
-        licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
-        pushURL: `/api/replicache-push?spaceId=${WORKSPACE}`,
-        pullURL: `/api/replicache-pull?spaceId=${WORKSPACE}`,
-        mutators: wokrspaceMutators,
-        pullInterval: null,
+    const r = new Replicache({
+      name: `${WORKSPACE}#${userId ? userId : STRANGER}`,
+      licenseKey: env.NEXT_PUBLIC_REPLICACHE_KEY,
+      pushURL: `/api/replicache-push?spaceId=${WORKSPACE}`,
+      pullURL: `/api/replicache-pull?spaceId=${WORKSPACE}`,
+      mutators: wokrspaceMutators,
+      pullInterval: null,
+    });
+    setRep(r);
+    if (env.NEXT_PUBLIC_PUSHER_KEY && env.NEXT_PUBLIC_PUSHER_CLUSTER) {
+      Pusher.logToConsole = true;
+      const pusher = new Pusher(env.NEXT_PUBLIC_PUSHER_KEY, {
+        cluster: env.NEXT_PUBLIC_PUSHER_CLUSTER,
       });
-      setRep(r);
-      if (env.NEXT_PUBLIC_PUSHER_KEY && env.NEXT_PUBLIC_PUSHER_CLUSTER) {
-        Pusher.logToConsole = true;
-        const pusher = new Pusher(env.NEXT_PUBLIC_PUSHER_KEY, {
-          cluster: env.NEXT_PUBLIC_PUSHER_CLUSTER,
-        });
 
-        const channel = pusher.subscribe(WORKSPACE);
-        channel.bind("poke", (data: string) => {
-          r.pull();
-        });
-      }
+      const channel = pusher.subscribe(
+        // `${WORKSPACE}${userId ? userId : STRANGER}`
+        WORKSPACE
+      );
+      channel.bind("poke", async (data: string) => {
+        const clientGroupId = await r.clientGroupID;
+        if (clientGroupId !== data) r.pull();
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rep, userId]);
-  if (!userId) {
-    return;
-  }
+
   return (
     <>
       <List
         showList={showList}
         toggleShowList={toggle}
         rep={rep}
-        userId={userId}
+        userId={userId || STRANGER}
       />
       <div className={`workspaceContainer ${showList ? "adjust" : ""}`}>
         {!showList ? (

@@ -130,6 +130,10 @@
   top: 50%;
   transform: translateY(-50%);
   overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 
   z-index: 42; /* Stay on top */
   transition: all 0.1s ease-in-out;

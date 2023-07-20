@@ -1,22 +1,23 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 "server-only";
-import { GetCommand, GetCommandInput } from "@aws-sdk/lib-dynamodb";
 import { serialize } from "next-mdx-remote/serialize";
-import { dynamoClient } from "~/clients/dynamodb";
-import { env } from "~/env.mjs";
-import { contentKey } from "~/repl/client/mutators/workspace";
-import { PublishedContent } from "~/types/types";
 import { visit } from "unist-util-visit";
+import { redis } from "~/clients/redis";
+import { contentKey } from "~/repl/client/mutators/workspace";
 export async function getPublishedContent(id: string) {
-  const params: GetCommandInput = {
-    TableName: env.MAIN_TABLE_NAME,
-    Key: { PK: contentKey(id), SK: contentKey(id) },
-  };
+  // const params: GetCommandInput = {
+  //   TableName: env.MAIN_TABLE_NAME,
+  //   Key: { PK: contentKey(id), SK: contentKey(id) },
+  // };
   try {
-    const result = await dynamoClient.send(new GetCommand(params));
+    // const result = await dynamoClient.send(new GetCommand(params));
 
-    if (result.Item) {
-      return result.Item as PublishedContent;
+    // if (result.Item) {
+    //   return result.Item as PublishedContent;
+    // }
+    const content = (await redis.get(contentKey(id))) as string | undefined;
+    if (content) {
+      return content;
     }
     return null;
   } catch (error) {

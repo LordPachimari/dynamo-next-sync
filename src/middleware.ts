@@ -10,6 +10,9 @@ export default authMiddleware({
     "/api/replicache-pull",
     "/api/replicache-push",
     "/leaderboard",
+    "/workspace(.*)",
+    "/settings(.*)",
+    "/guild(.*)",
   ],
   afterAuth(auth, req, evt) {
     const isAuthPage =

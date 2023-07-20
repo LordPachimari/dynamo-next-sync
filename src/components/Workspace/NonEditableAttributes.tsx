@@ -1,17 +1,5 @@
-import { generateHTML } from "@tiptap/html";
-import parse, {
-  attributesToProps,
-  Element,
-  HTMLReactParserOptions,
-} from "html-react-parser";
-import Image, { ImageLoaderProps } from "next/image";
-import { useMemo } from "react";
-import FileExtension from "../Tiptap/extensions/FileExtension";
-import ImageExtension from "../Tiptap/extensions/ImageExtension";
-
 import { format } from "date-fns";
-import { JSONContent } from "@tiptap/core";
-import StarterKit from "@tiptap/starter-kit";
+import { Gem, Users2 } from "lucide-react";
 import {
   PublishedQuest,
   PublishedSolution,
@@ -21,7 +9,6 @@ import {
 } from "~/types/types";
 import { Badge } from "~/ui/Badge";
 import { cn } from "~/utils/cn";
-import { Gem, Users2 } from "lucide-react";
 const Title = ({ title }: { title: string | undefined }) => {
   return (
     <h1 className="2xl font-extrabold" id="title">

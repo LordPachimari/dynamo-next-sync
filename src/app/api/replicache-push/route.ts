@@ -15,10 +15,11 @@ import { env } from "~/env.mjs";
 import { getLastMutationIds, setLastMutationIds } from "~/repl/data";
 import { WorkspaceMutators } from "~/repl/server/mutators/workspace";
 import { ReplicacheTransaction } from "~/repl/transaction";
-import { PUBLISHED_QUESTS, USER, WORKSPACE } from "~/utils/constants";
+import { PUBLISHED_QUESTS, STRANGER, USER, WORKSPACE } from "~/utils/constants";
 import { QuestMutators } from "~/repl/server/mutators/quest";
 import { UserMutators } from "~/repl/server/mutators/user";
 import { User } from "@clerk/nextjs/dist/types/server";
+import { GlobalChatMutators } from "~/repl/server/mutators/global-chat";
 
 // See notes in bug: https://github.com/rocicorp/replidraw/issues/47
 const mutationSchema = z.object({
@@ -42,11 +43,13 @@ export async function POST(req: Request, res: Response) {
 
   const { searchParams } = new URL(req.url);
   const spaceId = z.string().parse(searchParams.get("spaceId"));
-  const { userId } = auth();
+  // const { userId } = auth();
 
-  if (!userId) {
-    return NextResponse.json({});
-  }
+  const userId = auth().userId ? (auth().userId as string) : STRANGER;
+
+  // if (!userId) {
+  //   return NextResponse.json({});
+  // }
   console.log("Processing push");
 
   const published = {
@@ -64,7 +67,6 @@ export async function POST(req: Request, res: Response) {
       ? `${spaceId}#${userId}`
       : spaceId;
 
-  console.log("json", json);
   const push = pushRequestSchema.parse(json);
   if (push.mutations.length === 0) {
     console.log("no mutations");
@@ -91,6 +93,9 @@ export async function POST(req: Request, res: Response) {
 
       const lastMutationId = lastMutationIds[mutation.clientID] || 0;
       if (mutation.name === "publishWork") {
+        if (userId === STRANGER) {
+          continue;
+        }
         const { params } = z
           .object({ params: PublishWorkParamsZod })
           .parse(mutation.args);
@@ -151,57 +156,20 @@ export async function POST(req: Request, res: Response) {
       if (spaceId === WORKSPACE) {
         if (published.quests) {
           await Promise.allSettled([
-            pusher.trigger(PUBLISHED_QUESTS, "poke", {}),
-            pusher.trigger(WORKSPACE, "poke", {}),
+            pusher.trigger(PUBLISHED_QUESTS, "poke", push.clientGroupID),
+            // pusher.trigger(`${WORKSPACE}${userId}`, "poke", {}),
+
+            pusher.trigger(WORKSPACE, "poke", push.clientGroupID),
           ]);
         } else {
-          await pusher.trigger(WORKSPACE, "poke", {});
+          await pusher.trigger(WORKSPACE, "poke", push.clientGroupID);
         }
-        // if (published.quests) {
-        //   const result = await momentoTopic.publish(
-        //     env.NEXT_PUBLIC_MOMENTO_CACHE_NAME,
-        //     PUBLISHED_QUESTS,
-        //     "test-topic-value"
-        //   );
-        //   if (result instanceof TopicPublish.Success) {
-        //     console.log(`Value published to topic ${PUBLISHED_QUESTS}`);
-        //   } else if (result instanceof TopicPublish.Error) {
-        //     console.log(
-        //       `An error occurred while attempting to publish to the topic 'test-topic' in cache 'test-cache': ${result.errorCode()}: ${result.toString()}`
-        //     );
-        //   }
-        // }
-
-        // const result = await momentoTopic.publish(
-        //   env.NEXT_PUBLIC_MOMENTO_CACHE_NAME,
-        //   WORKSPACE,
-        //   "test-topic-value"
-        // );
-        // if (result instanceof TopicPublish.Success) {
-        //   console.log(`Value published to topic ${WORKSPACE}`);
-        // } else if (result instanceof TopicPublish.Error) {
-        //   console.log(
-        //     `An error occurred while attempting to publish to the topic 'test-topic' in cache 'test-cache': ${result.errorCode()}: ${result.toString()}`
-        //   );
-        // }
       }
       if (spaceId === PUBLISHED_QUESTS) {
-        await pusher.trigger(PUBLISHED_QUESTS, "poke", {});
-        // const result = await momentoTopic.publish(
-        //   env.NEXT_PUBLIC_MOMENTO_CACHE_NAME,
-        //   PUBLISHED_QUESTS,
-        //   "poke"
-        // );
-        // if (result instanceof TopicPublish.Success) {
-        //   console.log(`Value published to topic ${PUBLISHED_QUESTS}`);
-        // } else if (result instanceof TopicPublish.Error) {
-        //   console.log(
-        //     `An error occurred while attempting to publish to the topic 'test-topic' in cache 'test-cache': ${result.errorCode()}: ${result.toString()}`
-        //   );
-        // }
+        await pusher.trigger(PUBLISHED_QUESTS, "poke", push.clientGroupID);
       }
       if (spaceId === USER) {
-        await pusher.trigger(USER, "poke", {});
+        await pusher.trigger(userId, "poke", push.clientGroupID);
       }
       console.log("Poke took", Date.now() - startPoke);
     } else {
@@ -256,6 +224,7 @@ const processMutation = async ({
       WorkspaceMutators({ tx, mutation, spaceId, userId }),
       QuestMutators({ tx, mutation, spaceId, userId }),
       UserMutators({ tx, mutation, spaceId, userId }),
+      GlobalChatMutators({ tx, mutation, spaceId, userId }),
     ]);
 
     console.log("Processed mutation in", Date.now() - t1);

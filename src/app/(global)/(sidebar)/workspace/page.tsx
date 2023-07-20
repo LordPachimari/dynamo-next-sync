@@ -1,5 +1,3 @@
-"use client";
-
 import Actions from "../../../../components/Workspace/Actions";
 
 export default function Workspace() {

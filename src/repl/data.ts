@@ -9,51 +9,36 @@ import {
   BatchGetCommandInput,
   GetCommand,
   GetCommandInput,
-  PutCommand,
-  PutCommandInput,
   QueryCommand,
   QueryCommandInput,
-  ScanCommand,
-  ScanCommandInput,
   TransactWriteCommand,
   TransactWriteCommandInput,
-  UpdateCommand,
-  UpdateCommandInput,
 } from "@aws-sdk/lib-dynamodb";
-import { JSONValue, PatchOperation } from "replicache";
-import { JSONObject } from "replicache";
+import { JSONObject, JSONValue, PatchOperation } from "replicache";
+import { ulid } from "ulid";
 import { dynamoClient } from "~/clients/dynamodb";
-import { env } from "~/env.mjs";
-import {
-  ClientViewRecord,
-  Content,
-  LastMutationId,
-  MergedWork,
-  Post,
-  PublishedQuest,
-  Quest,
-  Solution,
-  SpaceVersion,
-} from "~/types/types";
 import { rocksetClient } from "~/clients/rockset";
+import { env } from "~/env.mjs";
+import { ClientViewRecord, LastMutationId, MergedWork } from "~/types/types";
 import {
   LEADERBOARD,
   PUBLISHED_QUESTS,
   USER,
   WORKSPACE,
 } from "~/utils/constants";
-import { CacheGet, CacheSet } from "@gomomento/sdk";
-import { momento } from "~/clients/momento";
-import { nanoid } from "nanoid";
-import { ulid } from "ulid";
 import { contentKey } from "./client/mutators/workspace";
+import { redis } from "~/clients/redis";
+import { momento } from "~/clients/momento";
+import { CacheGet, CacheSet } from "@gomomento/sdk";
 export const makeCVR = ({
   items,
+  cvrId,
 }: {
   items: { SK: string; version: number }[];
+  cvrId: string | undefined;
 }) => {
   const cvr: ClientViewRecord = {
-    id: ulid(),
+    id: cvrId ? cvrId : ulid(),
     keys: {},
   };
 
@@ -87,6 +72,7 @@ export const getPatch = async ({
   try {
     const nextCVR = makeCVR({
       items,
+      cvrId: prevCVR.id,
     });
 
     const putKeys: { PK: string; SK: string }[] = [];
@@ -225,41 +211,9 @@ const getWorkspaceCVR = async ({
       KeyConditionExpression: "PK = :PK",
       ExpressionAttributeValues: { ":PK": spaceId },
     };
-    const workspaceCVRPromise = dynamoClient.send(new QueryCommand(params));
-
-    const collaborativeItemsPromise =
-      rocksetClient.queryLambdas.executeQueryLambda(
-        "commons",
-        "WorkspaceCollaborativeItems",
-        "a23c60f39f648c6e",
-        {
-          parameters: [
-            {
-              name: "userId",
-              type: "string",
-              value: userId,
-            },
-          ],
-        }
-      );
-    const [workspaceCVR, collaborativeItems] = await Promise.all([
-      workspaceCVRPromise,
-      collaborativeItemsPromise,
-    ]);
+    const workspaceCVR = await dynamoClient.send(new QueryCommand(params));
 
     if (workspaceCVR.Items && workspaceCVR.Items.length > 0) {
-      if (collaborativeItems.results && collaborativeItems.results.length > 0) {
-        //versions in dynamo are fresh, while rockset syncs from dynamo with a delay, so always retrieve versions from dynamodb
-        const collaborativeCVR = await getVersionsFromDynamoDb({
-          keys: collaborativeItems.results as { PK: string; SK: string }[],
-        });
-
-        return [...workspaceCVR.Items, ...collaborativeCVR] as {
-          PK: string;
-          SK: string;
-          version: number;
-        }[];
-      }
       return workspaceCVR.Items as {
         PK: string;
         SK: string;
@@ -309,23 +263,28 @@ const getLeaderboardCVR = async () => {
   }
 };
 const getPublishedQuestsCVR = async () => {
-  const scanParams: ScanCommandInput = {
+  const params: QueryCommandInput = {
     TableName: env.MAIN_TABLE_NAME,
     IndexName: env.PUBLISHED_QUESTS_CVR_INDEX_NAME,
+    KeyConditionExpression:
+      "publishedQuestKey = :publishedQuestKey AND begins_with(SK, :SK)",
+    ExpressionAttributeValues: {
+      ":publishedQuestKey": PUBLISHED_QUESTS,
+      ":SK": "WORK#QUEST",
+    },
   };
-
   try {
-    const publishedQuestsCVR = await dynamoClient.send(
-      new ScanCommand(scanParams)
-    );
-    if (publishedQuestsCVR.Items && publishedQuestsCVR.Items.length > 0) {
-      return publishedQuestsCVR.Items as {
-        PK: string;
-        SK: string;
-        version: number;
-      }[];
+    try {
+      const result = await dynamoClient.send(new QueryCommand(params));
+
+      if (result.Items && result.Items.length > 0) {
+        return result.Items as { SK: string; PK: string; version: number }[];
+      }
+      return [];
+    } catch (error) {
+      console.log(error);
+      throw new Error("Failed to retrieve published quests CVR");
     }
-    return [];
   } catch (error) {
     console.log(error);
     throw new Error("Failed to get published quests CVR");
@@ -349,7 +308,7 @@ const getResetPatch = async ({
       : spaceId === LEADERBOARD
       ? await getLeaderboardItems()
       : [];
-  const cvr = makeCVR({ items });
+  const cvr = makeCVR({ items, cvrId: undefined });
   const patch: PatchOperation[] = [
     {
       op: "clear",
@@ -371,7 +330,7 @@ const getResetPatch = async ({
   };
 };
 
-const recursiveQuery = async (params: QueryCommandInput | ScanCommandInput) => {
+const recursiveQuery = async (params: QueryCommandInput) => {
   let items: Record<string, any>[] = [];
   let lastEvaluatedKey;
 
@@ -399,44 +358,9 @@ const getWorkspaceItems = async ({
       KeyConditionExpression: "PK = :PK",
       ExpressionAttributeValues: { ":PK": spaceId },
     };
-    const workspaceItemsPromise = recursiveQuery(params);
+    const workspaceItems = await recursiveQuery(params);
 
-    const collaborativeItemsIdsPromise =
-      rocksetClient.queryLambdas.executeQueryLambda(
-        "commons",
-        "WorkspaceCollaborativeItems",
-        "06c57497728b7d5f",
-        {
-          parameters: [
-            {
-              name: "userId",
-              type: "string",
-              value: userId,
-            },
-          ],
-        }
-      );
-    const [workspaceItems, collaborativeItemsIds] = await Promise.all([
-      workspaceItemsPromise,
-      collaborativeItemsIdsPromise,
-    ]);
     if (workspaceItems && workspaceItems.length > 0) {
-      if (
-        collaborativeItemsIds.results &&
-        collaborativeItemsIds.results.length > 0
-      ) {
-        const keys: { PK: string; SK: string }[] = [];
-        for (const { PK, SK } of collaborativeItemsIds.results as {
-          PK: string;
-          SK: string;
-        }[]) {
-          keys.push({ PK, SK });
-        }
-        const collborativeItems = await getFullItems({ keys });
-        return [...workspaceItems, ...collborativeItems] as (MergedWork & {
-          SK: string;
-        })[];
-      }
       return workspaceItems as (MergedWork & { SK: string })[];
     }
     return [];
@@ -601,6 +525,23 @@ export const putItems = async ({
     throw new Error("Transact put failed");
   }
 };
+export const putRedisItems = async ({
+  items,
+}: {
+  items: {
+    [key: string]: unknown;
+  };
+}) => {
+  if (Object.entries(items).length === 0) {
+    return;
+  }
+  try {
+    await redis.mset(items);
+  } catch (error) {
+    console.log(error);
+    throw new Error("failed to put in redis");
+  }
+};
 export const updateItems = async ({
   spaceId,
   items,
@@ -708,6 +649,7 @@ export const delItems = async ({
         })
       | undefined;
   }[] = [];
+  const lastUpdated = new Date().toISOString();
   for (const key of keysToDel) {
     updateItems.push({
       Update: {
@@ -716,13 +658,19 @@ export const delItems = async ({
 
           SK: key,
         },
-        UpdateExpression: "SET #inTrash = :value, #version = #version + :inc",
+        UpdateExpression:
+          "SET #inTrash = :value, #version = #version + :inc, #lastUpdated = :lastUpdated",
         ConditionExpression: "inTrash <> :value",
         ExpressionAttributeNames: {
           "#inTrash": "inTrash",
           "#version": "version",
+          "#lastUpdated": "lastUpdated",
         },
-        ExpressionAttributeValues: { ":value": true, ":inc": 1 },
+        ExpressionAttributeValues: {
+          ":value": true,
+          ":inc": 1,
+          ":lastUpdated": lastUpdated,
+        },
         TableName: env.MAIN_TABLE_NAME,
       },
     });
@@ -905,10 +853,11 @@ export const getLastMutationIdsSince = async ({
     const result = await dynamoClient.send(new QueryCommand(queryParams));
     if (result.Items) {
       const items = result.Items as LastMutationId[];
-      // const items =Object.fromEntries(
-      //   lastMutationIDArray.map((l) => [l.id, l.lastMutationId] as const)
-      // );
-      const nextCVR = makeCVR({ items });
+
+      const nextCVR = makeCVR({
+        items,
+        cvrId: prevLastMutationIdsCVR ? prevLastMutationIdsCVR.id : undefined,
+      });
       if (!prevLastMutationIdsCVR) {
         return {
           nextLastMutationIdsCVR: nextCVR,
@@ -1007,7 +956,6 @@ export const getPrevCVR = async ({ key }: { key: string | undefined }) => {
     );
     if (getResponse instanceof CacheGet.Hit) {
       console.log("cache CVR hit!");
-      // increasing view count on the quest logic. If user exists and haven't seen the quest by checking whether user has this quest id as a sort key in VIEWS_TABLE.
       const result = JSON.parse(getResponse.valueString()) as ClientViewRecord;
 
       return result;
@@ -1017,7 +965,7 @@ export const getPrevCVR = async ({ key }: { key: string | undefined }) => {
     return undefined;
   } catch (error) {
     console.log(error);
-    throw new Error("Failed to get item");
+    throw new Error("Failed to get prev CVR");
   }
 };
 export const setCVR = async ({

@@ -66,6 +66,9 @@ export const Topics = [
   "VIDEOGRAPHY",
   "GAMING",
 ] as const;
+export const Channel = ["GENERAL", ...Topics] as const;
+export const ChannelZod = z.enum(Channel);
+export type ChannelType = z.infer<typeof ChannelZod>;
 export type QuestAttributesType = typeof QuestAttributes;
 export const Subtopics = ["SOCIAL MEDIA", "MACHINE LEARNING", "WEB3"] as const;
 const TopicsZod = z.enum(Topics);
@@ -286,16 +289,18 @@ export const AddCommentZod = z.object({
   commentId: z.string(),
   text: z.string(),
 });
-export type Message = {
-  id: string;
-  message: string;
-  user_id: string;
-  created_at: Date;
-  profile: string;
-  username: string;
-  level: number;
-  channel: Topic | "GENERAL";
-};
+export const MessageZod = z.object({
+  id: z.string(),
+  message: z.string(),
+  userId: z.string(),
+  username: z.string(),
+  createAt: z.string(),
+  profile: z.optional(z.string()),
+  level: z.number(),
+  channel: z.enum([...Topics, "GENERAL" as const]),
+  version: z.number(),
+});
+export type Message = z.infer<typeof MessageZod>;
 
 export const PostZodPartial = z
   .object({
@@ -401,7 +406,7 @@ export type MergedWork = (Post & Quest & Solution) & {
 };
 export interface PublishedMergedWork extends MergedWork {
   textContent: string;
-  publishedQuestKey?:string
+  publishedQuestKey?: string;
 }
 
 const basePublishWorkSchema = z.object({
@@ -470,6 +475,8 @@ const mutationNames = [
   "inviteMember",
   "acceptGuildInvitation",
   "createMemberInquiry",
+  "createMessage",
+  "updateChannel"
 ] as const;
 export const MutationNamesZod = z.enum(mutationNames);
 export type MutaitonNamesType = z.infer<typeof MutationNamesZod>;

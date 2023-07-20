@@ -16,16 +16,7 @@ import {
   AlertDialogTitle,
 } from "~/ui/AlertDialog";
 import { Button } from "~/ui/Button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/ui/Dialog";
 import { UpdateAttributeErrorsZod, WorkspaceStore } from "~/zustand/workspace";
-import Preview from "./Preview";
 
 import { Editor } from "@tiptap/react";
 import { toast } from "sonner";
@@ -34,10 +25,12 @@ const Publish = ({
   work,
   editor,
   ydoc,
+  isAuthorised,
 }: {
   work: MergedWork;
   editor: Editor;
   ydoc: Y.Doc;
+  isAuthorised: boolean;
 }) => {
   const [isValid, setIsValid] = useState(false);
   const rep = WorkspaceStore((state) => state.rep);
@@ -80,16 +73,20 @@ const Publish = ({
       const result = QuestAttributesZod.safeParse(work);
 
       if (!result.success) {
-        console.log("error", result.error.issues);
         const errors: Record<string, { error: boolean; message: string }> = {};
         result.error.issues.forEach(
           (e) =>
-            (errors[e.path[0] as string] = { error: true, message: e.message })
+            (errors[e.path[0] as string] = {
+              error: true,
+              message: e.message.startsWith("Expected")
+                ? "Invalid input"
+                : e.message,
+            })
         );
-        console.log("errors", errors);
         const newAttributeErrors = UpdateAttributeErrorsZod.parse(errors);
         setAttributeErrors(newAttributeErrors);
         setIsValid(false);
+        toast.error("Fill in all the necessary inputs");
       } else {
         setIsValid(true);
       }
@@ -98,18 +95,17 @@ const Publish = ({
       const result = SolutionAttributesZod.safeParse(work);
 
       if (!result.success) {
-        console.log("error", result.error.issues);
         const errors: Record<string, { error: boolean; message: string }> = {};
         result.error.issues.forEach(
           (e) =>
             (errors[e.path[0] as string] = { error: true, message: e.message })
         );
-        console.log("errors", errors);
 
         const newAttributeErrors = UpdateAttributeErrorsZod.parse(errors);
         setAttributeErrors(newAttributeErrors);
 
         setIsValid(false);
+        toast.error("Fill in all the necessary inputs");
       } else {
         setIsValid(true);
       }
@@ -148,15 +144,18 @@ const Publish = ({
       <Button
         className="mt-3 w-full bg-emerald-500 text-white hover:bg-emerald-600"
         onClick={() => {
-          validate();
+          if (!isAuthorised) {
+            toast.error(
+              "Permission denied. Only creator or signed in user is allowed to publish"
+            );
+          } else {
+            validate();
+          }
         }}
       >
         Publish
       </Button>
       <AlertDialog open={isValid}>
-        {/* <AlertDialogTrigger asChild> */}
-
-        {/* </AlertDialogTrigger> */}
         <AlertDialogContent className="border-slate-6">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm publish</AlertDialogTitle>
@@ -185,9 +184,9 @@ const Publish = ({
 
             <AlertDialogAction
               className="bg-emerald-500 hover:bg-emerald-600"
-              // eslint-disable-next-line @typescript-eslint/no-misused-promises
               onClick={() => {
-                if (work.type === "QUEST") void handleQuestPublish();
+                if (work.type === "QUEST")
+                  handleQuestPublish().catch((err) => console.log(err));
               }}
             >
               Continue

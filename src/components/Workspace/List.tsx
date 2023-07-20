@@ -13,6 +13,7 @@ import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { UndoManager } from "@rocicorp/undo";
 import {
   Album,
+  ArchiveRestoreIcon,
   BookOpenCheck,
   ChevronDown,
   Copy,
@@ -22,6 +23,7 @@ import {
   Plus,
   Trash,
   Trash2,
+  Undo2,
 } from "lucide-react";
 import {
   useParams,
@@ -55,6 +57,38 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "~/ui/Collapsible";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/ui/Tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "~/ui/Card";
+import { Label } from "~/ui/label";
+import { Input } from "~/ui/Input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/ui/Dialog";
+import { DialogOverlay } from "@radix-ui/react-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/ui/AlertDialog";
 
 export default function List({
   showList,
@@ -72,15 +106,15 @@ export default function List({
   const quests: Quest[] = [];
   const solutions: Solution[] = [];
   const posts: Post[] = [];
+  const trash: MergedWork[] = [];
   const router = useRouter();
   const { id: routerId } = useParams();
+  const [type, setType] = useState<WorkType>("QUEST");
 
   const works = useSubscribe(
     rep,
     async (tx) => {
       const list = await tx.scan({ prefix: "WORK#" }).entries().toArray();
-
-      console.log("list", list);
       return list;
     },
     null,
@@ -96,6 +130,8 @@ export default function List({
         solutions.push(work);
       } else if (work.type === "POST" && !work.inTrash) {
         posts.push(work as Post);
+      } else if (work.inTrash) {
+        trash.push(work);
       }
     }
   }
@@ -115,7 +151,6 @@ export default function List({
         type: "QUEST",
         version: 1,
       };
-      // await rep.mutate.createQuest({ quest: newQuest });
       await undoManagerRef.current.add({
         execute: () =>
           rep.mutate.createWork({
@@ -131,7 +166,6 @@ export default function List({
   const handleDeleteWork = useCallback(
     async ({ id, type }: { id: string; type: WorkType }) => {
       if (rep) {
-        // await rep.mutate.createQuest({ quest: newQuest });
         await undoManagerRef.current.add({
           execute: async () => {
             await rep.mutate.deleteWork({ id, type });
@@ -142,7 +176,15 @@ export default function List({
           undo: () => rep.mutate.restoreWork({ id, type }),
         });
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rep]
+  );
+  const handlePermDeleteWork = useCallback(
+    async ({ id, type }: { id: string; type: WorkType }) => {
+      if (rep) {
+        await rep.mutate.deleteWorkPermanently({ id, type });
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rep]
@@ -152,7 +194,6 @@ export default function List({
       const newId = ulid();
       const lastUpdated = new Date().toISOString();
       if (rep) {
-        // await rep.mutate.createQuest({ quest: newQuest });
         await undoManagerRef.current.add({
           execute: async () => {
             await rep.mutate.duplicateWork({
@@ -169,61 +210,72 @@ export default function List({
     },
     [rep]
   );
+  const handleRestoreWork = useCallback(
+    async ({ id, type }: { id: string; type: WorkType }) => {
+      if (rep) {
+        await undoManagerRef.current.add({
+          execute: async () => {
+            await rep.mutate.restoreWork({ id, type });
+          },
+          undo: () => rep.mutate.deleteWork({ id, type }),
+        });
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rep]
+  );
   return (
     <div className={`listContainer ${showList ? "showList" : ""}`}>
-      <div className="relative flex flex-row-reverse p-2">
-        <Button
-          aria-label="close list"
-          size="icon"
-          className="bg-blue-4 hover:bg-blue-5"
-          onClick={() => {
-            toggleShowList((val) => !val);
-          }}
-        >
-          <ArrowBigLeftDash className="text-blue-9" />
-        </Button>
-      </div>
-      <ListComponent
-        type="QUEST"
-        handleCreateQuest={handleCreateQuest}
-        handleDeleteWork={handleDeleteWork}
-        handleDuplicateWork={handleDuplicateWork}
-        quests={quests}
-        segment={segment || ""}
-      />
-      <ListComponent
-        type="POST"
-        handleCreateQuest={handleCreateQuest}
-        handleDeleteWork={handleDeleteWork}
-        handleDuplicateWork={handleDuplicateWork}
-        posts={posts}
-        segment={segment || ""}
-      />
-      <ListComponent
-        type="SOLUTION"
-        handleCreateQuest={handleCreateQuest}
-        handleDeleteWork={handleDeleteWork}
-        handleDuplicateWork={handleDuplicateWork}
-        solutions={solutions}
-        segment={segment || ""}
-      />
+      <div>
+        <div className="relative flex flex-row-reverse p-2">
+          <Button
+            aria-label="close list"
+            size="icon"
+            className="bg-blue-4 hover:bg-blue-5"
+            onClick={() => {
+              toggleShowList((val) => !val);
+            }}
+          >
+            <ArrowBigLeftDash className="text-blue-9" />
+          </Button>
+        </div>
+        <Tabs defaultValue={type} className="w-full p-1">
+          <TabsList className="grid w-full grid-cols-3 gap-2 shadow-inner">
+            <TabsTrigger value="SOLUTION" onClick={() => setType("SOLUTION")}>
+              Solutions
+            </TabsTrigger>
 
-      {/* <ListSettings> */}
-      <span
-        className={cn(
-          " mx-2 flex w-[240px] cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal text-blue-9 hover:bg-blue-4 hover:text-accent-foreground"
-          // path === item.href ? "bg-accent" : "transparent",
-          // item.disabled && "cursor-not-allowed opacity-80",
-        )}
-      >
-        <Trash className="text-blue-500" size={20} />
-        Trash
-      </span>
-      {/* </ListSettings> */}
+            <TabsTrigger value="QUEST" onClick={() => setType("QUEST")}>
+              Quests
+            </TabsTrigger>
+            <TabsTrigger value="POST" onClick={() => setType("POST")}>
+              Posts
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <Items
+          type={type}
+          handleCreateQuest={handleCreateQuest}
+          handleDeleteWork={handleDeleteWork}
+          handleDuplicateWork={handleDuplicateWork}
+          quests={quests}
+          posts={posts}
+          solutions={solutions}
+          segment={segment || ""}
+        />
+      </div>
+
+      <div>
+        <TrashComponent
+          trash={trash}
+          handleRestoreWork={handleRestoreWork}
+          handlePermDeleteWork={handlePermDeleteWork}
+        />
+      </div>
     </div>
   );
 }
-const ListComponent = ({
+const Items = ({
   handleDeleteWork,
   handleCreateQuest,
   handleDuplicateWork,
@@ -234,9 +286,9 @@ const ListComponent = ({
   solutions,
 }: {
   type: WorkType;
-  quests?: Quest[];
-  posts?: Post[];
-  solutions?: Solution[];
+  quests: Quest[];
+  posts: Post[];
+  solutions: Solution[];
   handleCreateQuest: () => Promise<void>;
   handleDeleteWork: (props: { id: string; type: WorkType }) => Promise<void>;
   segment: string;
@@ -253,118 +305,246 @@ const ListComponent = ({
   }, [type]);
 
   return (
-    <Collapsible open={isCollapsed}>
-      <CollapsibleTrigger
-        className="relative flex w-full gap-2 p-2 opacity-80"
-        onClick={() => {
-          setIsCollapsed((old) => !old);
-          localStorage.setItem(type, JSON.stringify(!isCollapsed));
+    <ScrollArea className="h-fit w-full">
+      <ul ref={parent}>
+        {type === "QUEST" &&
+          quests &&
+          quests.map((work) => {
+            return (
+              <Item
+                handleDeleteWork={handleDeleteWork}
+                router={router}
+                segment={segment}
+                work={work}
+                key={work.id}
+              />
+            );
+          })}
+        {type === "SOLUTION" &&
+          solutions &&
+          solutions.map((work) => {
+            return (
+              <Item
+                handleDeleteWork={handleDeleteWork}
+                router={router}
+                segment={segment}
+                work={work}
+                key={work.id}
+              />
+            );
+          })}
+        {type === "POST" &&
+          posts &&
+          posts.map((work) => {
+            return (
+              <Item
+                handleDeleteWork={handleDeleteWork}
+                router={router}
+                segment={segment}
+                work={work as MergedWork}
+                key={work.id}
+              />
+            );
+          })}
+      </ul>
+      <span
+        className={cn(
+          "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-xs font-normal text-slate-600 hover:bg-blue-4 hover:text-blue-9 "
+          // path === item.href ? "bg-accent" : "transparent",
+          // item.disabled && "cursor-not-allowed opacity-80",
+        )}
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        onClick={async () => {
+          if (type === "QUEST") await handleCreateQuest();
         }}
       >
-        {type === "QUEST" ? (
-          <BookOpenCheck />
-        ) : type === "POST" ? (
-          <Album />
-        ) : (
-          <FileEdit />
-        )}
-        {type === "QUEST" ? "Quests" : type === "POST" ? "Posts" : "Solutions"}
-        <ChevronDown
-          className={cn(
-            "absolute right-2 transition-transform duration-200 ease-in-out",
-            isCollapsed && "rotate-180 transform"
-          )}
-          size={20}
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <ScrollArea className="h-fit w-full">
-          <ul ref={parent}>
-            {type === "QUEST" &&
-              quests &&
-              quests.map((work) => {
-                return (
-                  <span
-                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                    onMouseDown={() => {
-                      router.push(`/workspace/${work.id}?type=${work.type}`);
-                    }}
-                    key={work.id}
-                    className={cn(
-                      "relative mx-1 my-1 flex w-[240px]  cursor-pointer items-center gap-2  rounded-md p-2 text-sm font-normal hover:bg-blue-4 hover:text-blue-9",
+        <Plus size={20} className="text-blue-9" />
+        <p>add {type.toLocaleLowerCase()}</p>
+      </span>
+    </ScrollArea>
+  );
+};
+const Item = ({
+  router,
+  work,
+  segment,
+  handleDeleteWork,
+}: {
+  router: AppRouterInstance;
+  work: MergedWork;
+  segment: string;
+  handleDeleteWork: ({
+    id,
+    type,
+  }: {
+    id: string;
+    type: WorkType;
+  }) => Promise<void>;
+}) => {
+  return (
+    <span
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      onMouseDown={() => {
+        router.push(`/workspace/${work.id}?type=${work.type}`);
+      }}
+      key={work.id}
+      className={cn(
+        "relative mx-1 my-1 flex w-[247px]  cursor-pointer items-center gap-2  rounded-md p-2 text-sm font-normal text-slate-600 hover:bg-blue-4 hover:text-blue-9 dark:text-white",
 
-                      {
-                        "bg-blue-4 text-blue-9": segment === work.id,
-                      }
-                    )}
-                  >
-                    <BookOpenCheck className="text-blue-9" size={20} />
-                    <p className="w-[180px] overflow-hidden text-ellipsis whitespace-nowrap">
-                      {work.title || "Untitled"}
-                    </p>
-                    {/* <Button className="h-6 w-5 bg-blue-300 hover:bg-blue-400"> */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        asChild
-                        className="absolute right-2 ml-2"
-                      >
-                        <MoreVertical className=" text-blue-9" size={15} />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-30">
-                        <DropdownMenuItem
-                          className="focus:bg-blue-100"
-                          onClick={(e) => {
-                            handleDuplicateWork({
-                              id: work.id,
-                              type: work.type as WorkType,
-                            }).catch((err) => console.log(err));
-                          }}
-                        >
-                          <Copy className="mr-2 h-4 w-4" />
-
-                          <span>Duplicate</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            handleDeleteWork({
-                              id: work.id,
-                              type: work.type as WorkType,
-                            }).catch((err) => console.log(err));
-                          }}
-                          className="focus:bg-blue-100"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          <span>Delete</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    {/* </Button> */}
-                  </span>
-                );
-              })}
-          </ul>
-          <span
-            className={cn(
-              "mx-2 flex cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal hover:bg-blue-4 hover:text-blue-9 "
-              // path === item.href ? "bg-accent" : "transparent",
-              // item.disabled && "cursor-not-allowed opacity-80",
-            )}
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
-            onClick={async () => {
-              if (type === "QUEST") await handleCreateQuest();
+        {
+          "bg-blue-4 text-blue-9": segment === work.id,
+        }
+      )}
+    >
+      <BookOpenCheck size={20} className="text-blue-9" />
+      <p className="w-[180px] overflow-hidden text-ellipsis whitespace-nowrap ">
+        {work.title || "Untitled"}
+      </p>
+      {/* <Button className="h-6 w-5 bg-blue-300 hover:bg-blue-400"> */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild className="absolute right-2 ml-2">
+          <MoreVertical size={15} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-30">
+          <DropdownMenuItem
+            onClick={(e) => {
+              handleDeleteWork({
+                id: work.id,
+                type: work.type as WorkType,
+              }).catch((err) => console.log(err));
             }}
+            className="focus:bg-blue-100"
           >
-            <Plus size={20} />
-            <span>Add {type}</span>
-          </span>
-        </ScrollArea>
-      </CollapsibleContent>
-    </Collapsible>
+            <Trash2 className="text-blue mr-2 h-4 w-4" />
+            <span>Delete</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {/* </Button> */}
+    </span>
+  );
+};
+const TrashItem = ({
+  work,
+  handleRestoreWork,
+  handlePermDeleteWork,
+}: {
+  work: MergedWork;
+  handleRestoreWork: ({
+    id,
+    type,
+  }: {
+    id: string;
+    type: WorkType;
+  }) => Promise<void>;
+  handlePermDeleteWork: ({
+    id,
+    type,
+  }: {
+    id: string;
+    type: WorkType;
+  }) => Promise<void>;
+}) => {
+  return (
+    <Card className="flex h-10 items-center justify-between p-2 shadow-lg">
+      <h3>{work.title}</h3>
+      <div>
+        <Button
+          size={"icon"}
+          className=" bg-transparent hover:bg-slate-200"
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
+          onClick={() => handleRestoreWork({ id: work.id, type: work.type })}
+        >
+          <Undo2 className="text-black" />
+        </Button>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button size={"icon"} className="bg-transparent hover:bg-slate-200">
+              <Trash2 className="text-red-9" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="dark:border-slate-6">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm your action</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure to permanently delete?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <Button
+                  className=" bg-red-9 text-white hover:bg-red-10"
+                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                  onClick={() =>
+                    handlePermDeleteWork({ id: work.id, type: work.type })
+                  }
+                >
+                  Delete
+                </Button>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </Card>
+  );
+};
+const TrashComponent = ({
+  trash,
+  handleRestoreWork,
+  handlePermDeleteWork,
+}: {
+  trash: MergedWork[];
+  handleRestoreWork: ({
+    id,
+    type,
+  }: {
+    id: string;
+    type: WorkType;
+  }) => Promise<void>;
+  handlePermDeleteWork: ({
+    id,
+    type,
+  }: {
+    id: string;
+    type: WorkType;
+  }) => Promise<void>;
+}) => {
+  return (
+    <Dialog>
+      <DialogTrigger>
+        <span
+          className={cn(
+            " mx-2 flex w-[240px] cursor-pointer items-center gap-2 rounded-md p-2 text-sm font-normal text-slate-600 hover:bg-blue-6  hover:text-blue-9"
+            // path === item.href ? "bg-accent" : "transparent",
+            // item.disabled && "cursor-not-allowed opacity-80",
+          )}
+        >
+          <Trash size={20} className="text-blue-9" />
+          <p>Trash</p>
+        </span>
+      </DialogTrigger>
+      <DialogContent className="bg-slate-100">
+        <DialogHeader>
+          <DialogTitle>Trash</DialogTitle>
+        </DialogHeader>
+        {trash.map((t) => (
+          <TrashItem
+            work={t}
+            key={t.id}
+            handleRestoreWork={handleRestoreWork}
+            handlePermDeleteWork={handlePermDeleteWork}
+          />
+        ))}
+      </DialogContent>
+    </Dialog>
   );
 };
 const ListSettings = ({ children }: { children: React.ReactNode }) => {
   return (
-    <>
+    <div>
       {/* <Button
         justifyContent="flex-start"
         pl="2"
@@ -397,125 +577,6 @@ const ListSettings = ({ children }: { children: React.ReactNode }) => {
       /> */}
 
       {children}
-    </>
+    </div>
   );
 };
-
-//  {type === "SOLUTION" &&
-//             solutions &&
-//             solutions.map((work) => {
-//               return (
-//                 <span
-//                   // eslint-disable-next-line @typescript-eslint/no-misused-promises
-//                   onMouseDown={() => {
-//                     router.push(`/workspace/${work.id}?type=${work.type}`);
-//                   }}
-//                   key={work.id}
-//                   className={cn(
-//                     "relative mx-1 my-1 flex cursor-pointer items-center  gap-2 rounded-md p-2 text-sm font-normal hover:bg-blue-4 hover:text-blue-9",
-
-//                     {
-//                       "bg-blue-4 text-blue-9": segment === work.id,
-//                     }
-//                   )}
-//                 >
-//                   <BookOpenCheck className="text-blue-9" size={20} />
-//                   <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-//                     {work.title || "Untitled"}
-//                   </span>
-//                   {/* <Button className="h-6 w-5 bg-blue-300 hover:bg-blue-400"> */}
-//                   <DropdownMenu>
-//                     <DropdownMenuTrigger asChild className="absolute right-2">
-//                       <MoreVertical className=" text-blue-9" size={15} />
-//                     </DropdownMenuTrigger>
-//                     <DropdownMenuContent className="w-30">
-//                       <DropdownMenuItem
-//                         className="focus:bg-blue-100"
-//                         onClick={(e) => {
-//                           handleDuplicateWork({
-//                             id: work.id,
-//                             type: work.type as WorkType,
-//                           }).catch((err) => console.log(err));
-//                         }}
-//                       >
-//                         <Copy className="mr-2 h-4 w-4" />
-
-//                         <span>Duplicate</span>
-//                       </DropdownMenuItem>
-//                       <DropdownMenuItem
-//                         onClick={(e) => {
-//                           handleDeleteWork({
-//                             id: work.id,
-//                             type: work.type as WorkType,
-//                           }).catch((err) => console.log(err));
-//                         }}
-//                         className="focus:bg-blue-100"
-//                       >
-//                         <Trash2 className="mr-2 h-4 w-4" />
-//                         <span>Delete</span>
-//                       </DropdownMenuItem>
-//                     </DropdownMenuContent>
-//                   </DropdownMenu>
-//                   {/* </Button> */}
-//                 </span>
-//               );
-//             })}
-//           {type === "POST" &&
-//             posts &&
-//             posts.map((work) => {
-//               return (
-//                 <span
-//                   // eslint-disable-next-line @typescript-eslint/no-misused-promises
-//                   onMouseDown={() => {
-//                     router.push(`/workspace/${work.id}?type=${work.type}`);
-//                   }}
-//                   key={work.id}
-//                   className={cn(
-//                     "relative mx-1 my-1 flex cursor-pointer items-center  gap-2 rounded-md p-2 text-sm font-normal hover:bg-blue-4 hover:text-blue-9",
-
-//                     {
-//                       "bg-blue-4 text-blue-9": segment === work.id,
-//                     }
-//                   )}
-//                 >
-//                   <BookOpenCheck className="text-blue-9" size={20} />
-//                   <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-//                     {work.title || "Untitled"}
-//                   </span>
-//                   {/* <Button className="h-6 w-5 bg-blue-300 hover:bg-blue-400"> */}
-//                   <DropdownMenu>
-//                     <DropdownMenuTrigger asChild className="absolute right-2">
-//                       <MoreVertical className=" text-blue-9" size={15} />
-//                     </DropdownMenuTrigger>
-//                     <DropdownMenuContent className="w-30">
-//                       <DropdownMenuItem
-//                         className="focus:bg-blue-100"
-//                         onClick={(e) => {
-//                           handleDuplicateWork({
-//                             id: work.id,
-//                             type: work.type as WorkType,
-//                           }).catch((err) => console.log(err));
-//                         }}
-//                       >
-//                         <Copy className="mr-2 h-4 w-4" />
-
-//                         <span>Duplicate</span>
-//                       </DropdownMenuItem>
-//                       <DropdownMenuItem
-//                         onClick={(e) => {
-//                           handleDeleteWork({
-//                             id: work.id,
-//                             type: work.type as WorkType,
-//                           }).catch((err) => console.log(err));
-//                         }}
-//                         className="focus:bg-blue-100"
-//                       >
-//                         <Trash2 className="mr-2 h-4 w-4" />
-//                         <span>Delete</span>
-//                       </DropdownMenuItem>
-//                     </DropdownMenuContent>
-//                   </DropdownMenu>
-//                   {/* </Button> */}
-//                 </span>
-//               );
-//             })}

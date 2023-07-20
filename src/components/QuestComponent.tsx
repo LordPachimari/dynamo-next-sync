@@ -16,7 +16,7 @@ export default function QuestComponent({
   includeDetails: boolean;
 }) {
   return (
-    <Card className="h-fit w-full rounded-xl bg-white drop-shadow-md dark:border-[1px] dark:border-slate-6 dark:bg-slate-3">
+    <Card className="h-fit w-full rounded-xl border-[1px] border-slate-200 bg-white  drop-shadow-sm dark:border-slate-6 dark:bg-slate-3">
       <CardHeader className="flex w-full p-2">
         <div className="flex w-full justify-between gap-5">
           <div className="flex w-full items-center gap-4">
@@ -30,34 +30,38 @@ export default function QuestComponent({
             )}
 
             <div className="w-full">
-              <div className="flex w-full items-center justify-between gap-2">
-                <div className=" flex flex-wrap items-center gap-2">
-                  <p className="text-lg font-extrabold">
+              <div className="flex w-full items-center justify-between gap-1">
+                <div className=" flex flex-wrap items-center gap-1">
+                  <p className="text-sm font-extrabold md:text-lg">
                     {quest.publisherUsername}
                   </p>
-                  <p className="font-bold opacity-70">
+                  <p className=" text-xs font-bold opacity-70  md:text-sm">
                     {formatDistanceToNowStrict(new Date(quest.publishedAt))} ago
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap ">
                   <div className="flex h-8  items-center gap-1">
-                    <p>due</p>
-                    <Badge className="h-6 w-28 bg-blue-400">
-                      <p>{format(new Date(quest.deadline), "PPP")} </p>
-                    </Badge>
+                    <div className="hidden gap-2 sm:flex">
+                      <p>due</p>
+                      <Badge className="wax-w-28 flex h-6 min-w-[90px]  bg-blue-9">
+                        <p>{format(new Date(quest.deadline), "PP")} </p>
+                      </Badge>
+                    </div>
+
                     <Badge className="h-6 w-16 justify-center bg-green-400 text-center">
                       <p className="text-sm font-bold">{quest.status}</p>
                     </Badge>
                   </div>
                 </div>
               </div>
-              <div className="mt-1 flex flex-wrap gap-2">
+              <div className=" flex flex-wrap gap-2">
                 <Badge className={TopicColor({ topic: quest.topic })}>
                   {quest.topic}
                 </Badge>
+
                 {quest.subtopic.map((subtopic, i) => (
-                  <Badge className="bg-blue-400" key={i}>
+                  <Badge className="hidden bg-blue-400 sm:block" key={i}>
                     {subtopic}
                   </Badge>
                 ))}
@@ -68,7 +72,7 @@ export default function QuestComponent({
       </CardHeader>
 
       <Link href={`/quests/${quest.id}`}>
-        <CardContent className="md:16 h-30 max-h-[300px] min-h-[100px] overflow-x-hidden text-ellipsis  p-3">
+        <CardContent className="md:16 h-30 max-h-[300px] min-h-[100px] overflow-x-hidden text-ellipsis  p-3 pt-0">
           <h3 className="font-default  text-xl font-bold dark:text-white">
             {quest.title}
           </h3>

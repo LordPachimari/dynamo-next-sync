@@ -20,7 +20,7 @@ import {
   WorkUpdatesZod,
   WorkZod,
 } from "~/types/types";
-import { contentKey, workKey } from "~/repl/client/mutators/workspace";
+import { contentKey, textKey, workKey } from "~/repl/client/mutators/workspace";
 import { PUBLISHED_QUESTS } from "~/utils/constants";
 import { userKey } from "~/repl/client/mutators/user";
 import { JSONObject } from "replicache";
@@ -52,7 +52,7 @@ export const WorkspaceMutators = async ({
       key: workKey({ id: work.id, type: work.type as WorkType }),
       value: work,
     });
-    tx.put({ key: contentKey(work.id), value: newContent });
+    // tx.put({ key: contentKey(work.id), value: newContent });
   } else if (mutation.name === "deleteWork") {
     const params = z
       .object({ id: z.string(), type: z.enum(WorkTypeEnum) })
@@ -64,48 +64,50 @@ export const WorkspaceMutators = async ({
       .parse(mutation.args);
     tx.permDel({ key: workKey({ id: params.id, type: params.type }) });
     tx.permDel({ key: contentKey(params.id) });
-  } else if (mutation.name === "duplicateWork") {
-    const { id, newId, createdAt, lastUpdated, type } = z
-      .object({
-        id: z.string(),
-        newId: z.string(),
-        lastUpdated: z.string(),
-        createdAt: z.string(),
-        type: z.enum(WorkTypeEnum),
-      })
-      .parse(mutation.args);
-    const result = await Promise.all([
-      getItem({ key: workKey({ id, type }), spaceId }),
-      getItem({ key: contentKey(id), spaceId }),
-    ]);
-    const newWork: MergedWork = {
-      ...(result[0] as MergedWork),
-      id: newId,
-      lastUpdated,
-      createdAt,
-      collaborators: [],
-      version: 1,
-      published: false,
-    };
-    //check it is published, if it is then delete the publishedkey so that it wont appear in the secondary index table
-    if (
-      newWork.type === "QUEST" &&
-      newWork.published &&
-      (newWork as PublishedMergedWork).publishedQuestKey
-    ) {
-      delete (newWork as PublishedMergedWork).publishedQuestKey;
-    }
-    if (result) {
-      tx.put({
-        key: workKey({ id: newId, type }),
-        value: { ...newWork },
-      });
-      tx.put({
-        key: contentKey(newId),
-        value: { ...result[1], collaborators: [] },
-      });
-    }
-  } else if (mutation.name === "updateWork") {
+  }
+  // else if (mutation.name === "duplicateWork") {
+  //   const { id, newId, createdAt, lastUpdated, type } = z
+  //     .object({
+  //       id: z.string(),
+  //       newId: z.string(),
+  //       lastUpdated: z.string(),
+  //       createdAt: z.string(),
+  //       type: z.enum(WorkTypeEnum),
+  //     })
+  //     .parse(mutation.args);
+  //   const result = await Promise.all([
+  //     getItem({ key: workKey({ id, type }), spaceId }),
+  //     getItem({ key: contentKey(id), spaceId }),
+  //   ]);
+  //   const newWork: MergedWork = {
+  //     ...(result[0] as MergedWork),
+  //     id: newId,
+  //     lastUpdated,
+  //     createdAt,
+  //     collaborators: [],
+  //     version: 1,
+  //     published: false,
+  //   };
+  //   //check it is published, if it is then delete the publishedkey so that it wont appear in the secondary index table
+  //   if (
+  //     newWork.type === "QUEST" &&
+  //     newWork.published &&
+  //     (newWork as PublishedMergedWork).publishedQuestKey
+  //   ) {
+  //     delete (newWork as PublishedMergedWork).publishedQuestKey;
+  //   }
+  //   if (result) {
+  //     tx.put({
+  //       key: workKey({ id: newId, type }),
+  //       value: { ...newWork },
+  //     });
+  //     tx.put({
+  //       key: contentKey(newId),
+  //       value: { ...result[1], collaborators: [] },
+  //     });
+  //   }
+  // }
+  else if (mutation.name === "updateWork") {
     const updateWorkParams = updateWorkArgsSchema.parse(mutation.args);
     tx.update({
       key: workKey({ id: updateWorkParams.id, type: updateWorkParams.type }),
@@ -116,18 +118,20 @@ export const WorkspaceMutators = async ({
       .object({ id: z.string(), type: z.enum(WorkTypeEnum) })
       .parse(mutation.args);
     tx.restore({ key: workKey({ id: params.id, type: params.type }) });
-  } else if (mutation.name === "updateContent") {
-    const content = z
-      .object({
-        id: z.string(),
-        update: z.object({
-          Ydoc: z.string(),
-          textContent: z.optional(z.string()),
-        }),
-      })
-      .parse(mutation.args);
-    tx.update({ key: contentKey(content.id), value: content.update });
-  } else if (mutation.name === "publishWork") {
+  }
+  // else if (mutation.name === "updateContent") {
+  //   const content = z
+  //     .object({
+  //       id: z.string(),
+  //       update: z.object({
+  //         Ydoc: z.string(),
+  //         textContent: z.optional(z.string()),
+  //       }),
+  //     })
+  //     .parse(mutation.args);
+  //   tx.update({ key: contentKey(content.id), value: content.update });
+  // }
+  else if (mutation.name === "publishWork") {
     const { params, markdown } = z
       .object({ params: PublishWorkParamsZod, markdown: z.string() })
       .parse(mutation.args);
@@ -170,7 +174,7 @@ export const WorkspaceMutators = async ({
         publisherProfile: user.profile || "profile",
         textContent: params.textContent,
         ...((params.type === "QUEST" || params.type === "SOLUTION") && {
-          publishedQuestKey: params.id,
+          publishedQuestKey: PUBLISHED_QUESTS,
         }),
         ...(params.type === "POST" &&
           params.destination === "FORUM" && {
@@ -183,10 +187,14 @@ export const WorkspaceMutators = async ({
           }),
       },
     });
-    tx.put({
-      PK: contentKey(params.id),
-      key: `${contentKey(params.id)}`,
-      value: { markdown },
+
+    tx.redisPut({
+      key: contentKey(params.id),
+      value: markdown,
+    });
+    tx.redisPut({
+      key: textKey(params.id),
+      value: params.textContent,
     });
   } else if (mutation.name === "unpublishWork") {
     const params = z

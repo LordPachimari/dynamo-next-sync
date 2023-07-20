@@ -12,7 +12,7 @@ export const momento = new CacheClient({
   credentialProvider: CredentialProvider.fromEnvironmentVariable({
     environmentVariableName: "MOMENTO_AUTH_TOKEN",
   }),
-  defaultTtlSeconds: 1 * 60 * 60,
+  defaultTtlSeconds: 24 * 60 * 60,
 });
 // export const momentoTopic = new TopicClient({
 //   configuration: TopicConfigurations.Default.latest(),

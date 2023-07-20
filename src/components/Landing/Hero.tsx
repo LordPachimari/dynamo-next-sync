@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ReactNode } from "react";
 import { Button } from "~/ui/Button";
-import LandingPageButtons from "./LandingPageButtons";
 // import heroImg from "../public/img/hero.png";
 
 const Hero = ({ children }: { children: ReactNode }) => {
@@ -28,10 +27,6 @@ const Hero = ({ children }: { children: ReactNode }) => {
                   Explore
                 </Button>
               </Link>
-            </div>
-            <div className="mt-10 flex flex-col items-center text-slate-600">
-              <p>email: thien.vanovich.nguyen@gmail.com</p>
-              <p>password: 5*d31#Ta7hHw</p>
             </div>
           </div>
         </div>
